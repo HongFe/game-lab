@@ -34,6 +34,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .lines{display:grid;gap:6px;margin-top:8px}
 .lines button{margin:0;text-align:left;padding:10px 12px;background:#3a4256;color:var(--tx);display:flex;justify-content:space-between;align-items:center}
 .lines button:disabled{opacity:.35} .lines small{color:var(--acc);font-size:12px}
+#snd{position:absolute;right:calc(10px + env(safe-area-inset-right));bottom:calc(10px + env(safe-area-inset-bottom));width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:rgba(12,14,20,.7);z-index:7;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}
+#snd svg{width:22px;height:22px}
 .dot{display:inline-block;width:18px;height:18px;border-radius:50%;color:#fff;font:900 11px/18px -apple-system,sans-serif;text-align:center;margin-right:6px;vertical-align:-3px}
 .logo{display:inline-block;width:34px;height:34px;border-radius:50%;border:5px solid var(--acc);vertical-align:-8px;margin-right:6px;position:relative}
 .logo:after{content:"";position:absolute;left:4px;right:4px;top:9px;height:6px;background:var(--acc);border-radius:3px}
@@ -43,36 +45,37 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 <div id="app">
   <canvas id="cv"></canvas>
   <div class="hud"><div class="clock" id="clockBox">지금<b id="clock">8:59:00</b></div><div class="life">셔츠<b id="life">♥♥♥</b></div><div class="score">점수<b id="score">0</b></div></div>
+  <button id="snd" aria-label="소리 켜기/끄기"></button>
   <div class="ov" id="ov"><div class="box" id="box"></div></div>
 </div>
 <script>
 "use strict";
 // ───────── 설정 ─────────
 // 세로 스크롤 탄막 슈팅: 웨이브 → 중간 보스 → 웨이브 → 보스. 내 발사체는 "잠시만요!" 말풍선(사람은 옆으로 비켜 주고, 물건은 치워짐)
-const LW = 360, LH = 640, PR = 4, GRAZE = 13, DT = 1 / 120, TOP_Y = 190, BOT_Y = 610, WALL = 22, FL = WALL, FR = LW - WALL;
+const LW = 360, LH = 640, PR = 4, GRAZE = 13, DT = 1 / 120, TOP_Y = 215, BOT_Y = 610, WALL = 22, FL = WALL, FR = LW - WALL;
 const VMAX = 290, GAIN = 13, ACC = 12;   // 최대 속도(px/s), 손가락 추종 세기, 관성
 const GAPNEED = 2 * PR + 8;               // 탄 사이 최소 틈(내 판정 지름 + 여유) — 생성 시 기하 검사 기준
 // 노선 = 스테이지. 스테이지마다 '이름 붙은 새 패턴' 1개를 소개(중간 보스가 처음 보여 줌) → 보스와 다음 스테이지에서 섞음
-// d: 난도(탄 수·적 체력·탄 속도), bs: 탄 속도 배수, bpm: 배경음 박자(모든 탄막이 이 박자에 맞춰 나감), gap: 웨이브 간격(박), seed: 패턴 뼈대 고정 시드
+// d: 난도(탄 수·적 체력), sp: 탄 속도 배수(조준탄 = 150 × sp px/s, 노선 순서대로 오름), bpm: 배경음 박자(모든 탄막이 이 박자에 맞춰 나감), gap: 웨이브 간격(박), seed: 패턴 뼈대 고정 시드
 const STAGES = [
-  { name: "2호선 아침", no: "2", col: "#3cb44b", d: 1.1, bs: 1, bpm: 104, gap: 6, w1: 14, w2: 12, seed: 11, mid: "booth", boss: "gate",
-    pat: "조준 전단지", hint: "옆으로 한 칸 비키기", pool: { walk: 3, flyer: 3, pigeon: 2, wall: 1 }, intro: "flyer" },
-  { name: "9호선 급행", no: "9", col: "#bfa14a", d: 2.15, bs: 1.8, bpm: 118, gap: 3, w1: 14, w2: 12, seed: 23, mid: "umbStall", boss: "door",
+  { name: "2호선 아침", no: "2", col: "#3cb44b", d: 1.5, sp: 1.33, bpm: 104, gap: 3, w1: 14, w2: 12, seed: 29, mid: "booth", boss: "gate",
+    pat: "조준 전단지", hint: "옆으로 한 칸 비키기", pool: { walk: 3, flyer: 3, pigeon: 2, cup: 1, wall: 1 }, intro: "flyer" },
+  { name: "9호선 급행", no: "9", col: "#bfa14a", d: 2.2, sp: 1.55, bpm: 114, gap: 4, w1: 14, w2: 12, seed: 23, mid: "umbStall", boss: "door",
     pat: "물방울 고리", hint: "고리 틈으로 빠지기", pool: { walk: 2, flyer: 3, pigeon: 2, umb: 3, wall: 1 }, intro: "umb" },
-  { name: "신도림 환승", no: "1", col: "#2a6ad8", d: 2.35, bs: 1.25, bpm: 120, gap: 3, w1: 14, w2: 12, seed: 37, mid: "cart", boss: "board",
-    pat: "커피 부채", hint: "쓸고 간 쪽으로", pool: { walk: 2, flyer: 3, pigeon: 2, umb: 2, cup: 3, wall: 1 }, intro: "cup" },
-  { name: "강남역 출구", no: "2", col: "#e0457b", d: 2.6, bs: 1.12, bpm: 128, gap: 3, w1: 14, w2: 12, seed: 41, mid: "pigeonKing", boss: "elev",
-    pat: "소용돌이", hint: "같은 방향으로 돌기", pool: { walk: 1, flyer: 3, pigeon: 2, umb: 2, cup: 3, scoot: 2, wall: 1 }, intro: "scoot" },
-  { name: "월요일 아침", no: "M", col: "#ff8a3d", d: 2.45, bs: 1.3, bpm: 136, gap: 3, w1: 14, w2: 12, seed: 53, mid: "rush", boss: "clock",
+  { name: "신도림 환승", no: "1", col: "#2a6ad8", d: 2.0, sp: 1.72, bpm: 120, gap: 3, w1: 14, w2: 12, seed: 37, mid: "cart", boss: "board",
+    pat: "커피 부채", hint: "쓸고 간 쪽으로", pool: { walk: 2, flyer: 3, pigeon: 2, umb: 2, cup: 3, scoot: 1, wall: 1 }, intro: "cup" },
+  { name: "강남역 출구", no: "2", col: "#e0457b", d: 2.3, sp: 1.86, bpm: 128, gap: 3, w1: 14, w2: 12, seed: 43, mid: "pigeonKing", boss: "elev",
+    pat: "소용돌이", hint: "같은 방향으로 돌기", pool: { walk: 2, flyer: 3, pigeon: 2, umb: 2, cup: 2, scoot: 2, wall: 1 }, intro: "pigeon" },
+  { name: "월요일 아침", no: "M", col: "#ff8a3d", d: 2.52, sp: 1.98, bpm: 136, gap: 4, w1: 14, w2: 12, seed: 53, mid: "rush", boss: "clock",
     pat: "9시 역회전", hint: "4박마다 방향 바뀜", pool: { walk: 1, flyer: 3, pigeon: 2, umb: 3, cup: 3, scoot: 2, wall: 1 }, intro: "umb" },
-  { name: "무한 출근", no: "∞", col: "#a78bfa", d: 1.6, bpm: 116, gap: 5, w1: 14, w2: 12, seed: 71, endless: true,
+  { name: "무한 출근", no: "∞", col: "#a78bfa", d: 1.6, sp: 1.5, bpm: 116, gap: 5, w1: 14, w2: 12, seed: 71, endless: true,
     pat: "전부 섞기", hint: "바퀴마다 빨라짐", pool: { walk: 2, flyer: 3, pigeon: 2, umb: 2, cup: 3, scoot: 2, wall: 1 } },
 ];
 const NSTAGE = 5;
-const TUNE = { ehp: 6, bhp: .6, bsp: 1.35 };   // 적 체력 배수, 보스 체력 배수, 탄 속도 배수
+const TUNE = { ehp: 6, bhp: .6 };   // 적 체력 배수, 보스 체력 배수
 // 보스: w·h = 말풍선이 맞는 상자, hp = 기본 체력, pats = 차례로 도는 탄막(한 패턴 = 8박 + 1박 쉼)
 const BOSSES = {
-  booth: { name: "전단지 부스", w: 96, h: 46, hp: 45, pats: ["aim3", "aim5"] },
+  booth: { name: "전단지 부스", w: 96, h: 46, hp: 45, pats: ["aim3", "fanDown", "aim5"] },
   gate: { name: "고장 난 개찰구", w: 160, h: 52, hp: 110, pats: ["aim3", "fanDown", "aim5"] },
   umbStall: { name: "우산 노점", w: 104, h: 52, hp: 60, pats: ["ring", "ringRot"] },
   door: { name: "만원 열차 문", w: 180, h: 70, hp: 130, pats: ["crowd", "ring", "aim5", "ringRot"] },
@@ -84,7 +87,7 @@ const BOSSES = {
   clock: { name: "9시 시계", w: 112, h: 112, hp: 200, pats: ["spiral2", "ringBurst", "fanSweep", "aim5"] },
 };
 // 패턴 발사 간격(16분음표 단위, 4 = 1박)
-const PAT_EVERY = { aim3: 1, aim5: 2, fanDown: 2, fanSweep: 1, ring: 2, ringBurst: 1, ringRot: 1, spiral: 1, spiral2: 1, stream: 1, rain: 1, crowd: 32, pigeons: 32 };
+const PAT_EVERY = { aim3: 2, aim5: 4, fanDown: 4, fanSweep: 2, ring: 4, ringBurst: 4, ringRot: 2, spiral: 2, spiral2: 2, stream: 2, rain: 2, crowd: 32, pigeons: 32 };   // 8분음표 위주, 정박(4칸마다) 탄은 크고 밝게
 const FE = { flyer: 2, umb: 4, cup: 2 };   // 길거리 적 발사 간격(16분음표)
 const ENDLESS_MIDS = ["booth", "umbStall", "cart", "pigeonKing", "rush"], ENDLESS_BOSSES = ["gate", "door", "board", "elev", "clock"];
 // 배경음: 노선마다 베이스 음 진행(박자에 맞춰 탄이 나감)
@@ -96,8 +99,9 @@ let save = Object.assign({ stars: {}, unlocked: 1, best: {} }, store.get());
 
 // ───────── 소리 ─────────
 let ac = null;
-function beep(f, d = .06, type = "square", v = .04, w = 0, f2) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + w, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {} }
-function noise(d = .12, v = .05, hp = 800) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n); const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = b; f.type = "highpass"; f.frequency.value = hp; g.gain.value = v; s.connect(f); f.connect(g); g.connect(ac.destination); s.start(); } catch (e) {} }
+function beep(f, d = .06, type = "square", v = .04, w = 0, f2) { if (save.mute) return; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + w, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {} }
+function noise(d = .12, v = .05, hp = 800) { if (save.mute) return; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const n = Math.floor(ac.sampleRate * d), b = ac.createBuffer(1, n, ac.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n); const s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(); s.buffer = b; f.type = "highpass"; f.frequency.value = hp; g.gain.value = v; s.connect(f); f.connect(g); g.connect(ac.destination); s.start(); } catch (e) {} }
+function sndIcon() { const on = !save.mute; $("snd").innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#e5e7eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#e5e7eb"/>${on ? '<path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/>' : '<path d="M17 9l5 6M22 9l-5 6"/>'}</svg>`; }
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 const q = new URLSearchParams(location.search);
 const JUICE = !q.has("nojuice"), HITBOX = q.has("hitbox");
@@ -150,17 +154,18 @@ function startPhase(G) {
 }
 // 난도: 노선 기본값 × (9시에 가까울수록 최대 +30%) + 무한 모드는 한 바퀴마다 +0.3
 const dEff = G => (G.St.d + G.loop * .3) * (1 + .3 * Math.min(1, G.t / 70));
-const bspd = G => (.85 + .15 * dEff(G)) * TUNE.bsp * (G.St.bs || 1);
+const bspd = G => G.St.sp * (1 + .08 * Math.min(1, G.t / 70)) * (1 + .06 * G.loop);   // 탄 속도 배수: 노선 순서대로 오름(조준탄 150 × 배수)
 const mult = G => 1 + Math.min(3, Math.floor(G.combo / 10) * .5);
 function addScore(G, n) { G.score += Math.round(n * mult(G)); }
 function bump(G) { G.combo++; G.comboT = 2.5; if (G.combo > G.maxCombo) G.maxCombo = G.combo; }
 // ── 탄 만들기 + 생성 시 기하 검사: 내가 갈 수 있는 곳까지의 거리에서 탄 사이 틈이 판정 지름+여유 이상인가
-function bul(G, x, y, ang, sp, kind, r = 4.5) { G.buls.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, r, kind, a: ang, age: 0 }); }
+function bul(G, x, y, ang, sp, kind, r = 4.5) { G.buls.push({ x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, r, kind, a: ang, age: 0, acc: G.accent }); }
 const reachD = y => Math.max(50, TOP_Y - y);
 function maxN(y, span, r = 4.5) { return Math.max(1, Math.floor(span * reachD(y) / (2 * r + GAPNEED)) + (span < 6.28 ? 1 : 0)); }
 function checkSpacing(G, y, dAng, r) { G.pats++; if (dAng * reachD(y) - 2 * r < GAPNEED - 1e-6) G.viol++; }
-function ring(G, x, y, n, sp, off, kind, r = 4.5) { n = Math.min(n, maxN(y, 6.283, r)); checkSpacing(G, y, 6.283 / n, r); for (let i = 0; i < n; i++) bul(G, x, y, off + i / n * 6.283, sp, kind, r); }
+function ring(G, x, y, n, sp, off, kind, r = 4.5) { if (G.accent) r += 1; n = Math.min(n, maxN(y, 6.283, r)); checkSpacing(G, y, 6.283 / n, r); for (let i = 0; i < n; i++) bul(G, x, y, off + i / n * 6.283, sp, kind, r); }
 function fan(G, x, y, ang, n, spread, sp, kind, r = 4.5) {
+  if (G.accent) r += 1;   // 정박 탄은 한 치수 크게(리듬이 보이게)
   if (n <= 1) { G.pats++; return bul(G, x, y, ang, sp, kind, r); }
   n = Math.min(n, maxN(y, spread, r)); if (n <= 1) { G.pats++; return bul(G, x, y, ang, sp, kind, r); }
   checkSpacing(G, y, spread / (n - 1), r); for (let i = 0; i < n; i++) bul(G, x, y, ang - spread / 2 + spread * i / (n - 1), sp, kind, r);
@@ -172,15 +177,15 @@ function spawnWave(G, kind, s) {
   const S = rng(s || 1), J = () => (G.R() - .5) * 16, d = dEff(G), sp = bspd(G);
   if (kind === "walk") { const n = 2 + Math.floor(d); for (let i = 0; i < n; i++) mkE(G, "walk", clamp(FL + 20 + S() * (FR - FL - 40) + J(), FL + 14, FR - 14), -20 - i * 46, { vy: (55 + S() * 30) * sp, hp: 2, sc: 50 }); }
   else if (kind === "wall") { const gap = 72, gx = FL + 10 + S() * (FR - FL - 20 - gap); for (let x = FL + 14; x <= FR - 14; x += 30) if (x + 14 < gx || x - 14 > gx + gap) mkE(G, "walk", x, -20, { vy: 62 * sp, hp: 2, sc: 30 }); }
-  else if (kind === "flyer") { const n = 1 + (d > 1.4 ? 1 : 0) + (d > 2.1 ? 1 : 0); for (let i = 0; i < n; i++) mkE(G, "flyer", FL + 40 + (FR - FL - 80) * (n === 1 ? S() : i / (n - 1)) + J(), -20, { ty: 60 + S() * 70, hp: 3, stay: 5.5, firing: true, off: i * 2, sc: 100, r: 14 }); }
-  else if (kind === "umb") { const n = 1 + (d > 1.7 ? 1 : 0); for (let i = 0; i < n; i++) mkE(G, "umb", (n === 1 ? FL + 60 + S() * (FR - FL - 120) : (i ? FR - 70 : FL + 70)) + J(), -24, { ty: 80 + S() * 50, hp: 4, stay: 4.5, firing: true, off: i * 8, sc: 150, r: 13 }); }
+  else if (kind === "flyer") { const n = 1 + (d > 1.4 ? 1 : 0) + (d > 2.1 ? 1 : 0); for (let i = 0; i < n; i++) mkE(G, "flyer", FL + 40 + (FR - FL - 80) * (n === 1 ? S() : i / (n - 1)) + J(), -20, { ty: 95 + S() * 50, hp: 3, stay: 5.5, firing: true, off: i * 2, sc: 100, r: 14 }); }
+  else if (kind === "umb") { const n = 1 + (d > 1.7 ? 1 : 0); for (let i = 0; i < n; i++) mkE(G, "umb", (n === 1 ? FL + 60 + S() * (FR - FL - 120) : (i ? FR - 70 : FL + 70)) + J(), -24, { ty: 100 + S() * 45, hp: 4, stay: 4.5, firing: true, off: i * 8, sc: 150, r: 13 }); }
   else if (kind === "cup") { for (let i = 0; i < 2; i++) mkE(G, "cup", (i ? FR - 50 - S() * 60 : FL + 50 + S() * 60) + J(), -20 - i * 30, { vy: 42 * sp, hp: 3, off: i * 4, sc: 120, r: 13 }); }
   else if (kind === "pigeon") { const n = 4 + Math.floor(d * 1.5), side = S() < .5 ? -1 : 1; for (let i = 0; i < n; i++) mkE(G, "pigeon", side < 0 ? FL + 10 + i * 6 : FR - 10 - i * 6, -20 - i * 26, { vx: -side * (45 + 20 * d) * sp, vy: (105 + 10 * d) * sp, hp: 1, r: 8, sc: 30, ph: i * .7 }); }
   else if (kind === "scoot") { const n = 1 + Math.floor(d / 1.2); for (let i = 0; i < n; i++) mkE(G, "scoot", FL + 20 + S() * (FR - FL - 40) + J(), -60, { vy: 340 * sp, r: 9, hl: 14, warn: .8 + i * .45, hp: 1e9, shoot: false, sc: 0 }); }
 }
 function spawnBoss(G, key, mid) {
   const B = BOSSES[key], d = dEff(G);
-  G.boss = mkE(G, "boss", LW / 2, -70, { key, B, mid, w: B.w, h: B.h, r: Math.max(B.w, B.h) / 2, hp: Math.round(B.hp * TUNE.bhp * (.7 + .3 * d)), ty: mid ? 105 : 112, q0: -1, ang: 0, sc: mid ? 1500 : 5000, body: false, life: 0 });
+  G.boss = mkE(G, "boss", LW / 2, -70, { key, B, mid, w: B.w, h: B.h, r: Math.max(B.w, B.h) / 2, hp: Math.round(B.hp * TUNE.bhp * (.7 + .3 * d)), ty: 94 + B.h / 2, q0: -1, ang: 0, sc: mid ? 1500 : 5000, body: false, life: 0 });
   G.boss.maxhp = G.boss.hp;
 }
 const BKIND = { gate: "card", door: "drop", elev: "tick", board: "card", clock: "tick", booth: "paper", pigeonKing: "drop", umbStall: "drop", cart: "coffee", rush: "paper" };
@@ -198,14 +203,14 @@ function bossBeat(G, e) {
   else if (pat === "ring" || pat === "ringBurst") ring(G, ox, oy, 12 + Math.floor(d * 3), (pat === "ring" ? 100 : 130) * sp, G.R() * 6.28, kind);
   else if (pat === "ringRot") { e.ang += .19; ring(G, ox, oy, 8 + Math.floor(d * 2), 105 * sp, e.ang, kind); }
   else if (pat === "spiral" || pat === "spiral2") { const k = pat === "spiral" ? 3 : 4; e.ang += pat === "spiral" ? .23 : (Math.floor(w / 16) % 2 ? -.21 : .21); ring(G, ox, oy, k, 115 * sp, e.ang, kind); }
-  else if (pat === "stream") { if (w % 8 === 0 || e.aim === undefined) e.aim = aimAt(G, ox, oy); if (w % 8 < 5) fan(G, ox, oy, e.aim, 1, 0, 170 * sp, kind); }
+  else if (pat === "stream") { if (w % 8 === 0 || e.aim === undefined) e.aim = aimAt(G, ox, oy); if (w % 8 < 5) fan(G, ox, oy, e.aim, 1, 0, 150 * sp, kind); }
   else if (pat === "rain") { G.pats++; bul(G, ox - e.w / 2 + G.R() * e.w, oy, Math.PI / 2 + (G.R() - .5) * .3, 150 * sp, kind); }
   else if (pat === "crowd") { if (w === 0) { const gap = 76, gx = FL + 10 + G.R() * (FR - FL - 20 - gap); for (let x = FL + 14; x <= FR - 14; x += 30) if (x + 14 < gx || x - 14 > gx + gap) mkE(G, "walk", x, -20, { vy: 70 * sp, hp: 2, sc: 20 }); } }
   else if (pat === "pigeons") { if (w === 0) spawnWave(G, "pigeon", 1 + idx); }
 }
 // 16분음표마다: 웨이브 등장 · 적 발사 · 보스 탄막
 function onSixteenth(G, ev) {
-  ev && ev("beat", G.q);
+  ev && ev("beat", G.q); G.accent = G.q % 4 === 0;
   for (const s of G.script) if (s.q === G.q) spawnWave(G, s.kind, s.s);
   const d = dEff(G), sp = bspd(G);
   for (const e of G.ens) {
@@ -263,14 +268,17 @@ function hurt(G, ev, src) {
   if (G.lives <= 0) { G.over = "late"; ev && ev("late"); }
 }
 function clearNear(G, rad) { G.buls = G.buls.filter(b => Math.hypot(b.x - G.px, b.y - G.py) > rad); }
-// 공정성 감사: 0.5초마다 '내가 설 수 있는 곳'(격자 88칸) 가운데 0.4초 동안 아무것도 안 닿는 칸이 하나라도 있는가
+// 공정성 감사: 0.5초마다 '내가 설 수 있는 곳'(격자) 가운데 0.4초 동안 아무것도 안 닿는 칸이 하나라도 있는가(연속 판정)
 function audit(G) {
   G.checks++; const ts = G.slowT > 0 ? .5 : 1, objs = [];
   for (const b of G.buls) objs.push([b.x, b.y, b.vx * ts, b.vy * ts, b.r]);
   for (const e of G.ens) if (!e.out && e.body && !(e.k === "scoot" && e.warn > .4)) objs.push([e.x, e.y, e.mvx || 0, e.mvy || e.vy || 0, e.k === "scoot" ? e.r + e.hl : e.r * .85]);
-  for (let gy = TOP_Y + 10; gy < BOT_Y; gy += 58) for (let gx = FL + 14; gx < FR; gx += 30) {
+  for (let gy = TOP_Y + 10; gy < BOT_Y; gy += 29) for (let gx = FL + 14; gx < FR; gx += 15) {
     let safe = true;
-    for (const o of objs) { for (let k = 0; k <= 4; k++) { const t = k * .1; if (Math.hypot(o[0] + o[2] * t - gx, o[1] + o[3] * t - gy) < o[4] + PR + 2) { safe = false; break; } } if (!safe) break; }
+    for (const o of objs) {   // 0~0.4초 직선 이동 중 가장 가까운 거리(연속 판정, 표본 사이를 건너뛰지 않음)
+      const wx = o[0] - gx, wy = o[1] - gy, vv = o[2] * o[2] + o[3] * o[3], t = vv > 0 ? clamp(-(wx * o[2] + wy * o[3]) / vv, 0, .4) : 0;
+      if (Math.hypot(wx + o[2] * t, wy + o[3] * t) < o[4] + PR + 2) { safe = false; break; }
+    }
     if (safe) return;
   }
   G.blocked++;
@@ -344,8 +352,8 @@ function stepRun(G, tx, ty, ev) {
   if (G.audit && (G.auditT -= DT) <= 0) { G.auditT = .5; if (G.endT <= 0) audit(G); }
 }
 // 회피 봇: 사람과 같은 최대 속도·관성으로 0.7초 앞을 내다보고(탄은 직선 예측), 안전하면 적·보스 밑으로 가서 쏜다
-// 사람 근사: 막 생긴 탄(BOT_REACT초 미만)은 못 본 것으로, 판단은 BOT_EVERY틱마다, 손가락 위치는 ±BOT_JIT px 흔들림
-const BOT = { react: .25, every: 18, jit: 12 };
+// 사람 근사: 막 생긴 탄(react초 미만)은 못 본 것으로, 판단은 every틱(24 = 0.2초)마다, 손가락 위치는 ±jit px 흔들림
+const BOT = { react: .3, every: 24, jit: 12 };
 const BOT_DIRS = 8, BOT_RADS = [40, 100], BOT_STEPS = 14, BOT_DT = .05;
 function botTarget(G) {
   if (G.botT && G.botT.k-- > 0) return G.botT;
@@ -422,11 +430,12 @@ function start(n, seed, cp) {
 function finish(win) {
   mode = "done";
   const best = save.best[si] || 0, nb = G.score > best;
-  if (!auto) { save.best[si] = Math.max(best, G.score); store.set(save); }
+  const cpRun = G.fromCp > 0;   // 체크포인트에서 시작한 판: 최고점 저장 안 함, 별 최대 2
+  if (!auto && !cpRun) { save.best[si] = Math.max(best, G.score); store.set(save); }
   lastCp = win ? null : G.cp;
-  const sub = `${nb ? "최고 기록!" : "최고 " + best.toLocaleString()} · 콤보 ${G.maxCombo}`;
+  const sub = cpRun ? `체크포인트 출근 · 별 최대 2` : `${nb ? "최고 기록!" : "최고 " + best.toLocaleString()} · 콤보 ${G.maxCombo}`;
   if (win) {
-    const st = G.lives; if (!auto) { save.stars[si] = Math.max(save.stars[si] || 0, st); save.unlocked = Math.max(save.unlocked, si + 2); store.set(save); }
+    const st = cpRun ? Math.min(2, G.lives) : G.lives; if (!auto) { save.stars[si] = Math.max(save.stars[si] || 0, st); save.unlocked = Math.max(save.unlocked, si + 2); store.set(save); }
     SFX.win(); emit("level_clear", { level: si + 1, lives: G.lives, score: G.score, combo: G.maxCombo, from: G.fromCp });
     $("box").innerHTML = `<div class="stamp">9:00 출근</div><div class="stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</div><div class="big">${G.score.toLocaleString()}</div><p>${sub}</p>
       <button id="nx">${si + 1 < NSTAGE ? "다음 노선" : "노선 목록"}</button><button class="sec" id="rt">처음부터 다시</button>`;
@@ -441,7 +450,7 @@ function finish(win) {
 function menu() {
   mode = "menu"; G = null;
   const row = (l, i, locked) => `<button ${locked ? "disabled" : ""} data-i="${i}"><span><span class="dot" style="background:${l.col}">${l.no}</span>${l.name}</span><small>${locked ? "잠김" : (save.stars[i] ? "★".repeat(save.stars[i]) + " " : "") + (save.best[i] ? save.best[i].toLocaleString() : l.pat)}</small></button>`;
-  $("box").innerHTML = `<h1><span class="logo"></span>출근길 피하기</h1><ul><li><b>끌어서</b> 이동 · 가운데 <b>빨간 점</b>만 피하기</li><li>말풍선이 저절로 나가 길을 터요</li><li>탄을 <b>스치면</b> 콤보 ↑</li><li>커피 = 말풍선+1 · 우산 = 방패 · 이어폰 = 느리게</li><li>탄은 음악 박자에 맞춰 나와요</li></ul>
+  $("box").innerHTML = `<h1><span class="logo"></span>출근길 피하기</h1><ul><li><b>끌어서</b> 이동 · <b>빨간 점</b>만 피하기</li><li>말풍선이 저절로 나가 길을 터요</li><li>탄을 <b>스치면</b> 콤보 ↑</li></ul>
     <div class="lines">${STAGES.slice(0, NSTAGE).map((l, i) => row(l, i, i + 1 > save.unlocked)).join("")}${row(STAGES[5], 5, save.unlocked <= NSTAGE)}</div>`;
   $("ov").classList.add("on"); $("box").querySelectorAll("[data-i]").forEach(b => b.onclick = () => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume && ac.resume(); } catch (e) {} start(+b.dataset.i); });
 }
@@ -519,7 +528,7 @@ const BCOL = { paper: ["#ffffff", "#e2455c"], drop: ["#7dd3fc", "#1d78c2"], coff
 function drawBul(b, t) {
   const X = sx(b.x), Y = sy(b.y), s = SC, r = b.r * s, [c1, c2] = BCOL[b.kind] || BCOL.paper;
   ell(X, Y, r + 2.2 * s, r + 2.2 * s, "rgba(0,0,0,.55)");
-  ell(X, Y, r + 1.2 * s, r + 1.2 * s, c2);
+  ell(X, Y, r + 1.2 * s, r + 1.2 * s, b.acc ? "#fff" : c2);
   if (b.kind === "paper" || b.kind === "card") { ctx.save(); ctx.translate(X, Y); ctx.rotate(t * 6 + b.a * 3); ctx.fillStyle = c1; ctx.fillRect(-r * .75, -r * .55, r * 1.5, r * 1.1); ctx.fillStyle = c2; ctx.fillRect(-r * .6, -r * .35, r * 1.2, r * .25); ctx.restore(); }
   else if (b.kind === "drop") { ell(X, Y, r * .85, r * .85, c1); ell(X - r * .3, Y - r * .3, r * .25, r * .25, "#fff"); }
   else if (b.kind === "coffee") { ell(X, Y, r * .85, r * .85, c1); ell(X - r * .3, Y - r * .3, r * .25, r * .2, "rgba(255,255,255,.7)"); }
@@ -535,7 +544,7 @@ function drawBoss(e, t) {
   const X = sx(e.x), Y = sy(e.y), s = SC, w = e.w * s, h = e.h * s, x0 = X - w / 2, y0 = Y - h / 2, k = e.key, col = G.St.col;
   ell(X, Y + h / 2 + 4 * s, w * .5, 7 * s, "rgba(0,0,0,.35)");
   if (k === "gate") {
-    for (let i = 0; i < 3; i++) { const gx = x0 + i * w / 3 + 4 * s, gw = w / 3 - 8 * s; ctx.fillStyle = "#9aa3b5"; rrect(gx, y0, gw, h, 6 * s); ctx.fill(); ctx.fillStyle = "#6b7386"; ctx.fillRect(gx + 4 * s, y0 + h * .55, gw - 8 * s, 6 * s); ell(gx + gw / 2, y0 + 12 * s, 8 * s, 8 * s, Math.floor(t * 4 + i) % 2 ? "#ef4444" : "#7f1d1d"); txt("✕", gx + gw / 2, y0 + 12 * s, 10 * s, "#fff"); ctx.fillStyle = "#1f2937"; ctx.fillRect(gx + gw / 2 - 8 * s, y0 + 26 * s, 16 * s, 4 * s); }
+    for (let i = 0; i < 3; i++) { const gx = x0 + i * w / 3 + 4 * s, gw = w / 3 - 8 * s; ctx.fillStyle = "#9aa3b5"; rrect(gx, y0, gw, h, 6 * s); ctx.fill(); ctx.fillStyle = "#6b7386"; ctx.fillRect(gx + 4 * s, y0 + h * .55, gw - 8 * s, 6 * s); ell(gx + gw / 2, y0 + 12 * s, 8 * s, 8 * s, Math.floor(t * 4 + i) % 2 ? "#ef4444" : "#7f1d1d"); txt("✕", gx + gw / 2, y0 + 12 * s, 12 * s, "#fff"); ctx.fillStyle = "#1f2937"; ctx.fillRect(gx + gw / 2 - 8 * s, y0 + 26 * s, 16 * s, 4 * s); }
     ctx.fillStyle = "#e5e7eb"; ctx.fillRect(x0 - 4 * s, y0 + h * .7, w + 8 * s, 5 * s);
   } else if (k === "door") {
     ctx.fillStyle = "#c9ced8"; rrect(x0, y0, w, h, 8 * s); ctx.fill(); ctx.fillStyle = col; ctx.fillRect(x0, y0 + h * .72, w, 6 * s);
@@ -543,10 +552,10 @@ function drawBoss(e, t) {
     ctx.fillStyle = "#1e2433"; ctx.fillRect(X - op - 2 * s, y0 + 6 * s, op * 2 + 4 * s, h - 12 * s);
     for (let i = -2; i <= 2; i++) drawPerson(X + i * 9 * s, y0 + h * .45, 7, (i + 5) % 6);
     for (const sd of [-1, 1]) { const dx = X + sd * (op + 2 * s); ctx.fillStyle = "#aeb5c4"; ctx.fillRect(sd < 0 ? dx - 44 * s : dx, y0 + 4 * s, 44 * s, h - 8 * s); ctx.fillStyle = "rgba(140,200,255,.55)"; ctx.fillRect(sd < 0 ? dx - 36 * s : dx + 8 * s, y0 + 10 * s, 28 * s, h * .45); }
-    txt("만원", x0 + 20 * s, y0 + h * .86, 10 * s, "#334155"); txt("만원", x0 + w - 20 * s, y0 + h * .86, 10 * s, "#334155");
+    txt("만원", x0 + 22 * s, y0 + h * .86, 12 * s, "#334155"); txt("만원", x0 + w - 22 * s, y0 + h * .86, 12 * s, "#334155");
   } else if (k === "elev") {
     ctx.fillStyle = "#4b5563"; rrect(x0, y0, w, h, 6 * s); ctx.fill(); ctx.fillStyle = "#111827"; ctx.fillRect(x0 + 10 * s, y0 + 4 * s, w - 20 * s, 14 * s);
-    txt(["B2", "B1", "1F", "2F"][Math.floor(t * 1.5) % 4] + " ▲", X, y0 + 11 * s, 10 * s, "#f97316");
+    txt(["B2", "B1", "1F", "2F"][Math.floor(t * 1.5) % 4] + " ▲", X, y0 + 11 * s, 12 * s, "#f97316");
     const op = (Math.sin(t * 2) * .5 + .5) * 8 * s; ctx.fillStyle = "#cbd5e1"; ctx.fillRect(x0 + 10 * s, y0 + 22 * s, (w - 20 * s) / 2 - op, h - 28 * s); ctx.fillRect(X + op, y0 + 22 * s, (w - 20 * s) / 2 - op, h - 28 * s);
     ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(x0 + 14 * s, y0 + 24 * s, 3 * s, h - 32 * s);
   } else if (k === "board") {
@@ -564,12 +573,12 @@ function drawBoss(e, t) {
     ctx.fillStyle = k === "cart" ? "#7c4a24" : "#475569"; rrect(x0, y0 + h * .35, w, h * .65, 6 * s); ctx.fill();
     for (let i = 0; i < 6; i++) { ctx.fillStyle = i % 2 ? "#fff" : (k === "cart" ? "#16a34a" : col); ctx.fillRect(x0 + i * w / 6, y0, w / 6 + 1, h * .3); }
     ctx.fillStyle = "rgba(0,0,0,.2)"; ctx.fillRect(x0, y0 + h * .3, w, 4 * s);
-    if (k === "booth") { for (let i = 0; i < 4; i++) { ctx.fillStyle = "#fff"; ctx.fillRect(x0 + 10 * s + i * 20 * s, y0 + h * .45, 14 * s, 10 * s); } txt("전단지", X, y0 + h * .85, 11 * s, "#ffcf3f"); }
-    else if (k === "cart") { for (let i = 0; i < 5; i++) { ctx.fillStyle = "#f5efe6"; ctx.fillRect(x0 + 12 * s + i * 19 * s, y0 + h * .45, 10 * s, 13 * s); ctx.fillStyle = "#3a2a1e"; ctx.fillRect(x0 + 11 * s + i * 19 * s, y0 + h * .43, 12 * s, 3 * s); } txt("COFFEE", X, y0 + h * .88, 10 * s, "#fde68a"); }
+    if (k === "booth") { for (let i = 0; i < 4; i++) { ctx.fillStyle = "#fff"; ctx.fillRect(x0 + 10 * s + i * 20 * s, y0 + h * .45, 14 * s, 10 * s); } txt("전단지", X, y0 + h * .85, 12 * s, "#ffcf3f"); }
+    else if (k === "cart") { for (let i = 0; i < 5; i++) { ctx.fillStyle = "#f5efe6"; ctx.fillRect(x0 + 12 * s + i * 19 * s, y0 + h * .45, 10 * s, 13 * s); ctx.fillStyle = "#3a2a1e"; ctx.fillRect(x0 + 11 * s + i * 19 * s, y0 + h * .43, 12 * s, 3 * s); } txt("COFFEE", X, y0 + h * .88, 12 * s, "#fde68a"); }
     else { for (let i = 0; i < 3; i++) drawUmb(x0 + w * (.2 + i * .3), y0 + h * .62, 13 * s, UMBS[i * 2], t + i); }
   } else if (k === "pigeonKing") drawPigeon(X, Y, s * 4, t, Math.PI / 2, true);
   else if (k === "rush") { for (let r = 0; r < 2; r++) for (let i = 0; i < 7; i++) drawPerson(x0 + 14 * s + i * (w - 28 * s) / 6, y0 + 14 * s + r * 22 * s + Math.sin(t * 5 + i) * 2 * s, 12, (i + r * 3) % 6); }
-  if (e.hitT > 0) { ctx.globalAlpha = .35; ctx.fillStyle = "#fff"; ctx.fillRect(x0, y0, w, h); ctx.globalAlpha = 1; }
+  if (e.hitT > 0) { ctx.globalAlpha = .35; if (k === "clock") ell(X, Y, w / 2, w / 2, "#fff"); else if (k === "pigeonKing") ell(X, Y, w * .45, h * .4, "#fff"); else { ctx.fillStyle = "#fff"; rrect(x0, y0, w, h, 8 * s); ctx.fill(); } ctx.globalAlpha = 1; }
 }
 function drawEnemy(e, t) {
   const X = sx(e.x), Y = sy(e.y), s = SC;
@@ -617,9 +626,9 @@ function drawBg(t) {
   ctx.restore();
 }
 function drawTop() {   // 한 줄: 노선 배지 + 구간 점 4개(또는 보스 체력) + 배율 / 아래: 아이콘 + 게이지
-  if (!G) return; const s = SC, y = sy(TOP_Y - 128), x = sx(FL + 10), w = (FR - FL - 20) * s, h = 22 * s, b = G.boss;
-  ctx.fillStyle = "rgba(10,14,30,.85)"; rrect(x, y, w, h, 5 * s); ctx.fill();
-  ell(x + 13 * s, y + h / 2, 8 * s, 8 * s, G.St.col); txt(G.St.no, x + 13 * s, y + h / 2 + .5 * s, 10 * s, "#fff");
+  if (!G) return; const s = SC, y = sy(58), x = sx(FL + 10), w = (FR - FL - 20) * s, h = 22 * s, b = G.boss;
+  ctx.fillStyle = "rgba(10,14,30,.55)"; rrect(x, y, w, h, 5 * s); ctx.fill();
+  ell(x + 13 * s, y + h / 2, 9 * s, 9 * s, G.St.col); txt(G.St.no, x + 13 * s, y + h / 2 + .5 * s, 12 * s, "#fff");
   if (b && !b.leaving) {
     txt(b.B.name, x + 26 * s, y + h / 2, 12 * s, "#fff", 800, "left");
     const bw = w * .4, bx = x + w - bw - 8 * s; ctx.fillStyle = "#3f1d1d"; ctx.fillRect(bx, y + 7 * s, bw, 8 * s); ctx.fillStyle = b.mid ? "#fb923c" : "#ef4444"; ctx.fillRect(bx, y + 7 * s, bw * Math.max(0, b.hp / b.maxhp), 8 * s);
@@ -709,20 +718,21 @@ function loop(tm) {
 
 // ───────── 시작 ─────────
 resize();
+sndIcon(); $("snd").onclick = e => { e.stopPropagation(); save.mute = !save.mute; store.set(save); sndIcon(); };
 // 노선별 봇 출근(클리어)률 목표 — 단계마다 매끄럽게 내려가게. + 탄 사이 틈 위반 0, 화면 전체가 막히는 순간 0
-const SELF_SEEDS = Number(q.get("seeds")) || 60, BANDS = [[.95, 1], [.85, 1], [.75, .93], [.65, .87], [.6, .8]];
+const SELF_SEEDS = Number(q.get("seeds")) || 60, BANDS = [[.9, 1], [.8, .96], [.7, .9], [.6, .8], [.5, .75]], STAR1_MAX = .7;   // 노선 1 무피해(★★★) 비율 상한: 너무 쉬우면 실패
 if (q.has("selftest")) {
-  const rows = [], rates = [], hitAvg = [], N = NSTAGE + 5; let ok = 0, i = 0, s = 0, win = 0, hitsT = 0, viol = 0, pats = 0, blocked = 0, checks = 0, timeT = 0, scoreT = 0;
+  const rows = [], rates = [], hitAvg = [], N = NSTAGE + 5; let ok = 0, i = 0, s = 0, win = 0, star3 = 0, hitsT = 0, viol = 0, pats = 0, blocked = 0, checks = 0, timeT = 0, scoreT = 0;
   document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px;font-size:11px;white-space:pre-wrap">SELFTEST 진행 중…</pre>`);
   const out = $("selftest"); let endlessRow = null;
   const chunk = () => {
     const t0 = performance.now();
     while (i < NSTAGE && performance.now() - t0 < 50) {
-      const T = botRun(i, 1000 + s * 131 + i * 7); if (T.over === "arrive") win++; hitsT += T.hits; viol += T.viol; pats += T.pats; blocked += T.blocked; checks += T.checks; timeT += T.t; scoreT += T.score; s++;
+      const T = botRun(i, 1000 + s * 131 + i * 7); if (T.over === "arrive") { win++; if (T.lives === 3) star3++; } hitsT += T.hits; viol += T.viol; pats += T.pats; blocked += T.blocked; checks += T.checks; timeT += T.t; scoreT += T.score; s++;
       if (s === SELF_SEEDS) {
-        const r = win / SELF_SEEDS, [lo, hi] = BANDS[i], pass = r >= lo - 1e-9 && r <= hi + 1e-9; if (pass) ok++; rates.push(r); hitAvg.push(hitsT / SELF_SEEDS);
-        rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${STAGES[i].name}\t봇 출근 ${win}/${SELF_SEEDS} (${Math.round(r * 100)}%)\t목표 ${Math.round(lo * 100)}~${Math.round(hi * 100)}%\t평균 얼룩 ${(hitsT / SELF_SEEDS).toFixed(2)}\t평균 ${Math.round(timeT / SELF_SEEDS)}초 · ${Math.round(scoreT / SELF_SEEDS)}점`);
-        i++; s = 0; win = 0; hitsT = 0; timeT = 0; scoreT = 0;
+        const r = win / SELF_SEEDS, [lo, hi] = BANDS[i], s3 = star3 / SELF_SEEDS, pass = r >= lo - 1e-9 && r <= hi + 1e-9 && (i > 0 || s3 <= STAR1_MAX); if (pass) ok++; rates.push(r); hitAvg.push(hitsT / SELF_SEEDS);
+        rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${STAGES[i].name}\t봇 출근 ${win}/${SELF_SEEDS} (${Math.round(r * 100)}%)\t목표 ${Math.round(lo * 100)}~${Math.round(hi * 100)}%\t평균 얼룩 ${(hitsT / SELF_SEEDS).toFixed(2)}\t★★★ ${Math.round(s3 * 100)}%${i === 0 ? ` (상한 ${STAR1_MAX * 100}%)` : ""}\t평균 ${Math.round(timeT / SELF_SEEDS)}초`);
+        i++; s = 0; win = 0; star3 = 0; hitsT = 0; timeT = 0; scoreT = 0;
       }
     }
     if (i >= NSTAGE && !endlessRow) {
@@ -736,7 +746,7 @@ if (q.has("selftest")) {
       const p4 = cpOk === cpTot; if (p4) ok++;
       const p1 = viol === 0; if (p1) ok++; const p2 = blocked === 0; if (p2) ok++;
       rows.push(`${NSTAGE + 4}\t${p3 ? "OK" : "FAIL"}\t패턴 뼈대 고정(다른 판 같은 순서)\t${same}/${tot}`, `${NSTAGE + 5}\t${p4 ? "OK" : "FAIL"}\t체크포인트 재시작(구간 2~4)\t${cpOk}/${cpTot}`);
-      rows.push(endlessRow, `${NSTAGE + 2}\t${p1 ? "OK" : "FAIL"}\t탄 사이 틈 위반(생성 시 기하 검사)\t${viol}회 / 탄막 ${pats}개`, `${NSTAGE + 3}\t${p2 ? "OK" : "FAIL"}\t피할 곳이 하나도 없는 순간(0.5초마다 88칸 감사)\t${blocked}회 / 검사 ${checks}번`);
+      rows.push(endlessRow, `${NSTAGE + 2}\t${p1 ? "OK" : "FAIL"}\t탄 사이 틈 위반(생성 시 기하 검사)\t${viol}회 / 탄막 ${pats}개`, `${NSTAGE + 3}\t${p2 ? "OK" : "FAIL"}\t피할 곳이 하나도 없는 순간(0.5초마다 15×29px 격자, 연속 판정)\t${blocked}회 / 검사 ${checks}번`);
     }
     out.textContent = rows.join("\n") + (i < NSTAGE ? `\n노선 ${i + 1} 검사 중… ${s}/${SELF_SEEDS}` : `\n출근률: ${rates.map(r => Math.round(r * 100) + "%").join(" / ")}\n평균 얼룩: ${hitAvg.map(h => h.toFixed(2)).join(" / ")}`);
     if (i < NSTAGE) setTimeout(chunk, 0); else document.title = `SELFTEST ${ok}/${N}`;
