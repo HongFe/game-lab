@@ -12,7 +12,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:
 #app{position:fixed;inset:0;max-width:480px;margin:0 auto}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .hud{position:absolute;left:10px;right:10px;top:calc(8px + env(safe-area-inset-top));display:flex;gap:6px;pointer-events:none;align-items:stretch}
-.hud div{background:rgba(12,14,20,.78);border:1px solid var(--line);border-radius:12px;padding:5px 9px;font-size:10.5px;color:var(--sub);text-align:center}
+.hud div{background:rgba(12,14,20,.78);border:1px solid var(--line);border-radius:12px;padding:5px 9px;font-size:12px;color:var(--sub);text-align:center;min-width:58px;white-space:nowrap}
 .hud b{display:block;font:900 18px ui-monospace,Menlo,monospace;color:var(--tx)}
 .hud .clock{flex:1.4} .hud .clock b{color:var(--acc);font-size:22px;transition:color .2s}
 .hud .clock.rush b{color:var(--red)}
@@ -47,18 +47,18 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 "use strict";
 // ───────── 설정 ─────────
 const LW = 360, LH = 640, PR = 10, DT = 1 / 120, DUR = 60, TOP_Y = 150, BOT_Y = 610, WALL = 22, FL = WALL, FR = LW - WALL;
-const VMAX = 290, VDASH = 460, GAIN = 9, ACC = 11;   // 최대 속도(px/s), 손가락 추종 세기, 관성(작을수록 더 미끄러짐)
+const VMAX = 290, VDASH = 460, GAIN = 13, ACC = 11;   // 최대 속도(px/s), 손가락 추종 세기, 관성(작을수록 더 미끄러짐)
 // kinds: 낱개 장애물 비율, forms: 대형 비율, formEvery: 대형 간격(초), gap: 벽 틈(px), zigRows: 지그재그 줄 수
 const LINES = [
   { name: "2호선 아침", no: "2", col: "#3cb44b", dens: .5, speed: .95, gap: 90, formEvery: 8, first: 6,
     kinds: { bag: 4, umb: 2, coffee: 1 }, forms: { wall: 3, swarm: 1, stairs: 1 } },
-  { name: "9호선 급행", no: "9", col: "#bfa14a", dens: .7, speed: 1.05, gap: 80, formEvery: 6.5, first: 5,
-    kinds: { bag: 3, umb: 2, scoot: 2, coffee: 1 }, forms: { wall: 2, zig: 2, swarm: 1, stairs: 1 } },
-  { name: "신도림 환승", no: "1", col: "#2a6ad8", dens: .9, speed: 1.12, gap: 68, formEvery: 5.2, first: 4, zigRows: 3,
-    kinds: { bag: 3, umb: 3, scoot: 2, flyer: 1, coffee: 1 }, forms: { wall: 2, zig: 2, pincer: 2, swarm: 1, esc: 1, stairs: 1 } },
-  { name: "강남역 출구", no: "2", col: "#e0457b", dens: 1.05, speed: 1.22, gap: 64, formEvery: 4.6, first: 4, zigRows: 3,
+  { name: "9호선 급행", no: "9", col: "#bfa14a", dens: .95, speed: 1.12, gap: 70, formEvery: 6.5, first: 5,
+    kinds: { bag: 3, umb: 2, scoot: 2, flyer: 1, coffee: 1 }, forms: { wall: 2, zig: 2, swarm: 1, stairs: 1 } },
+  { name: "신도림 환승", no: "1", col: "#2a6ad8", dens: 1.1, speed: 1.2, gap: 62, formEvery: 5.2, first: 4, zigRows: 3,
+    kinds: { bag: 3, umb: 3, scoot: 2, flyer: 2, coffee: 1 }, forms: { wall: 2, zig: 2, pincer: 2, swarm: 1, esc: 1, stairs: 1 } },
+  { name: "강남역 출구", no: "2", col: "#e0457b", dens: 1.15, speed: 1.25, gap: 60, formEvery: 4.6, first: 4, zigRows: 4,
     kinds: { bag: 3, umb: 2, scoot: 3, flyer: 2, coffee: 1 }, forms: { wall: 2, zig: 2, pincer: 2, swarm: 2, esc: 1, stairs: 1 } },
-  { name: "월요일 아침", no: "M", col: "#ff8a3d", dens: 1.05, speed: 1.24, gap: 62, formEvery: 4.5, first: 3.5, zigRows: 4,
+  { name: "월요일 아침", no: "M", col: "#ff8a3d", dens: 1.5, speed: 1.38, gap: 56, formEvery: 4, first: 3.5, zigRows: 4,
     kinds: { bag: 3, umb: 3, scoot: 3, flyer: 2, coffee: 1 }, forms: { wall: 2, zig: 3, pincer: 2, swarm: 2, esc: 2, stairs: 1 } },
 ];
 const $ = id => document.getElementById(id);
@@ -96,11 +96,36 @@ const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 function newRun(li, seed) {
   const L = LINES[li];
   return { li, L, R: rng(seed), t: 0, px: LW / 2, py: 520, vx: 0, vy: 0, lives: 3, inv: 0, dash: 0, near: 0, obs: [], zones: [],
-    nextSpawn: 1.2, formT: L.first, quiet: 0, over: null, hits: 0, scroll: 0, zoneHit: 0, zoneNear: 0, lastForm: null, formN: 0 };
+    nextSpawn: 1.2, formT: L.first, quiet: 0, over: null, hits: 0, scroll: 0, zoneHit: 0, zoneNear: 0, lastForm: null, formN: 0, overlaps: 0 };
 }
 // 9시에 가까울수록 빨라짐: 시작 1.0배 → 끝 1.6배 (곡선)
 const speedMul = G => G.L.speed * (1 + .6 * Math.pow(G.t / DUR, 1.6));
-const escActive = G => G.zones.some(z => z.k === "esc");
+// 에스컬레이터: 레인 윗변이 나를 지나가기 전까지만 새 대형·낱개를 멈춤 (접근 중엔 레인 밖 킥보드만)
+const escBlock = G => G.zones.find(z => z.k === "esc" && z.y < G.py);
+// 대형 겹침 방지: 이전 대형의 맨 위 줄이 '새 줄 위치 + 세로 간격' 아래로 내려온 뒤에만 다음 대형
+const formSep = vy => Math.max(150, vy * 1.4);
+function formBlocked(G, vy) {
+  const need = -20 + formSep(vy);
+  for (const o of G.obs) if (o.fid && o.k !== "stand" && (o.k === "orb" ? o.cy - o.R : o.y) < need) return true;
+  return false;
+}
+// 생성 직후 기하 검사: 아직 나를 안 지난 인파 줄끼리, 열린 칸 사이를 최대 속도의 80% 안에서 옮겨 갈 수 있는가
+function rowsOf(G) {
+  const m = new Map();
+  for (const o of G.obs) if (o.k === "crowd" && o.y < 520) { const key = o.fid + ":" + Math.round(o.y); if (!m.has(key)) m.set(key, { fid: o.fid, y: o.y, vy: o.vy, xs: [] }); m.get(key).xs.push(o.tx !== undefined ? o.tx : o.x); }
+  return [...m.values()].map(r => { r.xs.sort((a, b) => a - b); const open = []; let lo = FL + PR; for (const x of r.xs) { const a = x - 14 - PR; if (a > lo) open.push([lo, a]); lo = Math.max(lo, x + 14 + PR); } if (FR - PR > lo) open.push([lo, FR - PR]); r.open = open; return r; }).sort((a, b) => b.y - a.y);
+}
+function checkOverlap(G, fid) {
+  const rows = rowsOf(G); let bad = 0;
+  for (const r of rows) if (r.fid === fid && !r.open.length) bad++;
+  for (let i = 0; i + 1 < rows.length; i++) {
+    const A = rows[i], B = rows[i + 1]; if (A.fid !== fid && B.fid !== fid) continue;
+    const tA = (520 - A.y) / A.vy, dyEff = (A.y - B.y) - Math.max(0, B.vy - A.vy) * tA, time = Math.max(0, dyEff) / B.vy;
+    let lat = 1e9; for (const [a0, a1] of A.open) for (const [b0, b1] of B.open) lat = Math.min(lat, Math.max(0, a0 - b1, b0 - a1));
+    if (lat > .8 * VMAX * time) bad++;
+  }
+  return bad;
+}
 const look = R => Math.floor(R() * 6);   // 사람 옷·머리 색 번호
 function spawnOne(G, k, sp) {
   const R = G.R, x = FL + 16 + R() * (FR - FL - 32);
@@ -114,7 +139,7 @@ function person(x, y, vy, R, extra) { return Object.assign({ k: "crowd", x, y, v
 function spawnForm(G, sp) {
   const R = G.R, L = G.L; let f = pick(R, L.forms);
   if (f === G.lastForm && R() < .6) f = pick(R, L.forms);   // 같은 대형 연속은 줄임
-  G.lastForm = f; G.formN++;
+  G.lastForm = f; const fid = ++G.formN;
   const gap = L.gap, vy = 92 * sp, n0 = G.obs.length;
   if (f === "wall") {   // 벽: 틈 1개
     const gx = FL + 10 + R() * (FR - FL - 20 - gap);
@@ -128,11 +153,11 @@ function spawnForm(G, sp) {
     }
     G.quiet = 1.2 + rows * dy / vy;
   } else if (f === "pincer") {   // 양쪽 협공: 양옆에서 인파가 몰려와 틈 하나만 남음
-    const gx = FL + 40 + R() * (FR - FL - 80 - gap), y0 = 40;
+    const gx = FL + 40 + R() * (FR - FL - 80 - gap), y0 = -30;   // 화면 위에서 시작, 옆 통로(벽 안쪽)에서 밀려 나옴
     for (let row = 0; row < 2; row++) {
       const y = y0 - row * 30, off = row * 15;
-      for (let tx = gx - 14 - off; tx > FL; tx -= 30) G.obs.push(person(tx - 190, y, vy * .9, R, { tx, conv: 1.9 }));
-      for (let tx = gx + gap + 14 + off; tx < FR; tx += 30) G.obs.push(person(tx + 190, y, vy * .9, R, { tx, conv: 1.9 }));
+      for (let tx = gx - 14 - off; tx >= FL + 14; tx -= 30) G.obs.push(person(tx - 150, y, vy * .9, R, { tx, conv: 2.2 }));
+      for (let tx = gx + gap + 14 + off; tx <= FR - 14; tx += 30) G.obs.push(person(tx + 150, y, vy * .9, R, { tx, conv: 2.2 }));
     }
     G.quiet = 1.6;
   } else if (f === "swarm") {   // 회전하는 백팩 무리: 고리 모양으로 돌며 나를 향해 살짝 따라옴
@@ -140,7 +165,7 @@ function spawnForm(G, sp) {
     for (let i = 0; i < n; i++) G.obs.push({ k: "orb", cx, cy: -70, vy: 78 * sp, R: rad, ang: a0 + i / n * 6.28, w, r: 10, x: cx, y: -70, home: 22, spin: R() * 6.28 });
     G.quiet = .9;
   } else if (f === "esc") {   // 에스컬레이터: 좁은 레인으로 들어가야 함 + 서 있는 사람 지그재그
-    const lw = Math.max(118, gap + 58), x0 = FL + 10 + R() * (FR - FL - 20 - lw), len = 380, zvy = 88 * sp;
+    const lw = Math.max(118, gap + 58), x0 = FL + 10 + R() * (FR - FL - 20 - lw), len = 320, zvy = 88 * sp;
     G.obs = G.obs.filter(o => o.y > 0);   // 화면 밖에서 대기 중인 것은 정리(레인 안 겹침 방지)
     const z = { k: "esc", x0, x1: x0 + lw, y: -len, len, vy: zvy, inside: false };
     G.zones.push(z);
@@ -150,7 +175,8 @@ function spawnForm(G, sp) {
     G.zones.push({ k: "stairs", y: -230, len: 230, vy: 92 * sp });
     G.quiet = .3;
   }
-  if (f !== "esc") for (let k = n0; k < G.obs.length; k++) G.obs[k].f = f;   // 어느 대형인지 표시(검사용)
+  if (f !== "esc") for (let k = n0; k < G.obs.length; k++) { G.obs[k].f = f; G.obs[k].fid = fid; }   // 어느 대형인지 표시(겹침 방지·검사용)
+  G.overlaps += checkOverlap(G, fid);
   return f;
 }
 function obsR(o) { return o.k === "umb" ? o.r + Math.max(0, Math.sin(o.ph)) * 20 : o.r; }
@@ -199,10 +225,15 @@ function stepRun(G, tx, ty, ev) {   // tx,ty: 이번 틱 목표 위치(손가락
   G.t += DT; G.inv = Math.max(0, G.inv - DT); G.dash = Math.max(0, G.dash - DT); G.quiet = Math.max(0, G.quiet - DT); G.formT -= DT;
   const sp = speedMul(G); G.scroll += 90 * sp * DT;
   stepPhys(G, tx, ty, DT);
-  if (G.formT <= 0 && G.t < DUR - 4 && !escActive(G)) { const f = spawnForm(G, sp); G.formT = G.L.formEvery * (.8 + G.R() * .4) * (1 - .25 * G.t / DUR) + (f === "esc" ? 3 : 0); ev && ev("form", f); }
+  if (G.formT <= 0 && G.t < DUR - 4 && !escBlock(G) && !formBlocked(G, 92 * sp)) { const f = spawnForm(G, sp); G.formT = G.L.formEvery * (.8 + G.R() * .4) * (1 - .25 * G.t / DUR) + (f === "esc" ? 3 : 0); ev && ev("form", f); }
   G.nextSpawn -= DT;
   if (G.nextSpawn <= 0 && G.t < DUR - 1.5) {
-    if (G.quiet <= 0 && !escActive(G)) spawnOne(G, pick(G.R, G.L.kinds), sp);
+    const z = escBlock(G);
+    if (!z) { if (G.quiet <= 0) spawnOne(G, pick(G.R, G.L.kinds), sp); }
+    else if (z.y + z.len < G.py - 60 && G.L.kinds.scoot && G.R() < .6) {   // 레인 접근 중: 레인 밖으로 킥보드가 달려와 레인 쪽으로 몰아감
+      spawnOne(G, "scoot", sp); const o = G.obs[G.obs.length - 1], left = z.x0 - FL, right = FR - z.x1;
+      o.x = left > right ? FL + 12 + G.R() * Math.max(0, left - 40) : z.x1 + 28 + G.R() * Math.max(0, right - 40);
+    }
     G.nextSpawn = (.95 - G.t / DUR * .35) / G.L.dens * (.6 + G.R() * .8);
   }
   const hurt = o => { G.lives--; G.hits++; G.inv = .9; ev && ev("hit", o); if (G.lives <= 0) { G.over = "late"; ev && ev("late"); } };
@@ -287,7 +318,7 @@ function finish(win) {
       <button id="nx">${li + 1 < LINES.length ? "다음 노선" : "노선 목록"}</button><button class="sec" id="rt">다시</button>`;
   } else {
     SFX.lose(); emit("fail", { level: li + 1, t: Math.round(G.t) });
-    const s = Math.round(G.t), late = DUR - s;
+    const late = DUR - Math.floor(G.t);
     $("box").innerHTML = `<h2>지각…</h2><p>셔츠가 커피 범벅이 됐어요. 9시까지 <b style="color:var(--acc)">${late}초</b> 남았었는데!</p><p>휙! ${G.near}번</p><button id="rt">다시 출근</button><button class="sec" id="nx">노선 목록</button>`;
   }
   setTimeout(() => { $("ov").classList.add("on"); const nx = $("nx"), rt = $("rt"); if (rt) rt.onclick = () => start(li); if (nx) nx.onclick = () => (win && li + 1 < LINES.length) ? start(li + 1) : menu(); }, win ? 600 : 700);
@@ -455,7 +486,7 @@ function drawSign() {
   ctx.fillStyle = G.L.col; ctx.fillRect(x, y + h - 3 * s, w, 3 * s);
   ell(x + 13 * s, y + h / 2 - 1 * s, 8 * s, 8 * s, G.L.col);
   ctx.fillStyle = "#fff"; ctx.font = `900 ${10 * s}px -apple-system,sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(G.L.no, x + 13 * s, y + h / 2 - .5 * s);
-  ctx.textAlign = "left"; ctx.font = `800 ${11 * s}px -apple-system,sans-serif`; ctx.fillText(G.L.name, x + 26 * s, y + h / 2 - 1 * s);
+  ctx.textAlign = "left"; ctx.font = `800 ${12 * s}px -apple-system,sans-serif`; ctx.fillText(G.L.name, x + 26 * s, y + h / 2 - 1 * s);
   ctx.textAlign = "right"; ctx.fillStyle = "#ffcf3f"; ctx.fillText("회사 출구 ↑", x + w - 8 * s, y + h / 2 - 1 * s);
 }
 function drawMe(t) {
@@ -490,7 +521,9 @@ function draw(t, dt) {
     // 9시 임박: 속도선
     if (JUICE && G.t > DUR - 15) { ctx.fillStyle = "rgba(255,255,255,.06)"; for (let k = 0; k < 10; k++) { const x = FL + ((k * 97) % (FR - FL)), y = ((t * 900 + k * 173) % (LH + 80)) - 80; ctx.fillRect(sx(x), sy(y), 2 * SC, 60 * SC); } }
     G.obs.forEach(o => { if (o.k === "orb" && o === G.obs.find(q2 => q2.k === "orb" && q2.cx === o.cx && q2.cy === o.cy)) { ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.setLineDash([4 * SC, 6 * SC]); ctx.lineWidth = 2 * SC; ctx.beginPath(); ctx.arc(sx(o.cx), sy(o.cy), o.R * SC, 0, 7); ctx.stroke(); ctx.setLineDash([]); } });
+    ctx.save(); ctx.beginPath(); ctx.rect(sx(FL), 0, (FR - FL) * SC, H); ctx.clip();   // 옆벽 위로는 안 그림(옆 통로에서 나오는 것처럼)
     G.obs.forEach(o => drawObs(o, t));
+    ctx.restore();
     drawMe(t);
     if (HITBOX) { G.obs.forEach(drawHit); ctx.strokeStyle = "#ff0"; ctx.beginPath(); ctx.arc(sx(G.px), sy(G.py), PR * SC, 0, 7); ctx.stroke(); }
   }
@@ -534,24 +567,25 @@ function loop(tm) {
 
 // ───────── 시작 ─────────
 resize();
-// 노선별 봇 도착률 목표 (노선 1은 쉽게, 노선 5는 60~80%)
-const SELF_SEEDS = Number(q.get("seeds")) || 20, BANDS = [[.9, 1], [.8, 1], [.7, .95], [.65, .9], [.6, .8]];
+// 노선별 봇 도착률 목표 (노선 1은 쉽게, 노선 5는 60~80%) + 대형 겹침(통과 불가) 0회
+const SELF_SEEDS = Number(q.get("seeds")) || 60, BANDS = [[.95, 1], [.83, 1], [.75, .95], [.65, .88], [.6, .8]];
 if (q.has("selftest")) {
-  const rows = [], rates = []; let ok = 0, i = 0, s = 0, win = 0, hitsT = 0;
+  const rows = [], rates = [], hitAvg = []; let ok = 0, i = 0, s = 0, win = 0, hitsT = 0, ovl = 0, ovlAll = 0, forms = 0;
   document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px;font-size:11px;white-space:pre-wrap">SELFTEST 진행 중…</pre>`);
-  const out = $("selftest");
+  const out = $("selftest"), N = LINES.length + 1;
   const chunk = () => {
     const t0 = performance.now();
     while (i < LINES.length && performance.now() - t0 < 50) {
-      const T = botRun(i, 1000 + s * 131 + i * 7); if (T.over === "arrive") win++; hitsT += T.hits; s++;
+      const T = botRun(i, 1000 + s * 131 + i * 7); if (T.over === "arrive") win++; hitsT += T.hits; ovl += T.overlaps; forms += T.formN; s++;
       if (s === SELF_SEEDS) {
-        const r = win / SELF_SEEDS, [lo, hi] = BANDS[i], pass = r >= lo - 1e-9 && r <= hi + 1e-9; if (pass) ok++; rates.push(r);
-        rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${LINES[i].name}\t봇 도착 ${win}/${SELF_SEEDS} (${Math.round(r * 100)}%)\t목표 ${Math.round(lo * 100)}~${Math.round(hi * 100)}%\t평균 얼룩 ${(hitsT / SELF_SEEDS).toFixed(2)}`);
-        i++; s = 0; win = 0; hitsT = 0;
+        const r = win / SELF_SEEDS, [lo, hi] = BANDS[i], pass = r >= lo - 1e-9 && r <= hi + 1e-9; if (pass) ok++; rates.push(r); hitAvg.push(hitsT / SELF_SEEDS); ovlAll += ovl;
+        rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${LINES[i].name}\t봇 도착 ${win}/${SELF_SEEDS} (${Math.round(r * 100)}%)\t목표 ${Math.round(lo * 100)}~${Math.round(hi * 100)}%\t평균 얼룩 ${(hitsT / SELF_SEEDS).toFixed(2)}\t대형 겹침 ${ovl}`);
+        i++; s = 0; win = 0; hitsT = 0; ovl = 0;
       }
     }
-    out.textContent = rows.join("\n") + (i < LINES.length ? `\n노선 ${i + 1} 검사 중… ${s}/${SELF_SEEDS}` : `\n도착률: ${rates.map(r => Math.round(r * 100) + "%").join(" / ")}`);
-    if (i < LINES.length) setTimeout(chunk, 0); else document.title = `SELFTEST ${ok}/${LINES.length}`;
+    if (i >= LINES.length) { const p = ovlAll === 0; if (p) ok++; rows.push(`${N}\t${p ? "OK" : "FAIL"}\t대형 겹침(통과 불가)\t${ovlAll}회 / 대형 ${forms}개`); }
+    out.textContent = rows.join("\n") + (i < LINES.length ? `\n노선 ${i + 1} 검사 중… ${s}/${SELF_SEEDS}` : `\n도착률: ${rates.map(r => Math.round(r * 100) + "%").join(" / ")}\n평균 얼룩: ${hitAvg.map(h => h.toFixed(2)).join(" / ")}`);
+    if (i < LINES.length) setTimeout(chunk, 0); else document.title = `SELFTEST ${ok}/${N}`;
   };
   setTimeout(chunk, 0);
 } else if (q.has("autoplay")) { auto = true; start(clamp((Number(q.get("autoplay")) || 1) - 1, 0, LINES.length - 1), Number(q.get("seed")) || 7); }
