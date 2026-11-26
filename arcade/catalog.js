@@ -27,8 +27,8 @@ window.CATALOG = [
   "path": "../G002_claw-army/game/index.html",
   "color": "#ff7ab6",
   "icon": "🧸",
-  "version": "2026-11-26 19:29",
-  "note": "3릴 슬롯 뽑기 + 실시간 웨이브 디펜스, 인형 역할 행동·시너지, 5…",
+  "version": "2026-11-26 19:35",
+  "note": "곰 붙잡기 제한(웨이브 최장 74초), 컷인 띠 축소, 패널 위치, 중…",
   "rating": null,
   "hot": false
  },
@@ -91,7 +91,7 @@ window.CATALOG = [
   "path": "../G011_commute-dodge/game/index.html",
   "color": "#2fc4c4",
   "icon": "🚇",
-  "version": "2026-11-26 19:29",
+  "version": "2026-11-26 19:37",
   "note": "이모지 불투명, ?에 멈추는 봇 곡선 추가·재조정, 모자·조끼 예고…",
   "rating": null,
   "hot": false
