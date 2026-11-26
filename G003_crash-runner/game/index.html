@@ -121,7 +121,7 @@ const LEV_EVERY = 8, MAX_LEV = 10, START_GRACE = 3;
 // 강화 아이템(시간 제한): 지속 시간(초)
 const DUR = { up: 4, stop: 8, water: 5, cb: 3, hold: 6 };
 const PCOL = { up: "#ff4d5e", stop: "#5fe0a0", water: "#4fc3ff", cb: "#ffa24d", hold: "#c39bff" };
-const CB_SLOW = .55, CAT_V = 640, BULL_V = 820, STOMP_V = 480, KNIFE_LEAD = .75, FORCE_LEAD = 1.25, FORCE_V = 170, BEAR_V = 45;
+const RIDE_V = 420, CB_SLOW = .55, CAT_V = 640, BULL_V = 820, STOMP_V = 480, KNIFE_LEAD = .75, FORCE_LEAD = 1.25, FORCE_V = 170, BEAR_V = 45;
 const TIERS = [
   { n: "개미", s: "기본 몸", e: "🐜", ab: "기본 몸. 곰은 밟으면 보너스, 부딪히면 −10%" },
   { n: "동학개미", s: "💪 세력 1번 버팀", e: "🐜", ab: "세력 털기 1번 버팀" },
@@ -133,17 +133,17 @@ const GRIP = [0, 1, 2, 3, 99];
 // 단계: goal = 목표 지점(캔들 수), need = 통과 최소 수익률, ★★ = need×s2, ★★★ = need×s3 (단계별 배수, 사람 근사 봇 ★3 20~40%로 맞춤)
 const ALLM = ["bear", "knife", "cat", "rumor", "bull", "force"], ALLP = ["up", "water", "cb", "stop", "hold"];
 const STAGES = [
-  { n: 1, name: "첫 출근", tier: 0, goal: 170, need: .50, s2: 1.8, s3: 9.6, d0: 0, seq: ["bear", "bear", "bear"], mobs: ["bear"], pseq: ["up"], pws: ["up"], fomc: 1e9, swan: 1e9 },
-  { n: 2, name: "칼날 장", tier: 1, goal: 230, need: .90, s2: 1.6, s3: 7.07, d0: .05, seq: ["knife", "force", "bear", "knife", "force"], mobs: ["bear", "knife", "force"], pseq: ["water"], pws: ["up", "water"], fomc: 1e9, swan: 1e9 },
-  { n: 3, name: "반등의 함정", tier: 2, goal: 290, need: 1.30, s2: 1.6, s3: 5.8, d0: .12, seq: ["cat", "knife", "cat"], mobs: ["bear", "knife", "cat", "force"], pseq: ["cb"], pws: ["up", "water", "cb"], fomc: 150, swan: 1e9 },
-  { n: 4, name: "소문의 시장", tier: 3, goal: 340, need: 1.95, s2: 1.3, s3: 4.69, d0: .2, seq: ["bull", "rumor", "force"], mobs: ALLM, pseq: ["stop"], pws: ["up", "water", "cb", "stop"], fomc: 140, swan: 1e9 },
-  { n: 5, name: "검은 백조", tier: 3, goal: 400, need: 2.60, s2: 1.35, s3: 3.96, d0: .28, seq: [], mobs: ALLM, pseq: ["hold"], pws: ALLP, fomc: 110, swan: 220 },
-  { n: 6, name: "고래의 바다", tier: 4, goal: 460, need: 3.60, s2: 1.37, s3: 3.36, d0: .4, seq: [], mobs: ALLM, pseq: [], pws: ALLP, fomc: 100, swan: 210, gap: 24 },
+  { n: 1, name: "첫 출근", tier: 0, goal: 170, need: .50, s2: 1.8, s3: 9.36, d0: 0, seq: ["bear", "bear", "bear"], mobs: ["bear"], pseq: ["up"], pws: ["up"], fomc: 1e9, swan: 1e9 },
+  { n: 2, name: "칼날 장", tier: 1, goal: 230, need: .90, s2: 1.6, s3: 6.67, d0: .05, seq: ["knife", "force", "bear", "knife", "force"], mobs: ["bear", "knife", "force"], pseq: ["water"], pws: ["up", "water"], fomc: 1e9, swan: 1e9 },
+  { n: 3, name: "반등의 함정", tier: 2, goal: 290, need: 1.30, s2: 1.6, s3: 5.43, d0: .12, seq: ["cat", "knife", "cat"], mobs: ["bear", "knife", "cat", "force"], pseq: ["cb"], pws: ["up", "water", "cb"], fomc: 150, swan: 1e9 },
+  { n: 4, name: "소문의 시장", tier: 3, goal: 340, need: 1.95, s2: 1.3, s3: 4.07, d0: .2, seq: ["bull", "rumor", "force"], mobs: ALLM, pseq: ["stop"], pws: ["up", "water", "cb", "stop"], fomc: 140, swan: 1e9 },
+  { n: 5, name: "검은 백조", tier: 3, goal: 400, need: 2.60, s2: 1.35, s3: 3.5, d0: .28, seq: [], mobs: ALLM, pseq: ["hold"], pws: ALLP, fomc: 110, swan: 220 },
+  { n: 6, name: "고래의 바다", tier: 4, goal: 460, need: 3.60, s2: 1.37, s3: 3.19, d0: .4, seq: [], mobs: ALLM, pseq: [], pws: ALLP, fomc: 100, swan: 210, gap: 24 },
 ];
 const ENDLESS = { n: 7, name: "무한 장", tier: 4, goal: 0, need: 0, d0: 0, seq: ["bear", "knife", "cat", "rumor", "bull", "force"], mobs: ALLM, pseq: ["up"], pws: ALLP, fomc: 140, swan: 320 };
 // 주식 용어 (도감)
 const TERMS = {
-  good: { e: "📈", n: "호재 · 악재", s: "📈 먹기 · 📉 피하기", g: "기본", m: "값에 좋은 소식과 나쁜 소식", f: "📈 먹으면 +, 📉 맞으면 −15%" },
+  good: { e: "📈", n: "호재 · 악재", s: "먹기 · 📉 피하기", g: "기본", m: "값에 좋은 소식과 나쁜 소식", f: "📈 먹으면 +, 📉 맞으면 −15%" },
   lev: { e: "⚡", n: "레버리지", s: "8초마다 빨라짐", g: "기본", m: "빌린 돈까지 얹어 크게 거는 것", f: "8초마다 x1씩 올라 빨라지고 손익도 커진다" },
   delist: { e: "🕳", n: "상장폐지", s: "빠지면 청산", g: "기본", m: "시장에서 퇴출되는 것", f: "구멍에 빠지면 강제 청산" },
   cash: { e: "💰", n: "익절", s: "수익 확정", g: "기본", m: "이익을 보고 파는 것", f: "수익을 확정하고 판을 끝낸다" },
@@ -155,7 +155,7 @@ const TERMS = {
   hold: { e: "💎", n: "존버", s: "6초 3단 점프", g: "아이템", m: "무슨 일이 있어도 버티며 들고 있는 것", f: "6초: 3단 점프" },
   bear: { e: "🐻", n: "곰 (약세장)", s: "밟으면 + · 박으면 −", g: "몹", m: "값이 내리는 시장을 부르는 말", f: "밟으면 +3%×레버리지, 연달아 밟으면 콤보 ×2·×3·×4. 부딪히면 −10%에 레버리지 −1" },
   knife: { e: "🔪", n: "떨어지는 칼날", s: "꽂힌 뒤 넘기", g: "몹", m: "급락하는 값을 섣불리 잡으면 다친다는 말", f: "하늘에서 꽂힌다. 뛰어넘으며 뒤의 금색 '바닥 매수'(+4%×레버리지)를 잡자. 닿으면 −12%" },
-  force: { e: "🕴️", n: "세력 (작전)", s: "뛰어넘기 · 털리면 −30%", g: "몹", m: "값을 일부러 흔들어 개미를 털어 내는 큰 돈", f: "바닥을 쓸고 온다. 넘어가기. 털리면 수익 30% 잃음, 버티면(성장·상점) +2%×레버리지" },
+  force: { e: "🖐️", n: "세력 (작전)", s: "뛰어넘기 · 털리면 −30%", g: "몹", m: "값을 일부러 흔들어 개미를 털어 내는 큰 돈", f: "바닥을 쓸고 온다. 넘어가기. 털리면 수익 30% 잃음, 버티면(성장·상점) +2%×레버리지" },
   cat: { e: "↗️", n: "데드캣 바운스", s: "밟으면 한 번 튕김", g: "몹", m: "폭락 뒤 잠깐 반짝 오르는 가짜 반등", f: "구멍 위 발판. 밟으면 한 번 튕겨 주고 무너진다. 튕겨야 닿는 금색 '반등 차익' +3%×레버리지" },
   rumor: { e: "📰", n: "찌라시", s: "✔공시만 먹기", g: "몹", m: "출처 모를 소문", f: "두 장 중 ✔공시 도장은 진짜(+4%×레버리지), '카더라?'는 가짜(−5%, 2초 동안 앞이 가려짐). 골라 먹기" },
   bull: { e: "🐂", n: "황소 (강세장)", s: "밟으면 하늘 길", g: "몹", m: "값이 오르는 시장을 부르는 말", f: "등을 밟으면 높이 튀어 뒤의 상폐 지대를 하늘 길로 건넌다. 금색 '강세장' +3%×레버리지" },
@@ -174,7 +174,7 @@ const pct = r => (r >= 0 ? "+" : "") + (r * 100).toFixed(1) + "%";
 
 // ───────── 저장 ─────────
 const store = { get() { try { return JSON.parse(localStorage.getItem("g003") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g003", JSON.stringify(v)); } catch (e) {} } };
-let save = Object.assign({ total: 1e6, bestRet: 0, bestLev: 1, runs: 0, cashouts: 0, cleared: 0, stars: {}, dex: [], endlessBest: 0, up: {} }, store.get());
+let save = Object.assign({ total: 1e6, bestRet: 0, bestLev: 1, runs: 0, cashouts: 0, cleared: 0, stars: {}, dex: [], endlessBest: 0, up: {}, badges: 0 }, store.get());
 let dex = new Set(save.dex || []);
 const tierNow = () => Math.min(4, save.cleared >= 5 ? 4 : save.cleared >= 3 ? 3 : save.cleared);
 const persist = () => { if (auto) return; save.dex = [...dex]; store.set(save); }; // 자동 플레이(녹화·QA)는 저장하지 않는다
@@ -220,7 +220,7 @@ const SFX = {
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 function makeWorld(seed, cfg) {
   cfg = cfg || ENDLESS;
-  const R = rng(seed * 7 + cfg.n), C = [], items = [], mobs = [], cat = {}, bk = {}, zm = {}, zones = [], intro = [];
+  const R = rng(seed * 7 + cfg.n), C = [], items = [], mobs = [], cat = {}, bk = {}, zm = {}, wk = {}, zones = [], intro = [];
   let lvl = 0, uid = 0, mobN = 0, pwN = 0, lastP = "", lastM = "", lastWall = -99;
   const nx = { mob: 40, pw: 64, fomc: cfg.fomc, swan: cfg.swan };
   const push = (top, n = 1) => { for (let k = 0; k < n; k++) C.push(top); };
@@ -248,8 +248,11 @@ function makeWorld(seed, cfg) {
     }
     o.zs = i0; o.ze = i0 + n - 1; if (t !== "rumor") mobs.push(o); else { o.mob = true; mobs.push(o); }
     if (t === "bull") { // 황소 뒤 '상폐 지대': 구멍 세 개를 걸어서 건너거나, 황소를 밟고 하늘 길(높은 호재)로 한 번에 넘는다
-      const top0 = lvl; for (let r = 0; r < 3; r++) { push(null, 2 + Math.floor(R() * 2)); lvl += Math.round((R() - .5) * 24); push(lvl, 3); }
-      push(lvl, 4); for (let k = 0; k < 4; k++) item((i0 + 9 + k * 2.2) * CW, top0 + 205 - Math.abs(k - 1.5) * 22, "up", { v: .03, lab: "강세장" });
+      const top0 = lvl, bx = (i0 + 5) * CW + CW / 2; for (let r = 0; r < 3; r++) { push(null, 2); lvl -= Math.round(R() * 12); push(lvl, 2); } // 섬은 시작보다 높지 않게(걸어서는 하늘 호재에 못 닿게)
+      push(lvl, 8);
+      // 하늘 길 호재: 황소를 밟으면 RIDE_V(모든 레버리지 같은 속도)로 날아가는 궤적 위, 2단 점프 최고(약 187)보다 높게
+      // 2단 점프로 걷는 길에서 닿는 최고 높이(몸 중심 약 226) 위, 황소 궤적(몸 중심 = 밟은 높이 + 820t − 750t²) 위에 놓는다
+      for (const t of [.4, .5, .6, .7]) item(bx + RIDE_V * t, top0 + 39 + BULL_V * t - G / 2 * t * t, "up", { v: .03, lab: "강세장" });
       zones.push({ t: "bullrun", i0: i0 + 1, i1: C.length - 5 });
     }
     intro.push({ x: o.x ?? o.xa ?? (i0 + 4) * CW, k: t });
@@ -261,13 +264,13 @@ function makeWorld(seed, cfg) {
       nx.swan = 1e9; const i0 = C.length; push(lvl, 10);
       for (let k = 0; k < 6; k++) { lvl -= 42; push(lvl, 2); }
       push(lvl, 10); for (let k = 0; k < 5; k++) item((C.length - 9 + k * 1.7) * CW, lvl + 44 + (k % 2) * 30, "up", { v: .03, lab: "줍줍" }); // 바닥 줍줍
-      zones.push({ t: "swan", i0, i1: C.length - 1 }); intro.push({ x: i0 * CW, k: "swan" }); return;
+      for (let j = i0; j < C.length; j++) wk[j] = 1; zones.push({ t: "swan", i0, i1: C.length - 1 }); intro.push({ x: i0 * CW, k: "swan" }); return;
     }
     if (i >= nx.fomc) { // FOMC: 변동성 구간(손익 3배)
       nx.fomc = i + 260 + Math.floor(R() * 120); const i0 = C.length, dove = R() < .5; push(lvl, 3); // 동결(빨강 우세) / 인상(파랑 우세): 들어가기 전엔 모른다
-      for (let r = 0; r < 3; r++) { for (let k = 0; k < 3; k++) { lvl += dove ? 11 : 7; push(lvl); } for (let k = 0; k < 3; k++) { lvl -= dove ? 6 : 16; push(lvl); } }
-      push(lvl, 3); for (let j = i0; j < C.length; j++) zm[j] = 3;
-      item((i0 + 6) * CW, lvl + 95, "up"); item((i0 + 15) * CW, lvl + 95, "up");
+      for (let r = 0; r < 3; r++) { for (let k = 0; k < 3; k++) { lvl += dove ? 9 : 5; push(lvl); } for (let k = 0; k < 3; k++) { lvl -= dove ? 7 : 15; push(lvl); } }
+      push(lvl, 3); for (let j = i0; j < C.length; j++) { zm[j] = 3; wk[j] = 1; }
+      item((i0 + 6) * CW, C[i0 + 6] + 80, "up"); item((i0 + 15) * CW, C[i0 + 15] + 80, "up"); // 점프해야 닿는 높이
       zones.push({ t: "fomc", i0, i1: C.length - 1, dove }); intro.push({ x: i0 * CW, k: "fomc" }); return;
     }
     if (i >= nx.mob && cfg.mobs.length) {
@@ -304,7 +307,7 @@ function makeWorld(seed, cfg) {
     }
   }
   push(0, 14); // 출발 평지
-  return { cfg, C, items, mobs, cat, bk, zm, zones, intro, ensure(x) { while (C.length * CW < x + 900) gen(); } };
+  return { cfg, C, items, mobs, cat, bk, zm, wk, zones, intro, ensure(x) { while (C.length * CW < x + 900) gen(); } };
 }
 function ground(st, x) {
   let i = Math.floor(x / CW); if (i < 0) return 0; const W = st.W; W.ensure(x);
@@ -320,17 +323,17 @@ function forceX(o, st) { const t0 = st.trig[o.id]; if (t0 === undefined) return 
 // ───────── 물리 (순수 함수: 봇 시뮬레이션과 실제 플레이가 같다) ─────────
 function starMult(c) { return [0, 1, c.s2 || 2, c.s3 || 3]; } // ★2·★3 = 목표 × 단계별 배수
 function starsOfC(c, r) { const m = starMult(c); return r >= c.need * m[3] ? 3 : r >= c.need * m[2] ? 2 : r >= c.need ? 1 : 0; }
-const UPG = { // 성장 상점 (가상 포인트로 영구 강화)
-  grip: { e: "💪", n: "버팀 근육", max: 2, cost: [2e6, 2e7], f: l => `세력 버팀 +${l}` },
-  dur: { e: "⏳", n: "아이템 지속", max: 3, cost: [1.5e6, 1.5e7, 1.5e8], f: l => `아이템 시간 +${l * 15}%` },
-  stop: { e: "🛡️", n: "손절매 계좌", max: 2, cost: [3e6, 3e7], f: l => l >= 2 ? "손절 비용 50→35%" : "판마다 손절매 1회" },
-  jump: { e: "🦘", n: "2단 점프력", max: 2, cost: [2.5e6, 2.5e7], f: l => `2단 점프 +${l * 3}%` },
+const UPG = { // 성장 상점: 🏅 성과 배지로 영구 강화 (배지 = 새로 딴 ★ + 첫 통과 1. 6단계까지 정상 플레이로 9레벨 중 6~8개)
+  grip: { e: "💪", n: "버팀 근육", max: 2, cost: [2, 4], f: l => `세력 버팀 +${l}` },
+  dur: { e: "⏳", n: "아이템 지속", max: 3, cost: [1, 2, 4], f: l => `아이템 시간 +${l * 15}%` },
+  stop: { e: "🛡️", n: "손절매 계좌", max: 2, cost: [2, 4], f: l => l >= 2 ? "손절 비용 50→35%" : "판마다 손절매 1회" },
+  jump: { e: "🦘", n: "2단 점프력", max: 2, cost: [2, 4], f: l => `2단 점프 +${l * 3}%` },
 };
 const UPMAX = { grip: 2, dur: 3, stop: 2, jump: 2 };
 function blankState(W, tier, up) {
   up = up || {};
   const s = { W, levAdj: 0, bg: { up: 0, water: 0 }, durMul: 1 + .15 * (up.dur || 0), stopCost: (up.stop || 0) >= 2 ? .35 : .5, jv2: JV2 * (1 + .03 * (up.jump || 0)), x: 2 * CW, y: 0, vy: 0, gnd: true, jumps: 0, lastG: 0, t: 0, dead: null, ret: 0, lastIdx: 2, landH: 0, done: new Set(), trig: {}, buffs: { up: 0, water: 0, cb: 0, stop: 0, hold: 0 }, inv: 0, fog: 0, streak: 0, combo: 0, tier: tier || 0, grip: GRIP[tier || 0], strict: false, kills: 0, hits: 0 };
-  if (s.tier >= 3 || (up.stop || 0) >= 1) s.buffs.stop = 9999; // 큰손부터(또는 상점) 손절매 1회 기본
+  s.stopN = Math.min(2, (s.tier >= 3 ? 1 : 0) + ((up.stop || 0) >= 1 ? 1 : 0)); // 손절매 기본 횟수: 큰손 1 + 상점 1 (최대 2)
   s.grip += up.grip || 0;
   return s;
 }
@@ -349,10 +352,10 @@ function safeSpot(st) {
   return -1;
 }
 function rescue(st, ev) { // 손절매: 청산 1번을 막아 앞쪽 안전한 곳으로, 대신 수익 절반
-  if (st.strict || !(st.buffs.stop > 0)) return false;
+  if (st.strict || !(st.buffs.stop > 0 || st.stopN > 0)) return false;
   const i = safeSpot(st); if (i < 0) return false;
   const lost = st.ret > 0 ? st.ret * st.stopCost : .1; st.ret -= lost;
-  st.x = i * CW + CW / 2; st.y = st.W.C[i] + 1; st.vy = 260; st.gnd = false; st.jumps = 1; st.lastG = st.W.C[i]; st.lastAir = st.y; st.lastIdx = i; st.buffs.stop = 0; st.inv = 1;
+  st.x = i * CW + CW / 2; st.y = st.W.C[i] + 1; st.vy = 260; st.gnd = false; st.jumps = 1; st.lastG = st.W.C[i]; st.lastAir = st.y; st.lastIdx = i; if (st.buffs.stop > 0) st.buffs.stop = 0; else st.stopN--; st.inv = 1; st.ride = false;
   ev && ev("rescue", lost); return true;
 }
 function hurt(st, o, loss, ev) { // 몹에 맞음: 엄격 모드(봇 검사)에선 실패로 센다
@@ -372,18 +375,18 @@ function touch(st, ev) {
         st.done.add(o.id);
         if (o.t === "up") { const b = (o.v || .02) * L; st.ret += b; st.streak++; ev && ev("coin", { o, b }); }
         else if (o.t === "dn") { st.ret -= 0.15; st.streak = 0; ev && ev("bomb", o); }
-        else if (o.t === "pw") { B[o.p] = o.p === "stop" ? Math.max(B.stop, DUR.stop * st.durMul) : DUR[o.p] * st.durMul; ev && ev("power", o); }
+        else if (o.t === "pw") { B[o.p] = DUR[o.p] * st.durMul; ev && ev("power", o); }
         else if (o.real) { const b = .04 * L; st.ret += b; ev && ev("rumorReal", { o, b }); } // ✔공시: 진짜 호재
         else if (B.up > 0 || st.tier >= 4) ev && ev("smash", o);
         else { st.fog = 2; st.ret -= .05; ev && ev("rumor", o); } // 카더라: 가짜 — 앞이 가려지고 −5%
       } else if (o.t === "bear") {
         const p = bearPos(o, st.t); if (Math.abs(p.x - st.x) >= 13 + 8 || st.y >= o.g + 24 || st.y + 24 <= o.g) continue;
-        if (st.vy < 0 && st.y > o.g + 10) { st.done.add(o.id); st.vy = STOMP_V; st.gnd = false; st.jumps = 1; st.combo++; st.kills++; const b = .03 * L * Math.min(st.combo, 4); st.ret += b; ev && ev("stomp", { o, b, x: p.x }); } // 연속으로 밟을수록 콤보 ×2·×3·×4
+        if (st.vy < 0 && st.y > o.g + 10) { st.done.add(o.id); st.vy = STOMP_V; st.gnd = false; st.jumps = 1; if (st.t - (st.comboT ?? -99) > 6) st.combo = 0; st.combo++; st.comboT = st.t; st.kills++; const b = .03 * L * Math.min(st.combo, 4); st.ret += b; ev && ev("stomp", { o, b, x: p.x }); } // 연속으로 밟을수록 콤보 ×2·×3·×4
         else if (B.up > 0 || st.tier >= 4) { st.done.add(o.id); st.kills++; const b = .03 * L; st.ret += b; ev && ev("smash", { o, b, x: p.x }); }
         else { const was = st.inv; hurt(st, o, st.tier >= 2 ? .05 : .10, ev); if (!st.dead && was <= 0 && st.inv > 0) { st.levAdj = (st.levAdj || 0) - 1; ev && ev("delev", o); } } // 약세장에 부딪히면 레버리지 −1
       } else if (o.t === "bull") {
         if (Math.abs(o.x - st.x) >= 18 + 8 || !(st.vy < 0 && st.y > o.g + 14 && st.y < o.g + 32)) continue;
-        st.done.add(o.id); st.vy = BULL_V; st.gnd = false; st.jumps = 1; st.lastAir = st.y; const b = .02 * L; st.ret += b; ev && ev("bull", { o, b });
+        st.done.add(o.id); st.vy = BULL_V; st.gnd = false; st.jumps = 1; st.lastAir = st.y; st.ride = true; /* 착지할 때까지 강세장 질주 */ const b = .02 * L; st.ret += b; ev && ev("bull", { o, b });
       } else if (o.t === "knife") {
         if (st.trig[o.id] === undefined) { if (st.x >= o.x - speed(st) * KNIFE_LEAD) { st.trig[o.id] = st.t; ev && ev("knife", o); } continue; }
         const tip = knifeTip(o, st); if (Math.abs(o.x - st.x) >= 5 + 8 || st.y >= tip + 40 || st.y + 24 <= tip) continue;
@@ -404,11 +407,11 @@ function touch(st, ev) {
 function step(st, jump, ev) {
   if (st.dead) return;
   const B = st.buffs, dt = DT * (B.cb > 0 ? CB_SLOW : 1);
-  for (const k in B) if (B[k] > 0 && B[k] < 9000) { B[k] -= DT; if (B[k] <= 0) { B[k] = 0; ev && ev("buffEnd", { k, gain: st.bg[k] || 0 }); if (k in st.bg) st.bg[k] = 0; } }
+  for (const k in B) if (B[k] > 0) { B[k] -= DT; if (B[k] <= 0) { B[k] = 0; ev && ev("buffEnd", { k, gain: st.bg[k] || 0 }); if (k in st.bg) st.bg[k] = 0; } }
   if (st.inv > 0) st.inv -= DT; if (st.fog > 0) st.fog -= DT;
   st.t += dt;
   if (jump && st.jumps < (B.hold > 0 ? 3 : 2)) { st.vy = st.jumps === 0 ? JV1 : (st.jv2 || JV2); st.jumps++; st.gnd = false; ev && ev("jump", st.jumps); }
-  const nx = st.x + speed(st) * dt;
+  const nx = st.x + (st.ride ? Math.max(RIDE_V, speed(st)) : speed(st)) * dt;
   // 앞쪽 벽
   const front = ground(st, nx + HALF);
   if (front !== null && front > st.y + STEP) { if (rescue(st, ev)) return; st.dead = "wall"; ev && ev("dead", "wall"); return; }
@@ -417,7 +420,7 @@ function step(st, jump, ev) {
   const sup = support(st, st.x);
   if (sup !== null && ny <= sup && st.y >= sup - STEP - 1) {
     if (!st.gnd) { st.landH = Math.max(0, st.lastAir - sup); ev && ev("land", st.landH); }
-    ny = sup; st.vy = 0; st.gnd = true; st.jumps = 0; st.lastG = sup;
+    ny = sup; st.vy = 0; st.gnd = true; st.jumps = 0; st.lastG = sup; st.ride = false;
     const cid = catUnder(st, sup); // 데드캣 바운스: 튕겨 주고 무너진다
     if (cid !== undefined) { st.done.add(cid); st.vy = CAT_V; st.gnd = false; st.jumps = 1; st.lastAir = sup; ev && ev("cat", cid); }
   } else {
@@ -433,7 +436,8 @@ function step(st, jump, ev) {
     st.lastIdx++; const L = lev(st), zmul = st.W.zm[st.lastIdx] || 1; let g = 0.0015 * L * (B.up > 0 ? 2 : 1), raw = 0.0015 * L;
     const c = st.W.C[st.lastIdx], p = st.W.C[st.lastIdx - 1];
     // 밟고 지나간 캔들: 빨강(상승)이면 +, 파랑(하락)이면 − (공중으로 건너뛴 캔들은 영향 없음)
-    if (st.gnd && c !== null && c !== undefined && p !== null && p !== undefined) {
+    // FOMC·블랙스완 구간: 계단을 걸어 내려가며 잠깐 뜬 것도 '밟은 것' (점프로 건너뛴 것만 면제)
+    if ((st.gnd || (st.W.wk[st.lastIdx] && st.jumps === 0)) && c !== null && c !== undefined && p !== null && p !== undefined) {
       const dl = Math.max(-40, Math.min(40, c - p));
       if (Math.abs(dl) > 2) { let b = dl * 0.00025 * L * zmul; raw += b; if (b < 0 && B.water > 0) b = -b; else if (b < 0 && B.up > 0) b = 0; else if (b > 0 && B.up > 0) b *= 2; g += b; ev && ev("candle", b); }
     }
@@ -563,6 +567,7 @@ function meet(k, x) {
   cardQ.push({ k, fresh, x, at: nowS() });
 }
 function showCard(c) {
+  if (toastEl) { toastEl.remove(); toastEl = null; }
   const T = c.custom || TERMS[c.k];
   $("card").innerHTML = `<div class="e">${T.e}</div><div class="n">${T.n}${c.fresh ? '<span class="nw">NEW</span>' : ""}</div><div class="f">${T.s}</div>`; // 이름 + 한 줄 효과만 (긴 설명은 도감)
   $("card").classList.add("on"); $("tip").style.opacity = 0; cardCur = c; cardAge = 0; cardT = c.custom ? 2.2 : c.fresh ? 2.2 : 1.3;
@@ -597,7 +602,7 @@ function onEvent(kind, a) {
     const nm = NAMES[o.t] || ""; popText((kind === "stomp" ? (st.combo > 1 ? `🐻 ×${Math.min(st.combo, 4)} ` : "🐻 ") : st.tier >= 4 && !st.buffs.up ? "🐋 " : "🚀 ") + (a.b ? `+${(a.b * 100).toFixed(0)}%` : ""), "#ffcc4d", .3, .4);
   }
   if (kind === "hit") { SFX.hit(); hitStop(.07); fx.flash = { t: 0, dur: .3, col: DN }; fx.shake = 11; puff(st.x, st.y + 14, 16, { speed: 180, life: .5, r: 3.5, cols: [DN, "#fff", "#9cc3ff"] }); if (a.o.t !== "force") popText(`−${(a.loss * 100).toFixed(0)}%`, DN, .3, .4, "", 2); }
-  if (kind === "shake") { popText(`🕴️ 털림 −${(a.loss * 100).toFixed(0)}%`, "#c08bff", .3, .4, "", 3); fx.shake = 16; }
+  if (kind === "shake") { popText(`🖐️ 털림 −${(a.loss * 100).toFixed(0)}%`, "#c08bff", .3, .4, "", 3); fx.shake = 16; }
   if (kind === "grip") { SFX.grip(); hitStop(.06); fx.shake = 8; ring(st.x, st.y + 14, "#ffcc4d", 70); puff(a.x, a.o.g + 10, 18, { speed: 200, life: .6, r: 3.5, cols: ["#c08bff", "#ffcc4d", "#fff"], star: true }); fx.gone.push({ t: "force", x: a.x, y: a.o.g, age: 0, f: -1 }); popText(`💪 +${(a.b * 100).toFixed(0)}%`, "#ffcc4d", .3, .4); }
   if (kind === "bull") { SFX.bull(); hitStop(.05); fx.shake = 6; ring(a.o.x, a.o.g + 30, UP, 70); puff(a.o.x, a.o.g + 30, 20, { speed: 200, life: .6, r: 4, cols: [UP, "#ffcc4d", "#fff"], sq: true }); fx.gone.push({ t: "bull", x: a.o.x, y: a.o.g, age: 0, f: 1 }); popText(`🐂 +${(a.b * 100).toFixed(0)}%`, UP, .3, .4); }
   if (kind === "knife") SFX.whoosh();
@@ -632,14 +637,17 @@ function cashOut() {
   save.total = Math.max(1e5, Math.round(save.total * (1 + st.ret))); save.cashouts++; meet("cash");
   const best = st.ret > save.bestRet; if (best) save.bestRet = st.ret; save.bestLev = Math.max(save.bestLev, lev(st));
   let clear = false, stars = 0, evolve = false;
-  if (cfg.n <= 6) { clear = reached() && st.ret >= cfg.need; if (clear) { stars = starsOf(st.ret); const k = "s" + cfg.n; save.stars[k] = Math.max(save.stars[k] || 0, stars); if (cfg.n > save.cleared) { evolve = cfg.n === 5; save.cleared = cfg.n; } } }
+  let badge = 0;
+  if (cfg.n <= 6) { clear = reached() && st.ret >= cfg.need; if (clear) { stars = starsOf(st.ret); const k = "s" + cfg.n, prev = save.stars[k] || 0;
+    badge = Math.max(0, stars - prev) + (prev === 0 ? 1 : 0); save.badges = (save.badges || 0) + badge; // 🏅 성과 배지: 새로 딴 별 수 + 첫 통과 1개 (상점 화폐, 계좌 P와 분리)
+    save.stars[k] = Math.max(prev, stars); if (cfg.n > save.cleared) { evolve = cfg.n === 5; save.cleared = cfg.n; } } }
   else save.endlessBest = Math.max(save.endlessBest || 0, st.ret);
   persist();
   SFX.cash(); buzz([20, 40, 20]); fx.flash = { t: 0, dur: .35, col: "#ffe28a" };
   for (let i = 0; i < 5; i++) setTimeout(() => puff(st.x + (Math.random() - .3) * 300, st.y + 340, 14, { angle: Math.PI / 2 * 3, spread: 1, speed: 40, g: -500, life: 1.6, r: 5, cols: ["#ffcc4d", "#ffe28a", UP, "#fff"], sq: true }), i * 120);
   $("cash").style.display = "none";
   if (clear || cfg.n === 7) emit("level_clear", { level: cfg.n, ret: st.ret, lev: lev(st), stars }); else emit("fail", { level: cfg.n, ret: st.ret, why: reached() ? "low_ret" : "early_cash" });
-  setTimeout(() => evolve ? startEvolve(() => result(true, { best, clear, stars, evolved: true }, before)) : result(true, { best, clear, stars }, before), 900);
+  setTimeout(() => evolve ? startEvolve(() => result(true, { best, clear, stars, badge, evolved: true }, before)) : result(true, { best, clear, stars, badge }, before), 900);
 }
 function startEvolve(done) { document.querySelector(".hud").style.visibility = "hidden"; $("cash").style.display = "none"; mode = "evolve"; evoT = 0; SFX.evolve(); fx.evoDone = done; $("tip").style.display = "none"; $("goal").style.display = "none"; }
 function starHtml(n) { return `<div class="stars">${[1, 2, 3].map(i => i <= n ? "★" : '<span class="off">★</span>').join("")}</div>`; }
@@ -650,7 +658,7 @@ function result(ok, extra, before) {
   const stg = cfg.n <= 6; let head;
   if (!ok) head = `<h2 style="color:var(--danger)">💥 강제 청산</h2><div class="big" style="color:var(--danger)">${pct(st.ret)} → 0%</div><p>${extra === "wall" ? "🧱 벽" : "🕳 상폐"} · −10%</p>`;
   else if (!stg) head = `<h2 style="color:var(--up)">익절!</h2><div class="big" style="color:var(--up)">${pct(st.ret)}</div>${st.ret >= save.endlessBest - 1e-9 ? '<p style="color:var(--acc);font-weight:800">🏆 무한 장 최고 기록!</p>' : ""}`;
-  else if (extra.clear) head = `<h2 style="color:var(--acc)">${extra.evolved ? "🐋 고래가 되었다!" : `${cfg.n}단계 통과!`}</h2>${starHtml(extra.stars)}<div class="big" style="color:var(--up)">${pct(st.ret)}</div>${extra.stars < 3 ? `<p>★${extra.stars + 1} = ${pct(cfg.need * starMult(cfg)[extra.stars + 1])}</p>` : ""}${cfg.n < 6 ? previewHtml(cfg.n + 1) : ""}${extra.evolved ? `<p>🐋 ${TIERS[4].s}</p>` : ""}`;
+  else if (extra.clear) head = `<h2 style="color:var(--acc)">${extra.evolved ? "🐋 고래가 되었다!" : `${cfg.n}단계 통과!`}</h2>${starHtml(extra.stars)}<div class="big" style="color:var(--up)">${pct(st.ret)}</div><p>${extra.badge ? `<b style="color:var(--acc)">🏅 +${extra.badge}</b> · ` : ""}${extra.stars < 3 ? `★${extra.stars + 1} = ${pct(cfg.need * starMult(cfg)[extra.stars + 1])}` : "★★★"}</p>${cfg.n < 6 ? previewHtml(cfg.n + 1) : ""}${extra.evolved ? `<p>🐋 ${TIERS[4].s}</p>` : ""}`;
   else head = `<h2 style="color:#cfd5e3">💰 익절 · 미달</h2><div class="big" style="color:${st.ret >= 0 ? "var(--up)" : "var(--dn)"}">${pct(st.ret)}</div><p>${reached() ? `🎯 ${pct(cfg.need)}` : "🚩 전"}</p>`;
   const nextBtn = ok && stg && extra.clear && cfg.n < 6 ? `<button class="btn" id="next">${STAGES[cfg.n].n}단계로 ▶</button>` : "";
   const endBtn = ok && stg && extra.clear && cfg.n === 6 ? `<button class="btn" id="endless">무한 장 열림 ▶</button>` : "";
@@ -671,19 +679,20 @@ function result(ok, extra, before) {
 // 다음 단계 보상 미리보기: 깨면 뭐가 달라지는지 늘 보이게
 function stageTerms(c) { const t = new Set([...c.mobs, ...c.pws]); if (c.fomc < 1e9) t.add("fomc"); if (c.swan < 1e9) t.add("swan"); return t; }
 function newIn(n) { const prev = new Set(); STAGES.slice(0, n - 1).forEach(c => stageTerms(c).forEach(k => prev.add(k))); return [...stageTerms(STAGES[n - 1])].filter(k => !prev.has(k)); }
-const shortName = k => TERMS[k].n.replace(/ \(.*\)/, "");
+const SN = { up: "상한가", water: "물타기", cb: "서킷", stop: "손절", hold: "존버", bear: "곰", knife: "칼날", force: "세력", cat: "데드캣", rumor: "찌라시", bull: "황소", fomc: "FOMC", swan: "백조" };
+const shortName = k => SN[k] || TERMS[k].n;
 function previewHtml(n) { // 짧게: 새 몸 · 새 용어 아이콘 · 목표
   const c = STAGES[n - 1], T = TIERS[c.tier], prevT = n > 1 ? STAGES[n - 2].tier : -1, nw = newIn(n);
-  return `<div class="next"><div class="h">▶ ${n}단계에서</div>${c.tier !== prevT ? `<div>${T.e} <b>${T.n}</b> · ${T.s}</div>` : ""}${nw.length ? `<div>🆕 ${nw.map(k => TERMS[k].e).join(" ")}</div>` : ""}<div>🎯 ${pct(c.need)} · ★3 ${pct(c.need * starMult(c)[3])}</div>${n === 2 ? "<div>🛒 상점 열림</div>" : ""}${n === 5 ? "<div>🐋 깨면 고래 변신</div>" : ""}${n === 6 ? "<div>♾ 깨면 무한 장</div>" : ""}</div>`;
+  return `<div class="next"><div class="h">▶ ${n}단계에서</div>${c.tier !== prevT ? `<div>${T.e} <b>${T.n}</b> · ${T.s}</div>` : ""}${nw.length ? `<div>🆕 ${nw.map(k => TERMS[k].e + shortName(k)).join(" · ")}</div>` : ""}<div>🎯 ${pct(c.need)} · ★3 ${pct(c.need * starMult(c)[3])}</div>${n === 2 ? "<div>🛒 상점 열림</div>" : ""}${n === 5 ? "<div>🐋 깨면 고래 변신</div>" : ""}${n === 6 ? "<div>♾ 깨면 무한 장</div>" : ""}</div>`;
 }
 function showShop(back) {
   const up = save.up || (save.up = {});
   const rows = Object.keys(UPG).map(k => { const u = UPG[k], l = up[k] || 0, max = l >= u.max, cost = u.cost[l];
-    return `<div><i>${u.e}</i><span><b>${u.n}</b> ${"●".repeat(l)}${"○".repeat(u.max - l)}<br>${u.f(max ? l : l + 1)}</span><button data-u="${k}" ${max || save.total < cost ? "disabled" : ""}>${max ? "MAX" : fmtWon(cost)}</button></div>`; }).join("");
-  $("box").innerHTML = `<h2>🛒 성장 상점</h2><p>💰 <b style="color:var(--tx)">${fmtWon(save.total)}</b> · 영구 강화</p><div class="shop">${rows}</div><button class="btn" id="shopBack">돌아가기</button><div class="disc">가상 차트 · 투자와 무관 · P = 가상 포인트</div>`;
+    return `<div><i>${u.e}</i><span><b>${u.n}</b> ${"●".repeat(l)}${"○".repeat(u.max - l)}<br>${u.f(max ? l : l + 1)}</span><button data-u="${k}" ${max || (save.badges || 0) < cost ? "disabled" : ""}>${max ? "MAX" : "🏅 " + cost}</button></div>`; }).join("");
+  $("box").innerHTML = `<h2>🛒 성장 상점</h2><p>🏅 <b style="color:var(--tx)">${save.badges || 0}</b> · ★로 받는 배지 · 영구 강화</p><div class="shop">${rows}</div><button class="btn" id="shopBack">돌아가기</button><div class="disc">가상 차트 · 투자와 무관 · P = 가상 포인트</div>`;
   $("ov").classList.add("on");
-  $("box").querySelectorAll("button[data-u]").forEach(b => b.onclick = () => { const k = b.dataset.u, l = up[k] || 0, c = UPG[k].cost[l]; if (l >= UPG[k].max || save.total < c) return;
-    save.total -= c; up[k] = l + 1; persist(); SFX.power("up"); showShop(back); });
+  $("box").querySelectorAll("button[data-u]").forEach(b => b.onclick = () => { const k = b.dataset.u, l = up[k] || 0, c = UPG[k].cost[l]; if (l >= UPG[k].max || (save.badges || 0) < c) return;
+    save.badges -= c; up[k] = l + 1; persist(); SFX.power("up"); showShop(back); });
   $("shopBack").onclick = () => back();
 }
 function menu() {
@@ -696,9 +705,9 @@ function menu() {
     <ul><li><b>탭</b> = 점프 · 두 번 = 2단</li><li>🟥 밟으면 + · 🟦 − · 🕳 = 청산</li><li>🚩 넘고 🎯 이상 💰 익절 = 통과</li></ul>
     <div class="stages">${cells}</div>
     ${save.cleared < 6 ? previewHtml(cur) : '<div class="next"><div class="h">🐋 바다의 주인</div>♾ 무한 장 최고 기록 도전</div>'}
-    <div class="grid"><div>💰<b>${fmtWon(save.total)}</b></div><div>몸<b>${TIERS[tierNow()].e} ${TIERS[tierNow()].n}</b></div></div>
+    <div class="grid"><div>💰 · 🏅 ${save.badges || 0}<b>${fmtWon(save.total)}</b></div><div>몸<b>${TIERS[tierNow()].e} ${TIERS[tierNow()].n}</b></div></div>
     <button class="btn" id="go">${cur}단계 시작</button>
-    <div class="row" style="gap:6px"><button class="btn ghost" id="shopBtn" ${save.cleared >= 1 ? "" : "disabled"}>${save.cleared >= 1 ? "🛒 상점" : "🔒 상점"}</button><button class="btn ghost" id="dexBtn">📖 도감 ${dex.size}/${TERM_KEYS.length}</button></div>
+    <div class="row" style="gap:6px"><button class="btn ghost" id="shopBtn" ${save.cleared >= 1 ? "" : "disabled"}>${save.cleared >= 1 ? `🛒 상점 🏅${save.badges || 0}` : "🔒 상점"}</button><button class="btn ghost" id="dexBtn">📖 도감 ${dex.size}/${TERM_KEYS.length}</button></div>
     <div class="disc">가상 차트 · 투자와 무관 · P = 가상 포인트</div>`;
   $("ov").classList.add("on"); $("go").onclick = () => startRun(cur); $("shopBtn").onclick = () => { if (save.cleared >= 1) showShop(menu); };
   $("box").querySelectorAll(".stg").forEach(b => b.onclick = () => { if (!b.disabled) startRun(Number(b.dataset.s)); });
@@ -724,11 +733,11 @@ function hud(force) {
     if (stg) { const p = Math.min(1, st.x / (cfg.goal * CW)); $("goalbar").style.width = p * 100 + "%"; $("goal").classList.toggle("reach", reached());
       $("goaltx").textContent = reached() ? (r >= cfg.need ? (starsOf(r) < 3 ? `${"★".repeat(starsOf(r))} → ★${starsOf(r) + 1} ${pct(cfg.need * starMult(cfg)[starsOf(r) + 1])}` : "★★★") : `🎯 ${pct(cfg.need)}`) : `🚩 ${Math.round(p * 100)}% · 🎯 ${pct(cfg.need)}`; }
     // 아이템 남은 시간 게이지
-    const B = st.buffs, act = Object.keys(B).filter(k => B[k] > 0), extra = st.tier >= 1 && st.tier < 4 ? ["grip"] : [];
-    const key = act.concat(extra).join(",") + "|" + st.grip;
+    const B = st.buffs, act = Object.keys(B).filter(k => B[k] > 0), extra = st.grip > 0 && st.grip < 90 ? ["grip"] : [];
+    const key = act.concat(extra).join(",") + "|" + st.grip + "|" + st.stopN;
     if (key !== chipKey || force) { chipKey = key;
-      $("buffs").innerHTML = act.map(k => `<div class="chip" style="color:${PCOL[k]}">${TERMS[k].e}<b data-k="${k}"></b></div>`).join("") + (extra.length ? `<div class="chip" style="color:#c08bff">💪<span>${st.grip}</span></div>` : ""); }
-    $("buffs").querySelectorAll("b[data-k]").forEach(b => { const k = b.dataset.k; b.style.width = (B[k] > 9000 ? 100 : Math.max(0, B[k] / (DUR[k] * st.durMul)) * 100) + "%"; });
+      $("buffs").innerHTML = act.map(k => `<div class="chip" style="color:${PCOL[k]}">${TERMS[k].e}<b data-k="${k}"></b></div>`).join("") + (st.stopN > 0 ? `<div class="chip" style="color:#5fe0a0">🛡️<span>${st.stopN}</span></div>` : "") + (extra.length ? `<div class="chip" style="color:#c08bff">💪<span>${st.grip}</span></div>` : ""); }
+    $("buffs").querySelectorAll("b[data-k]").forEach(b => { const k = b.dataset.k; b.style.width = (Math.max(0, B[k] / (DUR[k] * st.durMul)) * 100) + "%"; });
   } else { c.classList.remove("go", "pre"); }
 }
 
@@ -786,7 +795,7 @@ function draw(dt) {
     }
     if (top === null || top === undefined) {
       ctx.fillStyle = "rgba(255,59,47,.07)"; ctx.fillRect(X, sy(st.lastG + 40), CW * SC, H);
-      if (C[i - 1] !== null && C[i - 1] !== undefined && Wd.cat[i - 1] === undefined) { ctx.fillStyle = "#ff3b2f"; ctx.font = `800 11px -apple-system,sans-serif`; ctx.textAlign = "left"; ctx.fillText("상폐", X + 3, sy(C[i - 1]) + 18); }
+      if (C[i - 1] !== null && C[i - 1] !== undefined && Wd.cat[i - 1] === undefined) { ctx.fillStyle = "#ff3b2f"; ctx.font = `800 12px -apple-system,sans-serif`; ctx.textAlign = "left"; ctx.fillText("상폐", X + 3, sy(C[i - 1]) + 18); }
       continue;
     }
     const prev = C[i - 1] ?? top, p = prev === null ? top : prev, up = top > p + 2, dn = top < p - 2;
@@ -831,7 +840,7 @@ function draw(dt) {
     else if (o.t === "force") { const x = forceX(o, st);
       if (x > camX + W / SC - 10 && x - st.x < 760) { // 화면 밖에서 다가오는 세력 예고
         const Y = sy(o.g) - 16 * SC, a = .6 + .4 * Math.sin(T * 12); ctx.globalAlpha = a; ctx.fillStyle = "#a77bff"; ctx.beginPath(); ctx.moveTo(W - 86, Y); ctx.lineTo(W - 66, Y - 13); ctx.lineTo(W - 66, Y + 13); ctx.fill();
-        ctx.globalAlpha = 1; label("🕴️ 세력", W - 80, Y - 18 * SC, "#d4a8ff"); return; }
+        ctx.globalAlpha = 1; label("🖐️ 세력", W - 80, Y - 18 * SC, "#d4a8ff"); return; }
       if (x < camX - 80 || x > camX + W / SC + 80) return; drawForce(sx(x), sy(o.g), SC, T, st.trig[o.id] !== undefined); label(st.tier >= 4 ? "세력" : st.grip > 0 ? `세력 💪${st.grip}` : "세력", sx(x), sy(o.g) - 50 * SC, "#d4a8ff"); }
   });
   // 퇴치된 몹 날아가기
@@ -852,7 +861,7 @@ function draw(dt) {
     if (B.water > 0 && Math.random() < .3) puff(st.x, st.y + 20, 1, { angle: -Math.PI / 2, spread: 1.4, speed: 60, g: 200, life: .5, r: 2.5, col: "#4fc3ff" });
     if (B.hold > 0 && Math.random() < .2) puff(st.x + (Math.random() - .5) * 20, st.y + Math.random() * 30, 1, { speed: 20, life: .5, r: 2.5, col: "#c39bff", star: true });
   }
-  if (B.stop > 0) { ctx.strokeStyle = `rgba(95,224,160,${.5 + .2 * Math.sin(T * 6)})`; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(AX, AY - 16 * SC, 25 * SC, 0, 7); ctx.stroke(); }
+  if (B.stop > 0 || st.stopN > 0) { ctx.strokeStyle = `rgba(95,224,160,${.5 + .2 * Math.sin(T * 6)})`; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(AX, AY - 16 * SC, 25 * SC, 0, 7); ctx.stroke(); }
   if (!(st.inv > 0 && Math.floor(T * 16) % 2)) drawPlayer(AX, AY, SC, st.tier);
   ctx.restore();
   // 서킷브레이커 화면
@@ -881,9 +890,11 @@ function drawRumor(X, Y, T, real) {
   ctx.save(); ctx.translate(X + (real ? 0 : Math.sin(T * 40) * 1.5), Y); ctx.rotate(real ? Math.sin(T * 2) * .05 : Math.sin(T * 5) * .25); ctx.scale(1.15 * SC, (real ? 1 : .8 + .2 * Math.abs(Math.sin(T * 9))) * 1.15 * SC);
   ctx.shadowColor = real ? "rgba(95,224,160,.7)" : "rgba(0,0,0,.5)"; ctx.shadowBlur = real ? 10 : 6; ctx.fillStyle = real ? "#f4f6f2" : "#e8d9a0"; ctx.fillRect(-15, -11, 30, 22); ctx.shadowBlur = 0;
   ctx.fillStyle = "#999"; for (let k = 0; k < 3; k++) ctx.fillRect(-12, -6 + k * 4, k === 2 ? 14 : 24, 2);
-  if (real) { ctx.strokeStyle = "#1f9d5c"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(7, 3, 7, 0, 7); ctx.stroke(); ctx.fillStyle = "#1f9d5c"; ctx.font = "900 8px -apple-system,sans-serif"; ctx.textAlign = "center"; ctx.fillText("✔공시", 7, 6); }
-  else { ctx.fillStyle = "#c62828"; ctx.font = "900 9px -apple-system,sans-serif"; ctx.textAlign = "center"; ctx.fillText("카더라?", 0, 4); }
+  if (real) { ctx.strokeStyle = "#1f9d5c"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(7, 3, 7, 0, 7); ctx.stroke(); }
   ctx.restore();
+  // 도장 글자는 줌아웃에도 12px 이상
+  ctx.font = `900 ${Math.max(12, Math.round(9 * SC))}px -apple-system,sans-serif`; ctx.textAlign = "center"; ctx.lineWidth = 3; ctx.strokeStyle = real ? "#f4f6f2" : "#e8d9a0";
+  const tx = real ? "✔공시" : "카더라?"; ctx.strokeText(tx, X, Y + 5); ctx.fillStyle = real ? "#1f9d5c" : "#c62828"; ctx.fillText(tx, X, Y + 5);
 }
 function drawBear(X, Y, s, f, T) {
   ctx.save(); ctx.translate(X, Y); ctx.scale(s * -f, s); // 그림은 왼쪽을 본다
@@ -1042,11 +1053,12 @@ function loop(t) {
     }
   }
   // 안내 카드
-  cardQ = cardQ.filter(c => c.custom || nowS() - c.at < 1.2); // 오래 기다린 카드는 버린다
+  cardQ = cardQ.filter(c => c.custom || nowS() - c.at < (c.k === "fomc" || c.k === "swan" ? 4 : 1.2)); // 오래 기다린 카드는 버린다
   if (cardT > 0) { cardT -= dtReal; cardAge += dtReal;
     const passed = cardCur && cardCur.x !== undefined && st && st.x > cardCur.x + 60 && cardAge > 1.6; // 그 물체를 지나쳤으면 내린다
     if (cardT <= 0 || passed || (cardQ.length && cardAge > 1.0)) hideCard(); }
-  if (cardT <= 0 && cardQ.length && mode === "run") { showCard(cardQ.pop()); cardQ = []; }
+  if (fx.banner && fx.banner.t < .05) { if (cardCur) hideCard(); if (toastEl) { toastEl.remove(); toastEl = null; } } // 띠 배너가 뜨면 카드·토스트를 내린다 (동시 표시 1~2개)
+  if (cardT <= 0 && cardQ.length && mode === "run" && !fx.banner) { showCard(cardQ.pop()); cardQ = []; }
   if (mode !== "run" && mode !== "dying" && cardCur) hideCard();
   // 손맛 갱신
   fx.parts = fx.parts.filter(p => (p.life -= dt) > 0); fx.parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy -= p.g * dt; p.vx *= .96; });
@@ -1127,7 +1139,7 @@ function selftest() {
       step(s, false); if (!s.dead && s.buffs.stop === 0) { s.strict = true; let ok = true; for (let k = 0; k < .3 / DT; k++) { step(s, false); if (s.dead) { ok = false; break; } } if (ok) rescOk++; } } }
   out.push("", `[D] 손절매 구조 ${rescOk}/${resc}`); total++; if (resc && rescOk === resc) pass++;
   // E. 사람 근사 봇: 휴대폰 375×760 시야(카메라 줌 포함) + 반응 0.4초. 시드 301~320
-  out.push("", "[E] 사람 근사 봇 (휴대폰 375×760 시야, 반응 0.4초, 탭 오차 15ms, 시드 301~320)");
+  out.push("", "[E] 사람 근사 봇 (휴대폰 375×760 시야, 반응 0.4초, 탭 오차 15ms, 단계는 시드 301~340, 무한은 301~320)");
   const HO = { R: .4, W: 375, H: 760 };
   let e72 = 0; for (let seed = 301; seed <= 320; seed++) { const r = humanRun(seed, ENDLESS, { ...HO, after: 0, tmax: 72 }); if (!r.dead) e72++; }
   const okE = e72 >= 10; total++; if (okE) pass++;
@@ -1135,9 +1147,9 @@ function selftest() {
   const base3 = [];
   for (const c of STAGES) {
     let p1 = 0, p2 = 0, p3 = 0, dead = 0; const tg = [];
-    for (let seed = 301; seed <= 320; seed++) { const r = humanRun(seed, c, { ...HO, after: 40, tmax: 160 }); if (r.T[1] !== null) p1++; if (r.T[2] !== null) p2++; if (r.T[3] !== null) p3++; if (r.dead && r.goalT === null) dead++; if (r.T[3] !== null) tg.push(r.T[3] - r.goalT); }
-    tg.sort((a, b) => a - b); base3.push(p3); const ok = p1 >= 14 && p3 >= 3 && p3 <= 9; total++; if (ok) pass++;
-    out.push(`  ${c.n}단계 ${ok ? "OK" : "FAIL"}\t통과 ${p1}/20\t깃발 전 청산 ${dead}\t★2 ${p2}/20\t★3 ${p3}/20 (${p3 * 5}%, 깃발 뒤 ${tg.length ? tg[tg.length >> 1].toFixed(0) + "초" : "-"})\t★ 배수 ×${starMult(c)[2]}·×${starMult(c)[3]} — 기준: 통과 70%+, ★3 15~45%`);
+    const b20 = []; for (let seed = 301; seed <= 340; seed++) { const r = humanRun(seed, c, { ...HO, after: 40, tmax: 160 }); if (seed <= 320) b20.push(r.T[3] !== null); if (r.T[1] !== null) p1++; if (r.T[2] !== null) p2++; if (r.T[3] !== null) p3++; if (r.dead && r.goalT === null) dead++; if (r.T[3] !== null) tg.push(r.T[3] - r.goalT); }
+    tg.sort((a, b) => a - b); base3.push(b20.filter(Boolean).length); const ok = p1 >= 28 && p3 >= 6 && p3 <= 18; total++; if (ok) pass++;
+    out.push(`  ${c.n}단계 ${ok ? "OK" : "FAIL"}\t통과 ${p1}/40\t깃발 전 청산 ${dead}\t★2 ${p2}/40\t★3 ${p3}/40 (${Math.round(p3 * 2.5)}%, 깃발 뒤 ${tg.length ? tg[tg.length >> 1].toFixed(0) + "초" : "-"})\t★ 배수 ×${starMult(c)[2]}·×${starMult(c)[3]} — 기준: 통과 70%+, ★3 15~45%`);
   }
   // F. 상점 최대 강화(버팀 +2, 아이템 +45%, 손절매 기본·비용 35%, 2단 점프 +6%)가 난이도를 무너뜨리지 않는가
   out.push("", "[F] 상점 최대 강화 vs 강화 없음 (같은 사람 근사 봇·시드) — 기준: 단계마다 ★3 증가 5판(25%p) 이하, ★3 60% 이하");
@@ -1145,6 +1157,17 @@ function selftest() {
   STAGES.forEach((c, k) => { let p1 = 0, p3 = 0; for (let seed = 301; seed <= 320; seed++) { const r = humanRun(seed, c, { ...HO, after: 40, tmax: 160, up: MAXUP }); if (r.T[1] !== null) p1++; if (r.T[3] !== null) p3++; }
     const ok = p3 - base3[k] <= 5 && p3 <= 12; if (!ok) okF = false; out.push(`  ${c.n}단계 ${ok ? "OK" : "FAIL"}\t통과 ${p1}/20\t★3 ${base3[k]} → ${p3}/20 (${p3 - base3[k] >= 0 ? "+" : ""}${(p3 - base3[k]) * 5}%p)`); });
   total++; if (okF) pass++;
+  // G. FOMC 인상 구간을 점프 없이 그냥 지나가면 손해(기대값 음수)여야 익절 판단이 생긴다. 블랙스완 계단도 그냥 걸으면 손해
+  out.push("", "[G] 이벤트 구간을 점프 없이 걸어서 지날 때 손익 (무한 장 시드 1~40, 레버리지 x1·x5·x10)");
+  const ev = { hawk: [], dove: [], swan: [] };
+  for (let seed = 1; seed <= 40; seed++) { const W = makeWorld(seed, ENDLESS); W.ensure(1400 * CW);
+    for (const z of W.zones.filter(z => z.t === "fomc" || z.t === "swan")) for (const t of [0, 32, 72]) {
+      const s = blankState(W, 0); s.x = z.i0 * CW + CW / 2; s.y = W.C[z.i0]; s.lastG = s.y; s.lastIdx = z.i0; s.t = t; s.strict = true; const r0 = s.ret;
+      for (let k = 0; k < 3000 && s.x < (z.i1 + 1) * CW - 12 && !s.dead; k++) step(s, false);
+      if (!s.dead) ev[z.t === "swan" ? "swan" : z.dove ? "dove" : "hawk"].push((s.ret - r0) / lev(s)); } }
+  const avg = a => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+  const okG = ev.hawk.length > 5 && avg(ev.hawk) < 0 && ev.hawk.filter(d => d < 0).length / ev.hawk.length >= .9 && avg(ev.swan) < 0; total++; if (okG) pass++;
+  out.push(`  ${okG ? "OK" : "FAIL"}\t인상: 평균 ${(avg(ev.hawk) * 100).toFixed(1)}%p×레버리지 (손해 ${ev.hawk.filter(d => d < 0).length}/${ev.hawk.length})\t동결: 평균 +${(avg(ev.dove) * 100).toFixed(1)}%p×레버리지\t블랙스완: 평균 ${(avg(ev.swan) * 100).toFixed(1)}%p×레버리지 (${ev.swan.length}건) — 기준: 인상·블랙스완 평균 음수, 인상 90% 이상 손해`);
   document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px;font-size:11px;overflow:auto;white-space:pre-wrap">${out.join("\n")}</pre>`);
   document.title = `SELFTEST ${pass}/${total}`;
 }
