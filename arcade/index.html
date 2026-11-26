@@ -33,33 +33,49 @@ button{font:inherit;color:inherit;cursor:pointer}
   body.play #stage{display:flex;position:fixed;inset:0;padding:0}
 }
 
-/* ── 메뉴 (목록 + 선택한 게임 설명) ── */
-.menu{width:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.35)}
-.top{display:flex;align-items:center;gap:8px;padding:14px 14px 10px}
-.logo{font:italic 900 18px/1 var(--mono);letter-spacing:.5px;flex:1}
-.logo b{font-style:normal;color:#ff4d7a}
-.me{border:1px solid var(--line);background:#1f1d28;border-radius:999px;padding:7px 11px;font:700 12.5px var(--mono);color:var(--acc)}
-.news{margin:0 12px 8px;padding:8px 11px;border-radius:12px;background:rgba(255,204,77,.12);border:1px solid rgba(255,204,77,.35);font-size:13px;font-weight:700;color:var(--acc)}
-.sort{display:flex;gap:6px;padding:0 12px 8px}
-.sort button{border:1px solid var(--line);background:#1f1d28;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:800;color:var(--sub)}
-.sort button.on{background:var(--tx);color:#111;border-color:var(--tx)}
-.list{flex:1;overflow:auto;padding:0 8px 8px;display:flex;flex-direction:column;gap:4px;overscroll-behavior:contain}
-.gm{display:flex;gap:10px;align-items:center;padding:9px 8px;border-radius:14px;cursor:pointer;border:1px solid transparent}
-.gm.sel{background:#1f1d28;border-color:var(--line)}
-.gm .ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex:none}
+/* ── 메뉴: 휴대용 게임기 (LCD 화면에 목록 + 설명, 아래는 얇은 A·B 줄) ── */
+.menu{width:100%;display:flex;flex-direction:column;background:linear-gradient(160deg,var(--shell),var(--shell2));border-radius:22px 22px 56px 22px;padding:16px 16px 0;box-shadow:inset -4px -6px 0 rgba(0,0,0,.08),inset 3px 3px 0 rgba(255,255,255,.5),0 20px 40px rgba(0,0,0,.45);user-select:none;-webkit-user-select:none}
+.bezel{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--bezel);border-radius:12px 12px 34px 12px;padding:10px 16px 18px 22px;position:relative;box-shadow:inset 0 2px 0 rgba(0,0,0,.25)}
+.bezel .led{position:absolute;left:7px;top:46%;width:7px;height:7px;border-radius:50%;background:#ff3348;box-shadow:0 0 8px #ff3348}
+.bezel .cap{font:700 8px var(--mono);letter-spacing:1.5px;color:#9fa0bf;text-align:center;margin-bottom:6px}
+.lcd{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--lcd3);color:var(--lcd0);border-radius:4px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),inset 0 0 24px rgba(15,56,15,.22);overflow:hidden;position:relative}
+.lcd:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(15,56,15,.045) 0 1px,transparent 1px 3px);pointer-events:none}
+.top{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;border-bottom:2px solid var(--lcd0)}
+.logo{font:900 14px/1 var(--mono);flex:1}
+.me{border:1.5px solid var(--lcd0);background:transparent;color:var(--lcd0);border-radius:4px;padding:3px 7px;font:800 12px var(--mono)}
+.news{margin:6px 8px 0;padding:5px 8px;border-radius:3px;background:var(--lcd0);color:var(--lcd3);font:800 12.5px var(--mono)}
+.sort{display:flex;gap:6px;padding:6px 8px}
+.sort button{border:1.5px solid var(--lcd0);background:transparent;color:var(--lcd0);border-radius:4px;padding:3px 9px;font:800 12px var(--mono)}
+.sort button.on{background:var(--lcd0);color:var(--lcd3)}
+.list{flex:1;overflow:auto;padding:0 6px 6px;display:flex;flex-direction:column;gap:3px;overscroll-behavior:contain}
+.gm{display:flex;gap:8px;align-items:center;padding:6px;border-radius:3px;cursor:pointer}
+.gm.sel{background:var(--lcd0);color:var(--lcd3)}
+.gm .ic{width:34px;height:34px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;background:var(--lcd2)!important}
+.gm.sel .ic{background:var(--lcd1)!important}
 .gm .w{min-width:0;flex:1}
-.gm .t{font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
-.gm .m{font-size:12.5px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bd{font:900 10.5px/1 var(--mono);padding:3px 5px;border-radius:5px;flex:none}
-.bd.hot{background:#ff4d4d;color:#fff} .bd.new{background:#4d9dff;color:#fff} .bd.up{background:var(--grn);color:#0b2a1a}
-.rt{font:700 12.5px var(--mono);color:var(--acc);flex:none;text-align:right}
-.rt small{display:block;color:var(--sub);font-size:10.5px;font-weight:600}
-.detail{border-top:1px solid var(--line);padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#211e2a}
-.detail h3{margin:0;font-size:17px;display:flex;align-items:center;gap:6px}
-.detail p{margin:5px 0 0;font-size:13px;color:#d9d6e6;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.detail .upd{font-size:12.5px;color:var(--grn);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.go{width:100%;margin-top:10px;border:0;border-radius:14px;padding:13px;font:900 16px inherit;background:var(--acc);color:#1b1b1b;box-shadow:0 4px 0 #b38a1c}
-.go:active{transform:translateY(3px);box-shadow:none}
+.gm .t{font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.gm .m{font-size:12px;opacity:.85;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd{font:900 10.5px/1 var(--mono);padding:2px 4px;border-radius:3px;flex:none;border:1.5px solid currentColor}
+.bd.hot{background:var(--a);color:#fff;border-color:var(--a)}
+.rt{font:800 12px var(--mono);flex:none;text-align:right}
+.rt small{display:block;font-size:10.5px;font-weight:700;opacity:.8}
+.detail{border-top:2px solid var(--lcd0);padding:7px 10px 8px}
+.detail h3{margin:0;font-size:15px;display:flex;align-items:center;gap:6px}
+.detail p{margin:3px 0 0;font-size:12.5px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.detail .upd{font:800 12px var(--mono);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.go{display:block;width:100%;margin-top:6px;border:0;border-radius:3px;background:var(--lcd0);color:var(--lcd3);padding:8px;font:900 14px var(--mono)}
+.empty{color:var(--lcd1)}
+.base{flex:none;height:84px;position:relative;display:flex;align-items:center;padding:0 4px}
+.brand{font:italic 900 15px/1 var(--mono);color:var(--ink);letter-spacing:.5px;flex:1}
+.brand b{font-style:normal;color:var(--a)}
+.ab{display:flex;gap:14px;align-items:center;transform:rotate(-18deg) translateY(-6px);margin-right:58px}
+.ab div{display:flex;flex-direction:column;align-items:center;gap:3px}
+.ab button{width:46px;height:46px;border-radius:50%;border:0;background:var(--a);box-shadow:0 4px 0 #6d1530,inset 0 -3px 0 rgba(0,0,0,.18);color:#fff;font:900 16px var(--mono)}
+.ab button:active{transform:translateY(3px);box-shadow:0 1px 0 #6d1530}
+.ab span{font:900 10px var(--mono);color:var(--ink);transform:rotate(18deg)}
+.speaker{position:absolute;right:10px;bottom:14px;display:flex;gap:5px;transform:rotate(-28deg)}
+.speaker i{width:5px;height:34px;border-radius:4px;background:var(--shell-dark);box-shadow:inset 1px 1px 2px rgba(0,0,0,.35)}
+@media (max-width:979px){.menu{border-radius:18px 18px 44px 18px}}
 
 /* ── 플레이 무대 ── */
 .slot{position:relative;display:flex;flex-direction:column;background:#000;border-radius:28px;padding:10px;box-shadow:0 18px 40px rgba(0,0,0,.5),0 0 0 2px #2c2a36;width:400px;height:min(820px,calc(100vh - 32px))}
@@ -117,11 +133,19 @@ pre.out{white-space:pre-wrap;background:#14131a;border-radius:10px;padding:10px;
 <div id="app">
   <div id="menuCol">
     <div class="menu">
-      <div class="top"><div class="logo">NHC <b>POCKET</b></div><button class="me" id="meBtn">내 기록</button></div>
-      <div id="newsBar"></div>
-      <div class="sort" id="sortBar"><button data-s="hot" class="on">🔥 인기</button><button data-s="new">🆕 최신</button></div>
-      <div class="list" id="list"></div>
-      <div class="detail" id="detail"></div>
+      <div class="bezel"><span class="led"></span><div class="cap">PROTOTYPE ARCADE</div>
+        <div class="lcd">
+          <div class="top"><div class="logo">카트리지 <span id="cnt"></span></div><button class="me" id="meBtn">내 기록</button></div>
+          <div id="newsBar"></div>
+          <div class="sort" id="sortBar"><button data-s="hot" class="on">인기</button><button data-s="new">최신</button></div>
+          <div class="list" id="list"></div>
+          <div class="detail" id="detail"></div>
+        </div>
+      </div>
+      <div class="base"><div class="brand">NHC <b>POCKET</b></div>
+        <div class="ab"><div><button id="bBtn" aria-label="내 기록">B</button><span>기록</span></div><div><button id="aBtn" aria-label="플레이">A</button><span>플레이</span></div></div>
+        <div class="speaker"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
     </div>
   </div>
   <div id="stage"></div>
@@ -214,7 +238,7 @@ const BD = { new: '<span class="bd new">NEW</span>', up: '<span class="bd up">UP
 function renderMenu() {
   const L = sorted(); if (!sel || !CAT.some(g => g.id === sel)) sel = L[0] && L[0].id;
   const fresh = CAT.filter(g => badgeOf(g)).length;
-  $("newsBar").innerHTML = fresh && !firstSeen ? `<div class="news">✨ 새 소식 ${fresh}개</div>` : "";
+  $("newsBar").innerHTML = fresh && !firstSeen ? `<div class="news">★ 새 소식 ${fresh}개</div>` : "";
   $("sortBar").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.s === sortBy));
   $("list").innerHTML = L.length ? L.map(g => {
     const r = ratingOf(g), b = badgeOf(g);
@@ -226,14 +250,15 @@ function renderMenu() {
   $("list").querySelectorAll(".gm").forEach(el => el.onclick = () => { if (sel === el.dataset.id) { start(sel); return; } sel = el.dataset.id; SND.nav(); renderMenu(); });
   const g = CAT.find(x => x.id === sel);
   $("detail").innerHTML = g ? `<h3>${esc(g.icon)} ${esc(g.title)}</h3><p>${esc(g.one_liner)}</p>
-    ${g.note ? `<div class="upd">${badgeOf(g) === "up" ? "🆕 " : "최근 "}${esc(g.note)}</div>` : ""}
-    <button class="go" id="goBtn">▶ 플레이</button>` : "";
+    ${g.note ? `<div class="upd">${badgeOf(g) === "up" ? "NEW▶ " : "최근 "}${esc(g.note)}</div>` : ""}
+    <button class="go" id="goBtn">▶ 플레이 (A)</button>` : "";
   if (g) $("goBtn").onclick = () => start(g.id);
-  $("meBtn").textContent = LS.get("nick", "") || anon;
+  $("meBtn").textContent = LS.get("nick", "") || anon; $("cnt").textContent = CAT.length;
 }
 function start(id) { SND.ok(); const g = CAT.find(x => x.id === id); seen[id] = g.version; LS.set("seen", seen); play([id]); }
 $("sortBar").querySelectorAll("button").forEach(b => b.onclick = () => { sortBy = b.dataset.s; LS.set("sort", sortBy); SND.nav(); renderMenu(); });
-$("meBtn").onclick = () => { SND.back(); openMine(); };
+$("meBtn").onclick = $("bBtn").onclick = () => { SND.back(); openMine(); };
+$("aBtn").onclick = () => { if (sel) start(sel); };
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2400); }
 addEventListener("keydown", e => {
   if ($("sheet").classList.contains("on")) { if (e.key === "Escape") closeSheet(); return; }
