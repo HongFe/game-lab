@@ -91,8 +91,8 @@ window.CATALOG = [
   "path": "../G011_commute-dodge/game/index.html",
   "color": "#2fc4c4",
   "icon": "🚇",
-  "version": "2026-11-26 19:37",
-  "note": "이모지 불투명, ?에 멈추는 봇 곡선 추가·재조정, 모자·조끼 예고…",
+  "version": "2026-11-26 19:39",
+  "note": "탄 속도 노선 순서대로, 노선 1→2 점프 완화, 체크포인트 별 최대…",
   "rating": null,
   "hot": false
  },
@@ -107,7 +107,7 @@ window.CATALOG = [
   "path": "../G012_house-upgrade/game/index.html",
   "color": "#4d9dff",
   "icon": "🏠",
-  "version": "2026-11-26 19:10",
+  "version": "2026-11-26 19:40",
   "note": "오락실 플레이 시간은 사람 입력·레벨 신호로만 측정, G012 이름 '…",
   "rating": null,
   "hot": false
