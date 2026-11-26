@@ -64,41 +64,108 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:
 .box button{width:100%;border:0;border-radius:12px;padding:12px;font:900 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:var(--acc);color:#3b2a00}
 .box button.sec{background:#334155;color:#fff}
 .flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6;transition:opacity .35s}
+.price{position:absolute;left:62px;top:12px;background:rgba(0,0,0,.35);border-radius:999px;padding:4px 10px;font:900 13px ui-monospace,Menlo,monospace}
+.price small{font:700 11px -apple-system,sans-serif;opacity:.85;margin-right:4px}
+.news{position:absolute;left:10px;right:10px;top:44px;background:rgba(10,14,30,.82);border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:12.5px;font-weight:700;line-height:1.45;opacity:0;transform:translateY(-8px);transition:.35s;pointer-events:none;z-index:2}
+.news.on{opacity:1;transform:none}
+.news.good{border-color:#4ade80} .news.bad{border-color:#ff6b6b}
+.news .left{float:right;font:900 11px ui-monospace,Menlo,monospace;color:var(--sub)}
+.kinds{display:flex;gap:6px}
+.kinds button{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--tx);border-radius:12px;padding:6px 4px;font:800 12.5px -apple-system,sans-serif;cursor:pointer;line-height:1.35;touch-action:manipulation}
+.kinds button small{display:block;font-size:10.5px;font-weight:600;color:var(--sub)}
+.kinds button.on{border-color:var(--acc);background:rgba(255,209,102,.16);box-shadow:0 0 0 1px var(--acc) inset}
+.kinds button:disabled{opacity:.5}
+.fx{font-size:11px;color:var(--acc);text-align:center;min-height:14px}
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="hud"><div class="money">돈<b id="money">0</b></div><div>월세 수입<b id="inc">0</b></div><div>시도<b id="tries">0</b></div></div>
+  <div class="hud"><div class="money">현금<b id="money">0</b></div><div>수입<b id="inc">0</b></div><div>시도<b id="tries">0</b></div></div>
   <div class="scene" id="scene"><div class="sun"></div><div class="cloud" style="top:12%">☁️</div><div class="cloud" style="top:26%;animation-delay:-12s;font-size:26px">☁️</div>
-    <div class="lvl" id="lvl">+0</div><div class="house" id="house">🛏️</div><div class="truck" id="truck">🚚💨</div><div class="name" id="name"></div></div>
+    <div class="lvl" id="lvl">+0</div><div class="news" id="news"></div><div class="price" id="price"></div><div class="house" id="house">🛏️</div><div class="truck" id="truck">🚚💨</div><div class="name" id="name"></div></div>
   <div class="odds"><div>성공 확률<br><b id="p">95%</b></div><div style="font-size:11.5px;color:var(--sub);flex:1" id="rule"></div><div class="nx">다음<br><span id="next"></span></div></div>
+  <div class="kinds" id="kinds"></div>
+  <div class="fx" id="fx"></div>
   <div class="dex" id="dex"></div>
-  <div class="btns"><button id="work">🔨 알바<small id="workAmt">+1만</small></button><button id="up">✨ 강화<small id="cost">-5만</small></button></div>
+  <div class="btns"><button id="work">🔨 알바<small id="workAmt">+1만</small></button><button id="up">✨ 갈아타기<small id="cost">-5만</small></button></div>
 </div>
 <div class="roll" id="roll"><div class="msg" id="rmsg">두근두근…</div><div class="num" id="rnum">0</div><div class="g"><i id="rbar"></i><em id="rline"></em></div><div class="sub" id="rsub"></div></div>
 <div class="flash" id="flash"></div>
 <div class="ov" id="ov"><div class="box" id="box"></div></div>
 <script>
 "use strict";
-// ───────── 데이터 (확률은 화면에 공개한다 · 실제 돈·결제 없음) ─────────
-const HOMES = [["고시원", "🛏️"], ["옥탑방", "🏚️"], ["반지하", "🪟"], ["원룸", "🏠"], ["투룸", "🏡"], ["오피스텔", "🏢"], ["빌라", "🏘️"], ["신축 빌라", "🏫"], ["구축 아파트", "🏬"], ["역세권 아파트", "🚉"], ["신축 아파트", "🏙️"], ["한강뷰", "🌉"], ["타운하우스", "🛖"], ["단독주택", "🏰"], ["펜트하우스", "🌆"], ["달 기지", "🌙"]];
+// ───────── 데이터 (확률 공개 · 실제 돈·결제 없음) ─────────
+// 시세: 2025~26년 전용 84㎡ 안팎 매매가를 크게 어림한 게임용 숫자(만원). 실제 거래가·특정 단지와 무관
+const HOMES = [
+  ["원룸 월세", "지방 소도시 · 보증금 1천", "🛏️", 1000],
+  ["원룸 전세", "지방 소도시", "🏠", 5000],
+  ["구축 빌라", "지방 소도시", "🏘️", 8000],
+  ["구축 아파트", "지방 소도시", "🏢", 15000],
+  ["외곽 아파트", "지방 광역시", "🏬", 25000],
+  ["외곽 아파트", "경기 외곽", "🚌", 35000],
+  ["신축 대단지", "지방 광역시", "🏙️", 50000],
+  ["구축 아파트", "서울 외곽", "🧱", 65000],
+  ["바다뷰 아파트", "부산 해운대", "🌊", 90000],
+  ["학군지 아파트", "대구 수성구", "📖", 110000],
+  ["재건축 기대 단지", "1기 신도시", "🌳", 130000],
+  ["신축 아파트", "서울 마포·성동", "🌉", 180000],
+  ["대단지 아파트", "서울 송파", "🏟️", 230000],
+  ["학원가 아파트", "서울 대치동", "📚", 300000],
+  ["한강뷰 펜트하우스", "서울 한강변", "🌆", 800000],
+  ["달 기지", "시세 측정 불가", "🌙", 3000000],
+];
 const P = [.95, .9, .85, .8, .75, .7, .65, .6, .55, .5, .47, .44, .4, .37, .33];
-const GOAL = 14, DROP = .4, C0 = 5, CG = 1.55, I0 = .6, IG = 1.4;
-const cost = s => Math.round(C0 * Math.pow(CG, s)), inc = s => I0 * Math.pow(IG, s), tapAmt = s => Math.round((1 + s * .2) * 10) / 10;
+const GOAL = 14, K = .1, A0 = .012, AD = .88, START = 600;
+// 매물 종류: 갈아탈 때 고르고, 그 집에 사는 동안 효과가 붙는다
+const KINDS = {
+  st: { n: "🚇 역세권", c: 1, inc: 1.35, drop: .4, d: "비용 그대로 · 살면 수입 ×1.35" },
+  edu: { n: "🎓 학군지", c: 1.2, inc: 1, drop: .15, d: "비용 +20% · 실패해도 잘 안 밀림" },
+  dev: { n: "🏗️ 호재 기대", c: .85, inc: 1, drop: .4, d: "비용 -15% · 뉴스 따라 대박/쪽박" },
+  none: { n: "", c: 1, inc: 1, drop: .4 },
+};
+// 뉴스: 25~55초마다 하나. k = 영향받는 매물(all = 모두). 내 집 종류와 맞을 때만 효과
+const NEWS = [
+  { k: "st", t: "🚇 새 지하철역 개통! 역세권 수입 2배", inc: 2, d: 30, good: 1 },
+  { k: "st", t: "🚇 노선 연장 무산… 역세권 수입 -30%", inc: .7, d: 25 },
+  { k: "edu", t: "🎓 학원가 확장 소식! 학군지 시세 상승 → 보너스", cash: .3, good: 1 },
+  { k: "dev", t: "🏗️ 개발 계획 확정! 호재 매물 시세 급등 → 큰 보너스", cash: .6, good: 1 },
+  { k: "dev", t: "🏗️ 사업 지연… 호재 매물 수입 절반", inc: .5, d: 30 },
+  { k: "all", t: "📉 금리 인상. 갈아타기 비용 +15%", cm: 1.15, d: 25 },
+  { k: "all", t: "📈 금리 인하! 갈아타기 비용 -15%", cm: .85, d: 25, good: 1 },
+  { k: "all", t: "🏗️ 주변 공급 물량 증가. 모든 수입 -20%", inc: .8, d: 20 },
+];
+const cost = (G, kind) => Math.round(HOMES[G.s + 1 < HOMES.length ? G.s + 1 : G.s][3] * K * KINDS[kind].c * G.cm);
+const inc = G => HOMES[G.s][3] * A0 * Math.pow(AD, G.s) * KINDS[G.k].inc * G.im;
+const tapAmt = s => Math.round(20 + HOMES[s][3] * .002);
 const $ = id => document.getElementById(id);
-const fmt = n => n >= 10000 ? (n / 10000).toFixed(n >= 100000 ? 0 : 1) + "억" : Math.floor(n).toLocaleString() + "만";
+const fmt = n => { n = Math.floor(n); if (n < 10000) return n.toLocaleString() + "만"; const e = Math.floor(n / 10000), r = Math.floor((n % 10000) / 1000); return e.toLocaleString() + "억" + (r && e < 100 ? " " + r + "천" : ""); };
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const store = { get() { try { return JSON.parse(localStorage.getItem("g012") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g012", JSON.stringify(v)); } catch (e) {} } };
+const store = { get() { try { return JSON.parse(localStorage.getItem("g012v2") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g012v2", JSON.stringify(v)); } catch (e) {} } };
 let save = Object.assign({ best: 0, seen: [0], clears: 0, bestTries: 0, cur: null }, store.get());
 
 // ───────── 로직 (봇 공통) ─────────
-function newGame(seed) { return { s: 0, m: 15, tries: 0, R: rng(seed), t0: Date.now() }; }
-function attempt(G) {   // 반환 {ok, roll, need, from, to}
-  const from = G.s, need = Math.round(P[G.s] * 100), c = cost(G.s); if (G.m < c || G.s >= HOMES.length - 1) return null;
+function newGame(seed) { return { s: 0, k: "none", m: START, tries: 0, R: rng(seed), t: 0, nextNews: 35, cm: 1, im: 1, fx: [], news: null, t0: Date.now() }; }
+function attempt(G, kind) {   // 반환 {ok, roll, need, from, to}
+  const from = G.s, need = Math.round(P[G.s] * 100), c = cost(G, kind); if (G.m < c || G.s >= HOMES.length - 1) return null;
   G.m -= c; G.tries++;
   const roll = 1 + Math.floor(G.R() * 100), ok = roll <= need;
-  if (ok) G.s++; else if (G.s >= 4 && G.R() < DROP) G.s--;
+  if (ok) { G.s++; G.k = kind; } else if (G.s >= 4 && G.R() < KINDS[G.k].drop) G.s--;
   return { ok, roll, need, from, to: G.s };
+}
+function step(G, dt) {   // 수입·뉴스·효과 만료. 새 뉴스가 나오면 반환
+  G.m += inc(G) * dt; G.t += dt; let fired = null;
+  G.fx = G.fx.filter(f => { if (G.t >= f.end) { G[f.key] = 1; return false; } return true; });
+  if (G.t >= G.nextNews && G.s < HOMES.length - 1) {
+    G.nextNews = G.t + 25 + G.R() * 30;
+    const n = NEWS[Math.floor(G.R() * NEWS.length)], hit = n.k === "all" || n.k === G.k; let bonus = 0;
+    if (hit) {
+      if (n.cash) { bonus = Math.round(n.cash * cost(G, "st")); G.m += bonus; }
+      if (n.inc) { G.im = n.inc; G.fx = G.fx.filter(f => f.key !== "im"); G.fx.push({ key: "im", end: G.t + n.d, t: n.t }); }
+      if (n.cm) { G.cm = n.cm; G.fx = G.fx.filter(f => f.key !== "cm"); G.fx.push({ key: "cm", end: G.t + n.d, t: n.t }); }
+    }
+    fired = { n, hit, bonus };
+  }
+  return fired;
 }
 
 // ───────── 소리 ─────────
@@ -115,35 +182,50 @@ const SFX = {
   stay() { beep(440, .12, "triangle", .05); beep(392, .16, "triangle", .05, .1); },
   down() { beep(300, .35, "sawtooth", .05, 0, 120); buzz([50, 40, 50]); },
   clear() { [523, 659, 784, 1046, 784, 1046, 1319, 1568].forEach((f, i) => beep(f, .14, "square", .05, i * .1)); },
+  newsGood() { beep(880, .08, "triangle", .05); beep(1175, .12, "triangle", .05, .08); },
+  newsBad() { beep(330, .12, "triangle", .05); beep(262, .18, "triangle", .05, .1); },
 };
 function emit(ev, data = {}) { try { if (parent !== window) parent.postMessage({ type: "nhc-game", game: "G012", ev, data }, "*"); } catch (e) {} }
 let lastInputEmit = 0;
 addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastInputEmit > 4000) { lastInputEmit = t; emit("input"); } }, true);
 
 // ───────── 화면 ─────────
-let G = null, busy = false, auto = false;
+let G = null, busy = false, auto = false, pick = "st", newsT = 0;
+const hn = s => `${HOMES[s][1]} ${HOMES[s][0]}`;
 function render(anim) {
-  const s = G.s, h = HOMES[s];
-  $("house").textContent = h[1]; $("name").innerHTML = `${h[0]}<small>${s >= GOAL ? "목표 달성!" : `펜트하우스까지 ${GOAL - s}단계`}</small>`;
-  $("lvl").textContent = "+" + s; $("scene").classList.toggle("night", s >= 10);
+  const s = G.s, h = HOMES[s], last = s >= HOMES.length - 1;
+  $("house").textContent = h[2];
+  $("name").innerHTML = `${h[0]}<small>${h[1]}${G.k !== "none" && s > 0 ? " · " + KINDS[G.k].n + " 매물" : ""}</small><small>${s >= GOAL ? "목표 달성!" : `펜트하우스까지 ${GOAL - s}단계`}</small>`;
+  $("price").innerHTML = `<small>시세 약</small>${s === HOMES.length - 1 ? "∞" : fmt(h[3])}`;
+  $("lvl").textContent = "+" + s; $("scene").classList.toggle("night", s >= 11);
   if (anim) { const el = $("house"); el.classList.remove("up", "crack"); void el.offsetWidth; el.classList.add(anim); }
-  const last = s >= HOMES.length - 1;
   $("p").textContent = last ? "-" : Math.round(P[s] * 100) + "%"; $("p").style.color = P[s] >= .7 ? "var(--ok)" : P[s] >= .45 ? "var(--acc)" : "var(--bad)";
-  $("rule").textContent = last ? "끝까지 왔어요!" : s < 4 ? "실패해도 그대로 (4단계 전까지)" : `실패하면 ${Math.round(DROP * 100)}% 확률로 한 단계 아래로 이사`;
-  $("next").textContent = last ? "🏁" : HOMES[s + 1][1];
-  $("dex").innerHTML = HOMES.map((x, i) => `<span class="${save.seen.includes(i) ? "got" : ""}" title="${x[0]}">${x[1]}</span>`).join("");
+  const drop = Math.round(KINDS[G.k].drop * 100);
+  $("rule").textContent = last ? "끝까지 왔어요!" : s < 4 ? "실패해도 그대로 (4단계 전까지)" : `실패하면 ${drop}% 확률로 한 단계 아래로 이사${G.k === "edu" ? " (학군지라 덜 밀림)" : ""}`;
+  $("next").textContent = last ? "🏁" : HOMES[s + 1][2];
+  $("kinds").innerHTML = ["st", "edu", "dev"].map(k => `<button data-k="${k}" class="${k === pick ? "on" : ""}">${KINDS[k].n}<small>${KINDS[k].d}</small></button>`).join("");
+  $("dex").innerHTML = HOMES.map((x, i) => `<span class="${save.seen.includes(i) ? "got" : ""}" title="${hn(i)}">${x[2]}</span>`).join("");
   hud();
 }
 function hud() {
-  $("money").textContent = fmt(G.m); $("inc").textContent = "+" + (inc(G.s) >= 10 ? Math.round(inc(G.s)) : inc(G.s).toFixed(1)) + "만/초"; $("tries").textContent = G.tries;
-  const c = cost(G.s), last = G.s >= HOMES.length - 1;
-  $("cost").textContent = last ? "완료" : "-" + fmt(c); $("workAmt").textContent = "+" + tapAmt(G.s) + "만";
+  const v = inc(G); $("money").textContent = fmt(G.m); $("inc").textContent = "+" + (v >= 10 ? fmt(v) : v.toFixed(1) + "만") + "/초"; $("tries").textContent = G.tries;
+  const c = cost(G, pick), last = G.s >= HOMES.length - 1;
+  $("cost").textContent = last ? "완료" : `${HOMES[G.s + 1][1]} · -${fmt(c)}`; $("workAmt").textContent = "+" + tapAmt(G.s) + "만";
   $("up").disabled = busy || last || G.m < c; $("work").disabled = busy;
+  $("kinds").querySelectorAll("button").forEach(b => b.disabled = busy || last);
+  $("fx").textContent = G.fx.map(f => `${f.t.split(/[!.…]/)[0]} ${Math.ceil(f.end - G.t)}초`).join(" · ");
+  if (newsT && Date.now() > newsT) { $("news").classList.remove("on"); newsT = 0; }
+}
+function showNews(f) {
+  if (auto && !JUICE) return; const el = $("news"), good = f.n.good, mine = f.hit;
+  const tail = !mine ? `<br><span style="color:var(--sub);font-weight:600">내 집(${G.k === "none" ? "해당 없음" : KINDS[G.k].n})엔 영향 없음</span>` : f.bonus ? `<br><span style="color:var(--ok)">+${fmt(f.bonus)} 들어왔어요</span>` : `<br><span style="color:${good ? "var(--ok)" : "var(--bad)"}">내 집에 적용!</span>`;
+  el.className = "news on " + (mine ? (good ? "good" : "bad") : ""); el.innerHTML = `<span class="left">📰 뉴스</span>${f.n.t}${tail}`; newsT = Date.now() + 4500;
+  if (mine && JUICE) (good ? SFX.newsGood : SFX.newsBad)();
 }
 function coinPop(x, y, txt) { if (!JUICE) return; const d = document.createElement("div"); d.className = "coin"; d.textContent = txt; d.style.left = x - 20 + "px"; d.style.top = y - 30 + "px"; document.body.appendChild(d); setTimeout(() => d.remove(), 820); }
 function confetti(n) { if (!JUICE) return; for (let i = 0; i < n; i++) { const c = document.createElement("div"); c.className = "conf"; c.style.background = ["#ffd166", "#4ade80", "#60a5fa", "#ff6b6b", "#fff"][i % 5]; c.style.left = "50%"; c.style.top = "40%"; c.style.setProperty("--dx", (Math.random() - .5) * 420 + "px"); c.style.setProperty("--dy", (Math.random() - .2) * 520 + "px"); document.body.appendChild(c); setTimeout(() => c.remove(), 1450); } }
 function flash() { if (!JUICE) return; const f = $("flash"); f.style.transition = "none"; f.style.opacity = .85; requestAnimationFrame(() => { f.style.transition = "opacity .4s"; f.style.opacity = 0; }); }
-function persist() { save.cur = { s: G.s, m: G.m, tries: G.tries }; store.set(save); }
+function persist() { save.cur = { s: G.s, k: G.k, m: G.m, tries: G.tries, pick }; store.set(save); }
 
 function work(e) {
   if (busy) return; const a = tapAmt(G.s); G.m += a; workCombo = Date.now() - workT < 400 ? workCombo + 1 : 0; workT = Date.now(); SFX.work();
@@ -151,9 +233,9 @@ function work(e) {
   coinPop(r.x + (Math.random() - .5) * 30, r.y, "+" + a); hud();
 }
 function enhance() {
-  if (busy) return; const res = attempt(G); if (!res) return;
+  if (busy) return; const kind = pick, res = attempt(G, kind); if (!res) return;
   busy = true; hud(); const fast = auto ? .35 : 1;
-  const ro = $("roll"); ro.classList.add("on"); $("rmsg").textContent = `${HOMES[res.from][0]} → ${HOMES[res.from + 1][0]}`; $("rmsg").style.color = "#fff"; $("rsub").textContent = `성공 확률 ${res.need}% · 1~${res.need}이 나오면 성공`;
+  const ro = $("roll"); ro.classList.add("on"); $("rmsg").innerHTML = `${hn(res.from)}<br>→ ${hn(res.from + 1)} <small style="font-size:15px">${KINDS[kind].n}</small>`; $("rmsg").style.color = "#fff"; $("rmsg").style.fontSize = "19px"; $("rmsg").style.textAlign = "center"; $("rsub").textContent = `성공 확률 ${res.need}% · 1~${res.need}이 나오면 성공`;
   $("rline").style.left = res.need + "%"; $("rbar").style.width = "0"; $("rnum").textContent = "··"; $("rnum").style.color = "#fff";
   const D = 1100 * fast, t0 = performance.now(); let lastI = -1;
   if (JUICE) SFX.heart();
@@ -162,8 +244,8 @@ function enhance() {
     $("rnum").textContent = shown; $("rbar").style.width = (u < 1 ? u * 100 : res.roll) + "%";
     const i = Math.floor(u * 14); if (i !== lastI && JUICE) { lastI = i; SFX.tick(i); if (i === 7) SFX.heart(); }
     if (u < 1) { requestAnimationFrame(spin); return; }
-    const near = !res.ok && res.roll - res.need <= 5;
-    if (res.ok) { $("rmsg").textContent = "강화 성공!"; $("rmsg").style.color = "var(--ok)"; $("rnum").style.color = "var(--ok)"; SFX.ok(res.to); }
+    const near = !res.ok && res.roll - res.need <= 5; $("rmsg").style.fontSize = "26px";
+    if (res.ok) { $("rmsg").textContent = "갈아타기 성공!"; $("rmsg").style.color = "var(--ok)"; $("rnum").style.color = "var(--ok)"; SFX.ok(res.to); }
     else if (res.to < res.from) { $("rmsg").textContent = "실패… 이사 갑니다"; $("rmsg").style.color = "var(--bad)"; $("rnum").style.color = "var(--bad)"; SFX.down(); }
     else { $("rmsg").textContent = "실패! 그래도 그대로"; $("rmsg").style.color = "var(--acc)"; $("rnum").style.color = "var(--acc)"; SFX.stay(); }
     $("rsub").textContent = `나온 수 ${res.roll} / 필요 ${res.need} 이하${near ? " — 아깝다!" : ""}`;
@@ -171,9 +253,9 @@ function enhance() {
       ro.classList.remove("on"); busy = false;
       if (res.ok) {
         if (!save.seen.includes(res.to)) save.seen.push(res.to);
-        save.best = Math.max(save.best, res.to); flash(); confetti(res.to >= 10 ? 60 : 24); render("up"); emit("level_clear", { level: res.to, tries: G.tries });
+        save.best = Math.max(save.best, res.to); flash(); confetti(res.to >= 10 ? 60 : 24); render("up"); emit("level_clear", { level: res.to, tries: G.tries, kind });
         if (res.to === GOAL) setTimeout(cleared, 700);
-      } else { render("crack"); if (res.to < res.from && JUICE) { const tr = $("truck"); tr.classList.remove("go"); void tr.offsetWidth; tr.classList.add("go"); } emit("fail", { level: res.from, roll: res.roll }); }
+      } else { render("crack"); if (res.to < res.from && JUICE) { const tr = $("truck"); tr.classList.remove("go"); void tr.offsetWidth; tr.classList.add("go"); } emit("fail", { level: res.from, roll: res.roll, kind }); }
       persist();
     }, 900 * fast);
   })(t0);
@@ -181,51 +263,52 @@ function enhance() {
 function cleared() {
   save.clears++; if (!save.bestTries || G.tries < save.bestTries) save.bestTries = G.tries; store.set(save); SFX.clear(); confetti(120);
   const min = Math.round((Date.now() - G.t0) / 6000) / 10;
-  $("box").innerHTML = `<h2>🌆 펜트하우스 입성!</h2><p>강화 ${G.tries}번 · ${min}분</p><p>최소 시도 기록: ${save.bestTries}번 · 클리어 ${save.clears}회</p><p style="font-size:12.5px">하나 더 남았어요… 🌙 (확률 33%)</p>
-    <button id="cont">계속 강화하기</button><button class="sec" id="newg">처음부터 다시</button>`;
+  $("box").innerHTML = `<h2>🌆 한강뷰 펜트하우스 입성!</h2><p>지방 원룸 월세에서 시작해 갈아타기 ${G.tries}번 · ${min}분</p><p>최소 시도 기록: ${save.bestTries}번 · 클리어 ${save.clears}회</p><p style="font-size:12.5px">하나 더 남았어요… 🌙 (확률 33%)</p>
+    <button id="cont">계속하기</button><button class="sec" id="newg">처음부터 다시</button>`;
   $("ov").classList.add("on"); $("cont").onclick = () => $("ov").classList.remove("on"); $("newg").onclick = () => { newRun(); $("ov").classList.remove("on"); };
 }
 function newRun(seed) { G = newGame(seed ?? Date.now() % 1e6); save.cur = null; render(); persist(); emit("level_start", { level: 1 }); }
 function menu() {
   const c = save.cur;
-  $("box").innerHTML = `<h1>🏠 집 강화하기</h1><ul><li><b>✨ 강화</b>: 돈을 내고 확률에 걸어 한 단계 위 집으로</li><li>실패하면 그대로이거나(초반), 한 단계 아래로 이사(4단계부터)</li><li><b>🔨 알바</b>를 탭하거나, 가만있어도 <b>월세 수입</b>이 들어와요 (좋은 집일수록 많이)</li><li>목표: 🌆 펜트하우스 (확률은 전부 공개)</li></ul>
-    <p style="font-size:22px;letter-spacing:2px">${HOMES.slice(0, 15).map(h => h[1]).join("")}</p>
-    ${c ? `<button id="resume">이어 하기 (${HOMES[c.s][0]})</button><button class="sec" id="go">처음부터</button>` : '<button id="go">시작</button>'}<p style="font-size:11px">실제 돈·결제 없음 · 게임 속 숫자예요</p>`;
+  $("box").innerHTML = `<h1>🏠 집 강화하기</h1><ul><li><b>✨ 갈아타기</b>: 돈을 내고 확률에 걸어 한 단계 비싼 동네로</li><li>지방 원룸 → 광역시 → 해운대·수성구 → 서울 → 🌆 한강뷰 펜트하우스</li><li>갈아탈 매물을 골라요: <b>🚇 역세권</b>(수입↑) · <b>🎓 학군지</b>(덜 밀림) · <b>🏗️ 호재 기대</b>(싸지만 뉴스 운)</li><li>📰 뉴스가 터지면 내 집 종류에 따라 득실이 생겨요</li><li>실패하면 그대로이거나(초반), 한 단계 아래로 이사(4단계부터)</li><li><b>🔨 알바</b>를 탭하거나, 가만있어도 수입이 들어와요</li></ul>
+    <p style="font-size:20px;letter-spacing:1px">${HOMES.slice(0, 15).map(h => h[2]).join("")}</p>
+    ${c ? `<button id="resume">이어 하기 (${hn(c.s)})</button><button class="sec" id="go">처음부터</button>` : '<button id="go">시작</button>'}<p style="font-size:11px">실제 돈·결제 없음 · 시세는 2025~26년 84㎡ 안팎을 크게 어림한 게임용 숫자예요(특정 단지와 무관)</p>`;
   $("ov").classList.add("on");
   $("go").onclick = () => { newRun(); $("ov").classList.remove("on"); };
-  if (c) $("resume").onclick = () => { G = newGame(Date.now() % 1e6); Object.assign(G, c); render(); $("ov").classList.remove("on"); emit("level_start", { level: G.s + 1 }); };
+  if (c) $("resume").onclick = () => { G = newGame(Date.now() % 1e6); Object.assign(G, { s: c.s, k: c.k || "none", m: c.m, tries: c.tries }); pick = c.pick || "st"; render(); $("ov").classList.remove("on"); emit("level_start", { level: G.s + 1 }); };
 }
 
 $("work").addEventListener("pointerdown", e => { e.preventDefault(); if (!auto) work(e); });
 $("up").addEventListener("pointerdown", e => { e.preventDefault(); if (!auto) enhance(); });
-addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); work(); } if (e.code === "Enter") enhance(); });
+$("kinds").addEventListener("pointerdown", e => { const b = e.target.closest("button"); if (!b || busy || auto) return; e.preventDefault(); pick = b.dataset.k; beep(700, .03, "square", .03); render(); });
+addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); work(); } if (e.code === "Enter") enhance(); if (["Digit1", "Digit2", "Digit3"].includes(e.code) && !busy) { pick = ["st", "edu", "dev"][+e.code.slice(5) - 1]; render(); } });
 let lastT = performance.now(), saveT = 0;
 function loop(t) {
   const dt = Math.min(.25, (t - lastT) / 1000); lastT = t;
-  if (G) {
-    G.m += inc(G.s) * dt; saveT += dt;
-    if (auto && !busy) { if (G.m >= cost(G.s) && G.s < HOMES.length - 1) enhance(); else if (Math.random() < .3) work(); }
+  if (G && !$("ov").classList.contains("on")) {
+    const f = step(G, dt); saveT += dt; if (f) { showNews(f); emit("news", { k: f.n.k, hit: f.hit }); }
+    if (auto && !busy) { if (G.m >= cost(G, pick) && G.s < HOMES.length - 1) { pick = ["st", "edu", "dev"][Math.floor(Math.random() * 3)]; render(); enhance(); } else if (Math.random() < .3) work(); }
     if (saveT > 2) { saveT = 0; persist(); }
     hud();
   }
   requestAnimationFrame(loop);
 }
 
-// ───────── 자체 검사: 봇(돈 있으면 강화, 없으면 알바 · 초당 4번)이 펜트하우스까지 가는지, 너무 빠르지 않은지 ─────────
+// ───────── 자체 검사: 봇(돈 있으면 갈아타기, 없으면 알바 · 초당 4번)이 매물 전략별로 펜트하우스까지 가는지 ─────────
 const q = new URLSearchParams(location.search);
 if (q.has("selftest")) {
-  const rows = []; let ok = 0;
-  for (let seed = 1; seed <= 20; seed++) {
-    const g = newGame(seed); let act = 0;
-    while (g.s < GOAL && act < 100000) { act++; if (g.m >= cost(g.s)) attempt(g); else g.m += tapAmt(g.s); g.m += inc(g.s) * .25; }
+  const rows = []; let ok = 0, total = 0;
+  for (const strat of ["st", "edu", "dev", "mix"]) for (let seed = 1; seed <= 20; seed++) {
+    const g = newGame(seed), pr = rng(seed * 7 + 1); let act = 0; total++;
+    while (g.s < GOAL && act < 100000) { act++; const k = strat === "mix" ? ["st", "edu", "dev"][Math.floor(pr() * 3)] : strat; if (g.m >= cost(g, k)) attempt(g, k); else g.m += tapAmt(g.s); step(g, .25); }
     const min = act * .25 / 60, pass = g.s >= GOAL && min >= 1.5 && min <= 40; if (pass) ok++;
-    rows.push(`${seed}\t${pass ? "OK" : "FAIL"}\t도달 ${HOMES[g.s][0]}\t강화 ${g.tries}번\t약 ${min.toFixed(1)}분(초당 4탭 기준)`);
+    rows.push(`${strat}\t${seed}\t${pass ? "OK" : "FAIL"}\t도달 ${hn(g.s)}\t시도 ${g.tries}번\t약 ${min.toFixed(1)}분(초당 4탭 기준)`);
   }
-  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px">${rows.join("\n")}</pre>`);
-  document.title = `SELFTEST ${ok}/20`;
-} else if (q.has("autoplay")) { auto = true; G = newGame(Number(q.get("autoplay")) || 1); G.m = 60; render(); }
+  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px;overflow:auto;font-size:11px">${rows.join("\n")}</pre>`);
+  document.title = `SELFTEST ${ok}/${total}`;
+} else if (q.has("autoplay")) { auto = true; G = newGame(Number(q.get("autoplay")) || 1); G.m = 2000; render(); }
 else { G = newGame(Date.now() % 1e6); render(); menu(); }
-window.__g012 = { newGame, attempt, cost, inc };
+window.__g012 = { newGame, attempt, step, cost, inc, HOMES };
 requestAnimationFrame(loop);
 </script>
 </body>

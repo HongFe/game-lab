@@ -22,7 +22,7 @@ window.CATALOG = [
   "path": "../G002_claw-army/game/index.html",
   "color": "#ff7ab6",
   "icon": "🧸",
-  "version": "2026-11-26 15:03"
+  "version": "2026-11-26 16:32"
  },
  {
   "id": "G003",
@@ -58,7 +58,7 @@ window.CATALOG = [
   "path": "../G006_queue-cutter/game/index.html",
   "color": "#ffb020",
   "icon": "🍜",
-  "version": "2026-11-26 15:06"
+  "version": "2026-11-26 16:27"
  },
  {
   "id": "G011",
@@ -70,18 +70,18 @@ window.CATALOG = [
   "path": "../G011_commute-dodge/game/index.html",
   "color": "#2fc4c4",
   "icon": "🚇",
-  "version": "2026-11-26 15:29"
+  "version": "2026-11-26 16:32"
  },
  {
   "id": "G012",
   "title": "집 강화하기",
-  "one_liner": "고시원에서 시작해 강화 버튼으로 반지하→원룸→아파트→펜트하우스. 실패하면 한 단계 이사 가야 한다.",
+  "one_liner": "지방 원룸 월세에서 시작해 갈아타기 버튼으로 광역시→해운대·수성구→서울→한강뷰 펜트하우스. 역세권·학군지·호재 매물을 골라 타고, 뉴스에 웃고 운다.",
   "type": "엄청난 중독성",
   "stage": "프로토",
   "deadline": "2026-12-03",
   "path": "../G012_house-upgrade/game/index.html",
   "color": "#4d9dff",
   "icon": "🏠",
-  "version": "2026-11-26 15:25"
+  "version": "2026-11-26 16:01"
  }
 ];
