@@ -4,311 +4,929 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#16213a">
-<title>집 강화하기</title>
+<title>집 갈아타기 — 갈림길 지도</title>
 <style>
-:root{--bg:#16213a;--tx:#f5f7ff;--sub:#a9b4d0;--acc:#ffd166;--ok:#4ade80;--bad:#ff6b6b;--blue:#60a5fa;--panel:rgba(255,255,255,.07);--line:rgba(255,255,255,.13)}
+:root{--bg:#141c33;--tx:#f5f7ff;--sub:#a9b4d0;--acc:#ffd166;--ok:#4ade80;--bad:#ff6b6b;--blue:#60a5fa;--pur:#c084fc;--panel:rgba(255,255,255,.065);--line:rgba(255,255,255,.13)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
-#app{position:fixed;inset:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:9px;padding:calc(10px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom))}
-.hud{display:flex;gap:6px}
-.hud div{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px 8px;text-align:center;font-size:10.5px;color:var(--sub)}
-.hud b{display:block;font:900 17px ui-monospace,Menlo,monospace;color:var(--tx);white-space:nowrap}
-.hud .money b{color:var(--acc)}
-.scene{position:relative;flex:1;min-height:0;border-radius:22px;overflow:hidden;background:linear-gradient(#6aa8ff,#bfe0ff 70%,#7fc47f 70%,#5fa85f);box-shadow:inset 0 -6px 0 rgba(0,0,0,.12);transition:background 1s}
-.scene.night{background:linear-gradient(#0b1430,#26345e 70%,#2f5a3a 70%,#24452d)}
-.sun{position:absolute;right:18px;top:16px;width:46px;height:46px;border-radius:50%;background:radial-gradient(#fff6c2,#ffd166);box-shadow:0 0 30px #ffd16699}
-.cloud{position:absolute;font-size:34px;opacity:.85;animation:drift 26s linear infinite}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+button{font-family:inherit;color:inherit}
+#app{position:fixed;inset:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:6px;padding:calc(8px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom));overflow-y:auto}
+#app.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translate(-6px,2px)}40%{transform:translate(6px,-2px)}60%{transform:translate(-4px,1px)}80%{transform:translate(3px,0)}}
+.hud{display:flex;gap:5px;flex:none}
+.hud div{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:4px 4px;text-align:center;font-size:10px;color:var(--sub);min-width:0}
+.hud b{display:block;font:900 15px ui-monospace,Menlo,monospace;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud .money b{color:var(--acc)} .hud .nw b{color:#a5f3fc}
+.scene{position:relative;flex:none;height:128px;border-radius:18px;overflow:hidden;background:linear-gradient(#6aa8ff,#bfe0ff 72%,#7fc47f 72%,#5fa85f);box-shadow:inset 0 -5px 0 rgba(0,0,0,.14),0 4px 14px rgba(0,0,0,.25);transition:background 1.2s}
+.scene.up{background:linear-gradient(#ff9f5a,#ffe3a3 72%,#86c979 72%,#5fa85f)}
+.scene.adj{background:linear-gradient(#7c6fd6,#d4c8ff 72%,#7aa77a 72%,#557d55)}
+.scene.crash{background:linear-gradient(#2c3047,#7d6574 72%,#4d5e4d 72%,#394739)}
+.sun{position:absolute;right:14px;top:30px;width:34px;height:34px;border-radius:50%;background:radial-gradient(#fff6c2,#ffd166);box-shadow:0 0 26px #ffd16699;transition:.8s}
+.scene.crash .sun{background:radial-gradient(#ccc,#888);box-shadow:none}
+.cloud{position:absolute;font-size:26px;opacity:.8;animation:drift 28s linear infinite}
 @keyframes drift{from{transform:translateX(-80px)}to{transform:translateX(520px)}}
-.house{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);font-size:118px;line-height:1;filter:drop-shadow(0 10px 8px rgba(0,0,0,.25));transition:transform .2s}
+.house{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);font-size:54px;line-height:1;filter:drop-shadow(0 8px 6px rgba(0,0,0,.3))}
 .house.up{animation:hup .7s cubic-bezier(.3,1.6,.6,1)}
-@keyframes hup{0%{transform:translateX(-50%) scale(.3) translateY(60px)}100%{transform:translateX(-50%) scale(1)}}
+@keyframes hup{0%{transform:translateX(-50%) scale(.3) translateY(50px)}100%{transform:translateX(-50%) scale(1)}}
 .house.crack{animation:crack .5s}
-@keyframes crack{20%{transform:translateX(calc(-50% - 10px)) rotate(-4deg)}40%{transform:translateX(calc(-50% + 10px)) rotate(4deg)}60%{transform:translateX(calc(-50% - 6px))}80%{transform:translateX(calc(-50% + 4px))}}
-.name{position:absolute;left:0;right:0;bottom:10%;text-align:center;font:900 22px -apple-system,sans-serif;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.45)}
-.name small{display:block;font-size:12px;font-weight:700;opacity:.9}
-.lvl{position:absolute;left:12px;top:12px;background:rgba(0,0,0,.35);border-radius:999px;padding:4px 10px;font:900 13px ui-monospace,Menlo,monospace}
-.truck{position:absolute;bottom:18%;left:-90px;font-size:56px;display:none}
-.truck.go{display:block;animation:truck 1.6s linear forwards}
-@keyframes truck{to{left:110%}}
-.odds{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.odds b{font:900 22px ui-monospace,Menlo,monospace;color:var(--ok)}
-.odds .nx{font-size:12px;color:var(--sub);text-align:right}
-.odds .nx span{font-size:22px;vertical-align:middle}
-.dex{display:flex;gap:3px;justify-content:center;font-size:17px;flex-wrap:wrap}
-.dex span{filter:grayscale(1) brightness(.5);opacity:.6} .dex span.got{filter:none;opacity:1}
-.btns{display:flex;gap:10px}
-.btns button{flex:1;border:0;border-radius:18px;padding:14px 0;font:900 17px -apple-system,sans-serif;cursor:pointer;touch-action:manipulation}
-.btns small{display:block;font-size:12px;font-weight:700;opacity:.85;margin-top:2px}
-#work{background:#334155;color:#fff;box-shadow:0 5px 0 #1e293b}
-#up{background:linear-gradient(#ffe08a,#ffb703);color:#3b2a00;box-shadow:0 5px 0 #b07d00;flex:1.25}
+@keyframes crack{20%{transform:translateX(calc(-50% - 9px)) rotate(-4deg)}40%{transform:translateX(calc(-50% + 9px)) rotate(4deg)}60%{transform:translateX(calc(-50% - 5px))}80%{transform:translateX(calc(-50% + 3px))}}
+.name{position:absolute;left:0;right:0;bottom:6px;text-align:center;font:900 16px -apple-system,sans-serif;color:#fff;text-shadow:0 2px 5px rgba(0,0,0,.55);line-height:1.25}
+.name small{display:block;font-size:11px;font-weight:700;opacity:.95}
+.chip{position:absolute;top:7px;background:rgba(0,0,0,.42);border-radius:999px;padding:3px 9px;font:800 11.5px -apple-system,sans-serif;white-space:nowrap}
+#phase{left:7px} #yr{right:7px}
+.pbar{position:absolute;left:10px;right:10px;top:34px;height:16px;border-radius:999px;background:rgba(0,0,0,.4);overflow:hidden;display:none;font:800 10.5px -apple-system,sans-serif;text-align:center;line-height:16px}
+.pbar.on{display:block} .pbar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#c084fc,#60a5fa);opacity:.85} .pbar span{position:relative}
+.news{position:absolute;left:7px;right:7px;top:32px;background:rgba(10,14,30,.9);border:1px solid var(--line);border-radius:12px;padding:6px 9px;font-size:11.5px;line-height:1.42;opacity:0;transform:translateY(-8px);transition:.3s;pointer-events:none;z-index:2}
+.news.on{opacity:1;transform:none;pointer-events:auto}
+.news.good{border-color:#4ade80} .news.bad{border-color:#ff6b6b} .news.ph{border-width:2px}
+.news b{font-size:13px} .news .c{color:var(--sub)} .news .r{color:var(--acc)}
+.fxrow{display:flex;gap:4px;overflow-x:auto;min-height:20px;flex:none;scrollbar-width:none}
+.fxrow::-webkit-scrollbar{display:none}
+.fxrow span{flex:none;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
+.fxrow span.bad{border-color:#ff6b6b88;color:#ffc2c2} .fxrow span.good{border-color:#4ade8088;color:#c6f6d5}
+.map{flex:1 1 auto;min-height:170px;background:radial-gradient(ellipse at 50% 0%,#24305a,#172042);border:1px solid var(--line);border-radius:16px;position:relative;overflow:hidden}
+.map svg{width:100%;height:100%;display:block}
+.map .nd{cursor:pointer}
+.map .nd circle.b{stroke:rgba(255,255,255,.25);stroke-width:1.2}
+.map .nd.dim{opacity:.4}
+.map .nd.can circle.b{stroke:#fff;stroke-width:2}
+.map .nd.sel circle.b{stroke:var(--acc);stroke-width:3}
+.map .nd.cur circle.ring{animation:pulse 1.4s infinite}
+@keyframes pulse{0%{r:15;opacity:.9}100%{r:24;opacity:0}}
+.map .eg{stroke:rgba(255,255,255,.12);stroke-width:1.4}
+.map .eg.hot{stroke:rgba(255,209,102,.8);stroke-width:2.4;stroke-dasharray:5 4;animation:dash 1s linear infinite}
+.map .eg.sub{stroke:rgba(192,132,252,.85);stroke-width:2;stroke-dasharray:2 4}
+@keyframes dash{to{stroke-dashoffset:-18}}
+.map .lb{font:800 9.5px -apple-system,sans-serif;fill:#dfe6ff;text-anchor:middle;pointer-events:none}
+.map .lb.dim{fill:#7c88aa}
+.map .disc{position:absolute;left:9px;top:5px;font-size:9px;color:#8892b0;pointer-events:none}
+.map .leg{position:absolute;left:8px;bottom:4px;font-size:9px;color:#8892b0;pointer-events:none}
+.dests{display:flex;gap:5px;overflow-x:auto;flex:none;scrollbar-width:none;padding-bottom:1px}
+.dests::-webkit-scrollbar{display:none}
+.dests button{flex:none;min-height:42px;min-width:64px;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:3px 9px;font:800 12px -apple-system,sans-serif;line-height:1.25;cursor:pointer}
+.dests button small{display:block;font-size:10px;font-weight:700;color:var(--sub)}
+.dests button.ok small{color:var(--ok)}
+.dests button.on{border-color:var(--acc);background:rgba(255,209,102,.16);box-shadow:0 0 0 1px var(--acc) inset}
+.panel{flex:none;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:7px 8px}
+.panel .hd{font-size:12.5px;font-weight:800;display:flex;justify-content:space-between;gap:6px;margin-bottom:5px}
+.panel .hd span{color:var(--sub);font-weight:700;font-size:11px;white-space:nowrap}
+.meths{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.meths button{min-height:46px;border:0;border-radius:12px;padding:4px 7px;text-align:left;font:900 13.5px -apple-system,sans-serif;cursor:pointer;background:linear-gradient(#ffe08a,#ffb703);color:#3b2a00;box-shadow:0 4px 0 #b07d00;line-height:1.2}
+.meths button small{display:block;font-size:10.3px;font-weight:700;opacity:.88}
+.meths button.lock{background:#2b3553;color:#c3cbe3;box-shadow:0 4px 0 #1b2238}
+.meths button.lock small{color:#ff9b9b;opacity:1}
+.meths button.c{background:linear-gradient(#e9d5ff,#c084fc);box-shadow:0 4px 0 #7e3fb8;color:#2a0b45}
+.meths button.a{background:linear-gradient(#bae6fd,#38bdf8);box-shadow:0 4px 0 #0e6a99;color:#06283d}
+.meths button.g{background:linear-gradient(#bbf7d0,#4ade80);box-shadow:0 4px 0 #15803d;color:#062b14}
+.meths button:active{transform:translateY(3px);box-shadow:none}
+.panel .info{font-size:10.3px;color:var(--sub);margin-top:6px;line-height:1.4}
+.panel .wait{font-size:12.5px;line-height:1.5;text-align:center;padding:4px 0}
+.btns{display:flex;gap:7px;flex:none}
+.btns button{border:0;border-radius:16px;padding:10px 0;font:900 16px -apple-system,sans-serif;cursor:pointer;touch-action:manipulation;min-height:50px}
+.btns small{display:block;font-size:11px;font-weight:700;opacity:.85;margin-top:1px}
+#work{flex:1;background:#334155;color:#fff;box-shadow:0 5px 0 #1e293b}
+#dexb{width:64px;background:#3b2f63;color:#fff;box-shadow:0 5px 0 #231a40;font-size:20px;position:relative}
+#dexb i{position:absolute;right:4px;top:3px;font:900 10px ui-monospace,monospace;font-style:normal;background:var(--acc);color:#3b2a00;border-radius:999px;padding:1px 5px}
 .btns button:active{transform:translateY(4px);box-shadow:none}
-.btns button:disabled{filter:grayscale(.8) brightness(.65)}
-.roll{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(5,8,20,.72);z-index:5;gap:10px}
+.roll{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(5,8,20,.8);z-index:5;gap:8px;padding:20px}
 .roll.on{display:flex}
-.roll .g{width:min(300px,80vw);height:18px;border-radius:999px;background:#1f2a44;overflow:hidden;position:relative}
+.roll .ttl{font:900 17px -apple-system,sans-serif;text-align:center;line-height:1.4}
+.roll .steps{width:min(330px,88vw);display:flex;flex-direction:column;gap:9px;margin:6px 0}
+.roll .st{background:#1f2a44;border:1px solid var(--line);border-radius:12px;padding:7px 9px;font-size:12.5px;font-weight:700;opacity:.35;transition:opacity .2s}
+.roll .st.on{opacity:1}
+.roll .st .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.roll .st .n{font:900 20px ui-monospace,Menlo,monospace;min-width:44px;text-align:right}
+.roll .g{height:12px;border-radius:999px;background:#0f172a;overflow:hidden;position:relative;margin-top:5px}
 .roll .g i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ffd166,#ff8c42);width:0}
 .roll .g em{position:absolute;top:0;bottom:0;width:3px;background:#fff}
-.roll .num{font:900 64px ui-monospace,Menlo,monospace}
-.roll .msg{font:900 26px -apple-system,sans-serif;min-height:34px}
-.roll .sub{font-size:13px;color:var(--sub);min-height:18px}
-.coin{position:fixed;font:900 16px -apple-system,sans-serif;color:var(--acc);pointer-events:none;animation:coin .8s ease-out forwards;z-index:4;text-shadow:0 2px 4px #000}
+.roll .g u{position:absolute;left:0;top:0;bottom:0;background:rgba(74,222,128,.25)}
+.roll .msg{font:900 25px -apple-system,sans-serif;min-height:32px;text-align:center}
+.roll .sub{font-size:13px;color:var(--sub);min-height:18px;text-align:center;max-width:330px;line-height:1.5}
+.roll .bids{width:min(330px,88vw);font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+.roll .bids div{display:flex;justify-content:space-between;background:#1f2a44;border-radius:8px;padding:4px 9px;opacity:0;transform:translateX(-10px);transition:.25s}
+.roll .bids div.on{opacity:1;transform:none} .roll .bids div.me{border:1px solid var(--acc)} .roll .bids div.win{background:#14532d}
+.coin{position:fixed;font:900 15px -apple-system,sans-serif;color:var(--acc);pointer-events:none;animation:coin .8s ease-out forwards;z-index:4;text-shadow:0 2px 4px #000}
 @keyframes coin{to{transform:translateY(-60px);opacity:0}}
 .conf{position:fixed;width:9px;height:6px;z-index:6;pointer-events:none;animation:conf 1.4s ease-out forwards}
 @keyframes conf{to{transform:translate(var(--dx),var(--dy)) rotate(720deg);opacity:0}}
-.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,8,20,.7);padding:18px;z-index:7}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,8,20,.75);padding:14px;z-index:7}
 .ov.on{display:flex}
-.box{background:#1f2a44;border:1px solid var(--line);border-radius:18px;padding:18px;width:min(360px,100%);text-align:center}
-.box h1{margin:0;font-size:26px} .box h2{margin:0 0 6px}
-.box p{color:var(--sub);font-size:13.5px;line-height:1.6;margin:6px 0}
-.box ul{text-align:left;font-size:13px;line-height:1.75;padding-left:18px}
-.box button{width:100%;border:0;border-radius:12px;padding:12px;font:900 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:var(--acc);color:#3b2a00}
+.box{background:#1f2a44;border:1px solid var(--line);border-radius:18px;padding:16px;width:min(380px,100%);max-height:calc(100% - 10px);overflow-y:auto;text-align:center}
+.box h1{margin:0;font-size:24px} .box h2{margin:0 0 6px;font-size:19px} .box h3{margin:12px 0 4px;font-size:14px;text-align:left}
+.box p{color:var(--sub);font-size:13px;line-height:1.6;margin:6px 0}
+.box ul{text-align:left;font-size:12.8px;line-height:1.7;padding-left:18px;margin:8px 0}
+.box button{width:100%;border:0;border-radius:12px;padding:12px;font:900 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:var(--acc);color:#3b2a00;min-height:44px}
 .box button.sec{background:#334155;color:#fff}
-.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6;transition:opacity .35s}
-.price{position:absolute;left:62px;top:12px;background:rgba(0,0,0,.35);border-radius:999px;padding:4px 10px;font:900 13px ui-monospace,Menlo,monospace}
-.price small{font:700 11px -apple-system,sans-serif;opacity:.85;margin-right:4px}
-.news{position:absolute;left:10px;right:10px;top:44px;background:rgba(10,14,30,.82);border:1px solid var(--line);border-radius:12px;padding:7px 10px;font-size:12.5px;font-weight:700;line-height:1.45;opacity:0;transform:translateY(-8px);transition:.35s;pointer-events:none;z-index:2}
-.news.on{opacity:1;transform:none}
-.news.good{border-color:#4ade80} .news.bad{border-color:#ff6b6b}
-.news .left{float:right;font:900 11px ui-monospace,Menlo,monospace;color:var(--sub)}
-.kinds{display:flex;gap:6px}
-.kinds button{flex:1;border:1px solid var(--line);background:var(--panel);color:var(--tx);border-radius:12px;padding:6px 4px;font:800 12.5px -apple-system,sans-serif;cursor:pointer;line-height:1.35;touch-action:manipulation}
-.kinds button small{display:block;font-size:10.5px;font-weight:600;color:var(--sub)}
-.kinds button.on{border-color:var(--acc);background:rgba(255,209,102,.16);box-shadow:0 0 0 1px var(--acc) inset}
-.kinds button:disabled{opacity:.5}
-.fx{font-size:11px;color:var(--acc);text-align:center;min-height:14px}
+.box .bidb{display:flex;justify-content:space-between;align-items:center;text-align:left;background:#38bdf8;color:#06283d}
+.box .bidb.lock{background:#2b3553;color:#9aa6c6}
+.box .bidb small{display:block;font-size:11px;font-weight:700}
+.box .tbl{font-size:12px;text-align:left;color:var(--sub);line-height:1.6;background:#172038;border-radius:10px;padding:7px 10px;margin:6px 0}
+.box .terms div{text-align:left;font-size:12.3px;line-height:1.45;padding:5px 0;border-bottom:1px solid var(--line)}
+.box .terms div.no{color:#59658a}
+.box .badges span{display:inline-block;margin:3px;padding:4px 9px;border-radius:999px;background:#172038;font-size:12px;font-weight:800;opacity:.4}
+.box .badges span.got{opacity:1;background:#3b2f63}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6}
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(10px);width:min(440px,calc(100% - 24px));background:#2a1f4d;border:1px solid #c084fc;border-radius:12px;padding:7px 10px;font-size:12px;line-height:1.45;opacity:0;transition:.3s;pointer-events:none;z-index:4}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.toast b{color:#e9d5ff}
+@media (max-height:600px){.scene{height:104px}.house{font-size:44px}.map{min-height:140px}}
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="hud"><div class="money">현금<b id="money">0</b></div><div>수입<b id="inc">0</b></div><div>시도<b id="tries">0</b></div></div>
-  <div class="scene" id="scene"><div class="sun"></div><div class="cloud" style="top:12%">☁️</div><div class="cloud" style="top:26%;animation-delay:-12s;font-size:26px">☁️</div>
-    <div class="lvl" id="lvl">+0</div><div class="news" id="news"></div><div class="price" id="price"></div><div class="house" id="house">🛏️</div><div class="truck" id="truck">🚚💨</div><div class="name" id="name"></div></div>
-  <div class="odds"><div>성공 확률<br><b id="p">95%</b></div><div style="font-size:11.5px;color:var(--sub);flex:1" id="rule"></div><div class="nx">다음<br><span id="next"></span></div></div>
-  <div class="kinds" id="kinds"></div>
-  <div class="fx" id="fx"></div>
-  <div class="dex" id="dex"></div>
-  <div class="btns"><button id="work">🔨 알바<small id="workAmt">+1만</small></button><button id="up">✨ 갈아타기<small id="cost">-5만</small></button></div>
+  <div class="hud"><div class="money">💰 현금<b id="money">0</b></div><div>⏱ 수입<b id="inc">0</b></div><div class="nw">🏠 순자산<b id="nw">0</b></div></div>
+  <div class="scene" id="scene"><div class="sun"></div><div class="cloud" style="top:30%">☁️</div><div class="cloud" style="top:12%;animation-delay:-14s;font-size:20px">☁️</div>
+    <div class="chip" id="phase"></div><div class="chip" id="yr"></div><div class="news" id="news"></div>
+    <div class="house" id="house">🛏️</div><div class="pbar" id="pbar"><i id="pbi"></i><span id="pbt"></span></div><div class="name" id="name"></div></div>
+  <div class="fxrow" id="fx"></div>
+  <div class="map" id="map"></div>
+  <div class="dests" id="dests"></div>
+  <div class="panel" id="panel"></div>
+  <div class="btns"><button id="work">🔨 부업<small id="workAmt">+10만</small></button><button id="dexb">📖<i id="dexn">0</i></button></div>
 </div>
-<div class="roll" id="roll"><div class="msg" id="rmsg">두근두근…</div><div class="num" id="rnum">0</div><div class="g"><i id="rbar"></i><em id="rline"></em></div><div class="sub" id="rsub"></div></div>
+<div class="roll" id="roll"><div class="ttl" id="rttl"></div><div class="bids" id="rbids"></div><div class="steps" id="rsteps"></div><div class="msg" id="rmsg"></div><div class="sub" id="rsub"></div></div>
 <div class="flash" id="flash"></div>
 <div class="ov" id="ov"><div class="box" id="box"></div></div>
 <script>
 "use strict";
-// ───────── 데이터 (확률 공개 · 실제 돈·결제 없음) ─────────
-// 시세: 2025~26년 전용 84㎡ 안팎 매매가를 크게 어림한 게임용 숫자(만원). 실제 거래가·특정 단지와 무관
-const HOMES = [
-  ["원룸 월세", "지방 소도시 · 보증금 1천", "🛏️", 1000],
-  ["원룸 전세", "지방 소도시", "🏠", 5000],
-  ["구축 빌라", "지방 소도시", "🏘️", 8000],
-  ["구축 아파트", "지방 소도시", "🏢", 15000],
-  ["외곽 아파트", "지방 광역시", "🏬", 25000],
-  ["외곽 아파트", "경기 외곽", "🚌", 35000],
-  ["신축 대단지", "지방 광역시", "🏙️", 50000],
-  ["구축 아파트", "서울 외곽", "🧱", 65000],
-  ["바다뷰 아파트", "부산 해운대", "🌊", 90000],
-  ["학군지 아파트", "대구 수성구", "📖", 110000],
-  ["재건축 기대 단지", "1기 신도시", "🌳", 130000],
-  ["신축 아파트", "서울 마포·성동", "🌉", 180000],
-  ["대단지 아파트", "서울 송파", "🏟️", 230000],
-  ["학원가 아파트", "서울 대치동", "📚", 300000],
-  ["한강뷰 펜트하우스", "서울 한강변", "🌆", 800000],
-  ["달 기지", "시세 측정 불가", "🌙", 3000000],
-];
-const P = [.95, .9, .85, .8, .75, .7, .65, .6, .55, .5, .47, .44, .4, .37, .33];
-const GOAL = 14, K = .1, A0 = .012, AD = .88, START = 600;
-// 매물 종류: 갈아탈 때 고르고, 그 집에 사는 동안 효과가 붙는다
-const KINDS = {
-  st: { n: "🚇 역세권", c: 1, inc: 1.35, drop: .4, d: "비용 그대로 · 살면 수입 ×1.35" },
-  edu: { n: "🎓 학군지", c: 1.2, inc: 1, drop: .15, d: "비용 +20% · 실패해도 잘 안 밀림" },
-  dev: { n: "🏗️ 호재 기대", c: .85, inc: 1, drop: .4, d: "비용 -15% · 뉴스 따라 대박/쪽박" },
-  none: { n: "", c: 1, inc: 1, drop: .4 },
+// ═════════ LOGIC START (DOM 없음 · 봇과 화면이 같이 쓴다) ═════════
+// 게임용 단순화 · 실제 제도·시세와 다를 수 있음. 금액 단위 = 만원. 40초 = 1년
+const YEAR = 30, TAP_RATE = 1.5, SAVE = 1.1, YG = .08;
+// 집 지도. p = 시작 시세(만원, 2025~26년 84㎡ 안팎을 크게 어림한 게임용 숫자, 특정 단지와 무관)
+// g = 가격 묶음, t = 층(지도 세로), x = 지도 가로, seoul = 규제지역, th = 토지거래허가 대상
+const NODES = {
+  r0: { n: "원룸 월세", r: "지방 소도시", e: "🛏️", p: 1000, g: "rent", t: 0, x: 200, rent: 1, s: "월세" },
+  r1: { n: "원룸 전세", r: "지방 소도시", e: "🏠", p: 5000, g: "rent", t: 1, x: 105, rent: 1, s: "지방전세" },
+  v1: { n: "구축 빌라", r: "지방 소도시", e: "🏘️", p: 8000, g: "local", t: 1, x: 295, s: "빌라" },
+  a1: { n: "구축 아파트", r: "지방 소도시", e: "🏢", p: 15000, g: "local", t: 2, x: 120, s: "지방구축" },
+  r2: { n: "빌라 전세", r: "서울", e: "🏡", p: 25000, g: "rent", t: 2, x: 350, rent: 1, seoulRes: 1, s: "서울전세" },
+  g1: { n: "외곽 아파트", r: "지방 광역시", e: "🏬", p: 25000, g: "local", t: 3, x: 40, s: "광역시" },
+  k1: { n: "외곽 아파트", r: "경기 외곽", e: "🚌", p: 35000, g: "metro", t: 3, x: 190, s: "경기외곽" },
+  rd: { n: "재개발구역 빌라", r: "서울 · 몸테크", e: "🏚️", p: 40000, g: "seoul", t: 3, x: 335, redev: 1, seoul: 1, th: 1, s: "재개발" },
+  g2: { n: "신축 대단지", r: "지방 광역시", e: "🏙️", p: 50000, g: "local", t: 4, x: 45, s: "광역신축" },
+  k2: { n: "신도시 아파트", r: "2기 신도시", e: "🚆", p: 70000, g: "metro", t: 4, x: 160, s: "신도시" },
+  s1: { n: "구축 아파트", r: "서울 외곽", e: "🧱", p: 65000, g: "seoul", t: 4, x: 270, seoul: 1, s: "서울외곽" },
+  g3: { n: "바다뷰 아파트", r: "부산 해운대", e: "🌊", p: 90000, g: "top", t: 5, x: 25, s: "해운대" },
+  g4: { n: "학군지 아파트", r: "대구 수성구", e: "📖", p: 110000, g: "top", t: 5, x: 95, s: "수성구" },
+  k3: { n: "재건축 기대 단지", r: "1기 신도시", e: "🌳", p: 130000, g: "metro", t: 5, x: 180, recon: 1, s: "1기재건축" },
+  s2: { n: "신축 아파트", r: "서울 마포·성동", e: "🌉", p: 170000, g: "seoul", t: 5, x: 275, seoul: 1, th: 1, s: "마포성동" },
+  s4: { n: "학원가 아파트", r: "서울 대치동", e: "📚", p: 260000, g: "seoul", t: 6, x: 125, seoul: 1, th: 1, s: "대치" },
+  s3: { n: "대단지 아파트", r: "서울 송파", e: "🏟️", p: 220000, g: "seoul", t: 6, x: 230, seoul: 1, th: 1, s: "송파" },
+  rdn: { n: "뉴타운 신축", r: "서울 · 재개발 입주", e: "🌇", p: 200000, g: "seoul", t: 6, x: 345, seoul: 1, s: "뉴타운" },
+  PH: { n: "한강뷰 펜트하우스", r: "서울 한강변", e: "🌆", p: 340000, g: "lux", t: 7, x: 200, seoul: 1, th: 1, s: "펜트" },
 };
-// 뉴스: 25~55초마다 하나. k = 영향받는 매물(all = 모두). 내 집 종류와 맞을 때만 효과
-const NEWS = [
-  { k: "st", t: "🚇 새 지하철역 개통! 역세권 수입 2배", inc: 2, d: 30, good: 1 },
-  { k: "st", t: "🚇 노선 연장 무산… 역세권 수입 -30%", inc: .7, d: 25 },
-  { k: "edu", t: "🎓 학원가 확장 소식! 학군지 시세 상승 → 보너스", cash: .3, good: 1 },
-  { k: "dev", t: "🏗️ 개발 계획 확정! 호재 매물 시세 급등 → 큰 보너스", cash: .6, good: 1 },
-  { k: "dev", t: "🏗️ 사업 지연… 호재 매물 수입 절반", inc: .5, d: 30 },
-  { k: "all", t: "📉 금리 인상. 갈아타기 비용 +15%", cm: 1.15, d: 25 },
-  { k: "all", t: "📈 금리 인하! 갈아타기 비용 -15%", cm: .85, d: 25, good: 1 },
-  { k: "all", t: "🏗️ 주변 공급 물량 증가. 모든 수입 -20%", inc: .8, d: 20 },
+const GOAL = "PH";
+// 길: from>to:수단  m=매매 a=경매 g=갭투자 j=전세 이사
+const EDGES = {};
+"r0>r1:j r0>v1:ma r1>v1:ma r1>a1:mag r1>r2:j v1>a1:ma v1>g1:m a1>g1:ma a1>k1:mg a1>r2:j k1>r2:j r2>k1:m r2>rd:m r2>s1:ma g1>g2:mag g1>k1:m k1>k2:mg k1>s1:ma k1>rd:m rd>s1:m g2>g3:mag g2>g4:mg g2>k2:m k2>k3:mg k2>s2:m s1>s2:ma s1>k3:m g3>g4:m g3>s2:m g3>PH:a g4>s4:m g4>s2:m k3>s3:m k3>s4:m s2>s3:ma s2>PH:m rdn>PH:m rdn>s3:m s3>PH:ma s4>PH:ma"
+  .split(" ").forEach(s => { const [a, rest] = s.split(">"), [b, m] = rest.split(":"); (EDGES[a] = EDGES[a] || []).push({ to: b, m }); });
+// 청약 대상(분양 단지). cut = 가점 커트라인, draw = 추첨으로 붙을 확률, seoul = 서울 거주자 우선
+const SUBS = { g2: { cut: 28, draw: .3 }, k2: { cut: 40, draw: .16 }, s2: { cut: 56, draw: .06, seoul: 1 }, rdn: { cut: 60, draw: .05, seoul: 1 } };
+// 재개발 단계: d = 기본 대기(초), mul = 빌라 값 배수
+const STAGES = [
+  { n: "구역지정", d: 26, mul: 1, term: "redev" },
+  { n: "조합설립인가", d: 32, mul: 1.15, term: "johap" },
+  { n: "사업시행인가", d: 32, mul: 1.35, term: "saup" },
+  { n: "관리처분인가", d: 28, mul: 1.6, term: "gwanri" },
+  { n: "이주·철거·착공", d: 44, mul: 1.7, term: "bundam" },
+  { n: "준공·입주", d: 0, mul: 0 },
 ];
-const cost = (G, kind) => Math.round(HOMES[G.s + 1 < HOMES.length ? G.s + 1 : G.s][3] * K * KINDS[kind].c * G.cm);
-const inc = G => HOMES[G.s][3] * A0 * Math.pow(AD, G.s) * KINDS[G.k].inc * G.im;
-const tapAmt = s => Math.round(20 + HOMES[s][3] * .002);
-const $ = id => document.getElementById(id);
-const fmt = n => { n = Math.floor(n); if (n < 10000) return n.toLocaleString() + "만"; const e = Math.floor(n / 10000), r = Math.floor((n % 10000) / 1000); return e.toLocaleString() + "억" + (r && e < 100 ? " " + r + "천" : ""); };
+// 시장 사이클: 묶음별 초당 등락(%)
+const PHASES = {
+  rec: { n: "회복기", c: "#60a5fa", ic: "🔵", d: [40, 60], deal: .85 },
+  up: { n: "상승기", c: "#4ade80", ic: "🟢", d: [60, 95], deal: .7 },
+  adj: { n: "조정기", c: "#ffd166", ic: "🟠", d: [30, 50], deal: .9 },
+  crash: { n: "폭락기", c: "#ff6b6b", ic: "🔴", d: [30, 45], deal: .95 },
+};
+const GR = { // %/초
+  rent: { rec: .03, up: .08, adj: 0, crash: -.05 },
+  local: { rec: .06, up: .18, adj: -.03, crash: -.25 },
+  top: { rec: .07, up: .2, adj: 0, crash: -.12 },
+  metro: { rec: .07, up: .3, adj: -.06, crash: -.38 },
+  seoul: { rec: .08, up: .28, adj: -.04, crash: -.35 },
+  lux: { rec: .08, up: .34, adj: -.06, crash: -.5 },
+};
+const GROUP_N = { local: "지방·광역", top: "지방 상급지", metro: "경기·신도시", seoul: "서울", lux: "초고가" };
+// 경매 경쟁자 최고 입찰가 범위(감정가 대비, 공개). 실제 확률 = (내 입찰 - lo) / (hi - lo)
+const BIDRANGE = { crash: [.66, .88], adj: [.74, .95], rec: [.8, 1.0], up: [.88, 1.1] };
+const bidRange = G => { const r = BIDRANGE[G.ph]; return G.pk && G.pk.bid ? [r[0] - .06, r[1] - .06] : r; };
+const BIDS = [.75, .85, .95, 1.05];
+const AUCTION_VAR = [["clean", .6, "깔끔하게 인수"], ["myeong", .25, "명도 지연 (20초)"], ["repair", .15, "숨은 수리비 +5%"]];
+
+// 사건: 원인 → 결과 → 대응. d = 지속(초, 0이면 한 번). w(G) = 뽑힐 무게
+const EVENTS = [
+  { id: "rateUp", s: "이자↑ 대출 한도↓", ic: "📈", t: "기준금리 인상", cause: "물가가 안 잡혀 중앙은행이 금리를 올렸다", eff: "대출 이자↑ · DSR 한도↓ · 시장이 식는다", resp: "대출이 적은 집·경매로 우회하거나 금리가 내릴 때까지 기다리기", d: 90, bad: 1, term: "rate", w: G => G.ph === "up" ? 3 : G.ph === "adj" ? 2 : .5 },
+  { id: "rateDown", s: "이자↓ 대출 한도↑", ic: "📉", t: "기준금리 인하", cause: "경기가 식어 금리를 내렸다", eff: "대출 이자↓ · DSR 한도↑ · 시장이 살아난다", resp: "막혔던 갈아타기를 다시 시도", d: 90, term: "rate", w: G => G.ph === "crash" ? 3 : G.ph === "rec" ? 1.5 : .4 },
+  { id: "loanTight", s: "서울 대출 한도↓", ic: "🚫", t: "대출 규제 강화", cause: "집값과 가계부채가 함께 급증", eff: "LTV -10%p · DSR 한도 축소 · 서울 고가주택 대출 한도 6억/4억/2억", resp: "비규제 지방 상급지, 청약 집단대출, 현금 많은 경매로 우회", d: 100, bad: 1, term: "cap", w: G => G.ph === "up" ? 2.5 : .5 },
+  { id: "loanEase", s: "LTV +10%p", ic: "🔓", t: "대출 규제 완화", cause: "거래 절벽으로 시장이 얼어붙음", eff: "LTV +10%p · 고가주택 한도 해제", resp: "대출 한도가 늘어난 지금이 갈아탈 때", d: 70, term: "ltv", w: G => G.ph === "crash" || G.ph === "adj" ? 2 : .3 },
+  { id: "toheo", s: "서울 핵심 허가제·갭 불가", ic: "🗺️", t: "토지거래허가구역 지정", cause: "서울 핵심지 집값이 급등", eff: "서울 핵심·재개발구역: 매매 허가 심사(실거주) · 갭투자 불가", resp: "경매는 허가 예외 · 다른 갈래로 돌아가기", d: 120, bad: 1, term: "toheo", w: G => G.ph === "up" ? 2.5 : .3, block: G => !G.act.some(a => a.id === "toheo") },
+  { id: "supplyM", s: "경기 시세 -8%", ic: "🏗️", t: "경기 입주 물량 폭탄", cause: "몇 년 전 분양한 단지가 한꺼번에 입주", eff: "경기·신도시 시세 -8% · 전세가율↓", resp: "그 동네 집을 싸게 살 기회, 내 집이면 버티기", d: 40, bad: 1, term: "supply", shock: { metro: .92 }, jr: -.08, w: () => 1 },
+  { id: "supplyL", s: "지방 시세 -8%", ic: "🏗️", t: "광역시 공급 과잉", cause: "광역시 외곽에 대단지 입주가 몰림", eff: "지방·광역 시세 -8%", resp: "지방 상급지(해운대·수성)는 덜 흔들린다", d: 0, bad: 1, term: "supply", shock: { local: .92 }, w: () => .8 },
+  { id: "redevTight", s: "재개발 지연↑", ic: "🏚️", t: "재건축·재개발 규제 강화", cause: "정비사업이 집값을 자극한다는 우려", eff: "정비 단계 지연 확률↑ · 1기 재건축 단지 -6%", resp: "몸테크 중이면 버티기, 아니면 다른 갈래", d: 100, bad: 1, term: "recon", nshock: { k3: .94 }, w: () => .9 },
+  { id: "redevEase", s: "재개발 빨라짐", ic: "🏗️", t: "재건축 규제 완화", cause: "도심 공급을 늘리려 진단·용적률 규제를 풂", eff: "정비 단계 빨라짐 · 1기 재건축 단지 +10%", resp: "재개발·재건축 갈래가 지름길이 된다", d: 100, term: "recon", nshock: { k3: 1.1 }, w: () => .9 },
+  { id: "capOn", s: "분양가↓ 경쟁↑", ic: "🏷️", t: "분양가 상한제 확대", cause: "고분양가 논란", eff: "분양가 시세 62% (로또 청약) · 커트라인 +6 · 추첨 경쟁↑", resp: "가점이 높다면 청약 도전, 낮다면 다른 갈래", d: 100, term: "bunyangcap", w: () => .8 },
+  { id: "capOff", s: "분양가↑ 경쟁↓", ic: "🏷️", t: "분양가 상한제 완화", cause: "공급이 줄어든다는 지적", eff: "분양가 시세 88% · 커트라인 -6 · 추첨 경쟁↓", resp: "당첨은 쉬워지지만 남는 차익이 작다", d: 100, term: "bunyangcap", w: () => .6 },
+  { id: "jeonseUp", s: "갭 비용↓", ic: "🏠", t: "전세가율 상승", cause: "매수 관망으로 전세 수요가 늘었다", eff: "전세가율 +10%p → 갭투자 필요 현금↓", resp: "갭투자 갈래가 싸진다", d: 60, term: "jr", jr: .1, w: G => G.ph === "adj" || G.ph === "rec" ? 1.5 : .6 },
+  { id: "taxHeavy", s: "2주택·단기 세금↑", ic: "💸", t: "다주택·단기매매 세금 중과", cause: "투기 수요를 누르려는 세제 개편", eff: "2주택(갭투자) 취득세 8% · 보유 2년 미만 양도세 70%", resp: "오래 보유하고 한 채만 갈아타기", d: 100, bad: 1, term: "heavy", w: () => .8 },
+  { id: "taxFree", s: "1년 보유 비과세", ic: "🎁", t: "1주택 비과세 요건 완화", cause: "실수요 갈아타기 지원", eff: "1년만 보유해도 양도세 비과세", resp: "빨리 갈아타도 세금이 없다", d: 80, term: "exempt", w: () => .7 },
+  { id: "gtx", s: "경기 시세 +8%", ic: "🚇", t: "광역급행철도 착공", cause: "수도권 외곽-도심 철도 확정", eff: "경기·신도시 시세 +8%", resp: "경기 집이면 순자산이 오른다", d: 0, term: "gtx", shock: { metro: 1.08 }, w: () => .8 },
+  { id: "gtxFail", s: "경기 외곽 -6%", ic: "🚇", t: "노선 연장 무산", cause: "예산·타당성 부족", eff: "경기 외곽 시세 -6%", resp: "다른 지역으로 갈아타거나 버티기", d: 0, bad: 1, term: "gtx", nshock: { k1: .94 }, w: () => .5 },
+  { id: "school", s: "학군지 +6%", ic: "🎓", t: "학원가 확장", cause: "명문 학원 분원이 몰림", eff: "수성구·대치동 시세 +6%", resp: "학군지 갈래가 오른다", d: 0, nshock: { g4: 1.06, s4: 1.06 }, w: () => .7 },
+  { id: "promo", s: "연봉 +12%", ic: "💼", t: "승진!", cause: "열심히 일한 보람", eff: "연봉 +12% → DSR 한도·수입↑", resp: "대출 한도가 늘었다", d: 0, personal: 1, w: () => 1.2 },
+  { id: "family", s: "청약 가점 +5", ic: "💍", t: "가족이 늘었다", cause: "결혼·출산", eff: "부양가족 +1 → 청약 가점 +5", resp: "청약 갈래가 유리해진다", d: 0, personal: 1, term: "gajum", w: G => G.fam < 3 ? 1 : 0 },
+];
+const EV = {}; EVENTS.forEach(e => EV[e.id] = e);
+const TERMS = {
+  wolse: ["월세 보증금", "월세 집에 맡기는 작은 보증금. 나갈 때 돌려받는다"],
+  jeonse: ["전세", "큰 보증금을 맡기고 월세 없이 사는 방식. 나갈 때 돌려받는다"],
+  jlLoan: ["전세대출", "전세 보증금의 80%까지 빌리는 대출 (게임 기준, DSR 미적용)"],
+  maemae: ["매매 계약", "집을 사고파는 계약. 상승기엔 파는 쪽이, 하락기엔 사는 쪽이 우위"],
+  hoga: ["호가", "집주인이 부르는 값. 상승기엔 계약 직전에 올리기도 한다"],
+  baeak: ["배액배상", "파는 쪽이 계약을 깨면 받은 계약금의 두 배를 돌려준다"],
+  ltv: ["LTV", "집값 대비 대출 비율. 게임 기준 비규제 70%, 규제지역 40%"],
+  dsr: ["DSR", "연 소득 대비 모든 대출 원리금 비율. 40%면 금리 4%일 때 연봉의 약 7배까지"],
+  first: ["생애최초", "처음 집을 사면 대출 비율 우대(규제지역도 70%)·취득세 200만 감면"],
+  regzone: ["규제지역", "투기과열지구·조정대상지역. 대출·세금이 더 엄격하다 (게임: 서울)"],
+  cap: ["고가주택 대출 한도", "규제 강화 때 서울 15억 이하 6억, 25억 이하 4억, 그 위 2억까지만"],
+  toheo: ["토지거래허가구역", "사려면 구청 허가가 필요하고 2년 실거주 의무. 갭투자 불가"],
+  toheoAuc: ["경매 허가 예외", "법원 경매로 산 집은 토지거래허가를 받지 않아도 된다"],
+  gap: ["갭투자", "전세를 끼고 사서 집값과 전세금의 차이(갭)만 내는 방식. 전세 만기 뒤 입주"],
+  jr: ["전세가율", "매매가 대비 전세가 비율. 높을수록 갭이 작다"],
+  gajum: ["청약 가점", "무주택 기간(32) + 통장 기간(17) + 부양가족(35) = 84점 만점"],
+  draw: ["추첨제", "가점과 상관없이 추첨으로 뽑는 물량. 1주택자는 '기존 집 처분' 조건으로 도전"],
+  bunyangcap: ["분양가 상한제", "분양가를 시세보다 낮게 묶는다. 당첨되면 차익이 크지만 경쟁이 치열"],
+  bunyangkwon: ["분양권", "당첨 뒤 입주 전까지의 권리. 계약금을 내고 공사가 끝나길 기다린다"],
+  jungdo: ["중도금·잔금 집단대출", "분양 계약자에게 한꺼번에 내주는 대출 (게임: 분양가의 60%)"],
+  rewin: ["재당첨 제한", "당첨되면 일정 기간 다른 청약에 당첨될 수 없다 (게임: 5년)"],
+  unfit: ["부적격 당첨", "자격 계산이 틀려 당첨이 취소되고 한동안 청약을 못 한다"],
+  yebi: ["예비당첨", "당첨자가 계약을 포기하면 예비 순번대로 기회가 온다"],
+  gamjung: ["감정가", "법원이 매긴 값. 몇 달 전 시세라 지금 시세와 다를 수 있다"],
+  ipchal: ["입찰보증금", "최저가의 10%를 내고 입찰한다. 떨어지면 그대로 돌려받는다"],
+  chasunwi: ["차순위 매수신고", "1등이 잔금을 못 내면 2등에게 기회가 간다"],
+  myeongdo: ["명도", "낙찰받은 집에서 살던 사람이 이사 나가는 과정. 늦어지기도 한다"],
+  redev: ["재개발", "낡은 동네를 통째로 허물고 새 아파트 단지로 짓는 정비사업"],
+  momtech: ["몸테크", "낡은 집에 직접 살며 재개발·재건축을 기다리는 것"],
+  johap: ["조합설립인가", "집·땅 주인들이 조합을 만들어 사업 주체가 되는 단계"],
+  saup: ["사업시행인가", "건물 배치·세대수 같은 사업 계획을 승인받는 단계. 분담금 윤곽이 나온다"],
+  gwanri: ["관리처분인가", "누가 어떤 집을 받고 얼마를 더 낼지 확정하는 단계"],
+  jiwi: ["지위양도 금지", "관리처분 뒤에는 조합원 자격(입주권)을 팔 수 없다 (게임 기준)"],
+  bundam: ["분담금", "새 아파트를 받으려고 조합원이 더 내는 돈. 이주비·중도금 대출로 일부 충당"],
+  recon: ["재건축", "낡은 아파트 단지를 다시 짓는 정비사업. 규제에 따라 속도가 크게 바뀐다"],
+  acq: ["취득세", "집을 살 때 내는 세금. 1~3% (게임 기준). 중과 때는 2주택 8%"],
+  cgt: ["양도세", "집을 팔아 남긴 차익에 매기는 세금. 짧게 보유하면 무겁다"],
+  exempt: ["1주택 비과세", "1주택을 2년 이상 보유하면 차익에 세금이 거의 없다 (게임: 12억 넘는 부분만 10%)"],
+  heavy: ["중과", "다주택·단기 매매에 세율을 더 높게 매기는 것"],
+  temp2: ["일시적 2주택", "갈아타는 동안 잠깐 두 채가 되어도 기한 안에 팔면 1주택처럼 본다"],
+  rate: ["기준금리", "오르면 이자 부담↑·대출 한도↓, 집값엔 보통 악재"],
+  supply: ["입주 물량", "한꺼번에 입주하면 그 지역 매매·전세 값이 눌린다"],
+  cycle: ["시장 사이클", "회복기 → 상승기 → 조정기 → (폭락기) → 회복기. 하락기엔 상급지와의 차이가 줄기도 한다"],
+  gtx: ["광역급행철도", "수도권 외곽과 도심을 빠르게 잇는 철도. 대표적인 호재·악재 뉴스"],
+};
+
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-const store = { get() { try { return JSON.parse(localStorage.getItem("g012v2") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g012v2", JSON.stringify(v)); } catch (e) {} } };
-let save = Object.assign({ best: 0, seen: [0], clears: 0, bestTries: 0, cur: null }, store.get());
-
-// ───────── 로직 (봇 공통) ─────────
-function newGame(seed) { return { s: 0, k: "none", m: START, tries: 0, R: rng(seed), t: 0, nextNews: 35, cm: 1, im: 1, fx: [], news: null, t0: Date.now() }; }
-function attempt(G, kind) {   // 반환 {ok, roll, need, from, to}
-  const from = G.s, need = Math.round(P[G.s] * 100), c = cost(G, kind); if (G.m < c || G.s >= HOMES.length - 1) return null;
-  G.m -= c; G.tries++;
-  const roll = 1 + Math.floor(G.R() * 100), ok = roll <= need;
-  if (ok) { G.s++; G.k = kind; } else if (G.s >= 4 && G.R() < KINDS[G.k].drop) G.s--;
-  return { ok, roll, need, from, to: G.s };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function newGame(seed) {
+  const R = rng(seed);
+  return {
+    seed, R, t: 0, h: "r0", cash: 300, L: 0, Lj: 0, dep: 1000, buy: 0, held: 0, owned: 0, Y: 3200,
+    idx: { rent: 1, local: 1, top: 1, metro: 1, seoul: 1, lux: 1 }, nm: {}, hist: [],
+    ph: "rec", phEnd: 45, act: [], nextEv: 30, evN: 0,
+    noHome: 0, acct: 2, fam: 0, rewin: 0, subBan: 0,
+    st: 0, stEnd: 0, stDelay: 0, pend: null, cd: {}, ask: {},
+    tries: 0, moves: 0, lm: 0, pk: { deal: 0, bid: 0, rateEnd: 0 }, boss: null, bossN: 0, path: ["r0"], used: { m: 0, a: 0, g: 0, c: 0, j: 0, redev: 0 }, done: 0, doneT: 0, seen: {}, log: [],
+  };
 }
-function step(G, dt) {   // 수입·뉴스·효과 만료. 새 뉴스가 나오면 반환
-  G.m += inc(G) * dt; G.t += dt; let fired = null;
-  G.fx = G.fx.filter(f => { if (G.t >= f.end) { G[f.key] = 1; return false; } return true; });
-  if (G.t >= G.nextNews && G.s < HOMES.length - 1) {
-    G.nextNews = G.t + 25 + G.R() * 30;
-    const n = NEWS[Math.floor(G.R() * NEWS.length)], hit = n.k === "all" || n.k === G.k; let bonus = 0;
-    if (hit) {
-      if (n.cash) { bonus = Math.round(n.cash * cost(G, "st")); G.m += bonus; }
-      if (n.inc) { G.im = n.inc; G.fx = G.fx.filter(f => f.key !== "im"); G.fx.push({ key: "im", end: G.t + n.d, t: n.t }); }
-      if (n.cm) { G.cm = n.cm; G.fx = G.fx.filter(f => f.key !== "cm"); G.fx.push({ key: "cm", end: G.t + n.d, t: n.t }); }
-    }
-    fired = { n, hit, bonus };
+const ph = G => PHASES[G.ph];
+function mods(G) {
+  const M = { rate: 0, ltv: 0, dsr: 0, cap: 0, toheo: 0, delay: 0, speed: 1, bun: .72, cut: 0, draw: 1, jr: 0, tax2: 0, cgtShort: .5, exemptT: 2 * YEAR };
+  if (G.pk && G.pk.rateEnd > G.t) M.rate -= 1;
+  for (const a of G.act) {
+    const id = a.id;
+    if (id === "rateUp") M.rate += 1.5; if (id === "rateDown") M.rate -= 1;
+    if (id === "loanTight") { M.ltv -= .1; M.dsr -= 1; M.cap = 1; } if (id === "loanEase") { M.ltv += .1; M.cap = -1; }
+    if (id === "toheo") M.toheo = 1;
+    if (id === "redevTight") M.delay += .2; if (id === "redevEase") { M.delay -= .12; M.speed = .6; }
+    if (id === "capOn") { M.bun = .62; M.cut += 6; M.draw *= .7; } if (id === "capOff") { M.bun = .88; M.cut -= 6; M.draw *= 1.4; }
+    if (EV[id] && EV[id].jr) M.jr += EV[id].jr;
+    if (id === "taxHeavy") { M.tax2 = .08; M.cgtShort = .7; } if (id === "taxFree") M.exemptT = YEAR;
   }
-  return fired;
+  return M;
 }
+const rate = (G, M) => clamp(4 + (M || mods(G)).rate, 2, 8);
+const annuity = r => { const i = r / 100; return i / (1 - Math.pow(1 + i, -30)); };
+const dsrK = (G, M) => { M = M || mods(G); return Math.max(3, .4 / annuity(rate(G, M)) + M.dsr); };
+function price(G, id, lag) {
+  const N = NODES[id], ix = lag ? lagIdx(G, lag) : G.idx;
+  if (N.rent) return Math.round(N.p * Math.pow(ix.rent, 1));
+  if (N.redev) return Math.round(N.p * (id === G.h ? STAGES[G.st].mul || 1 : 1) * Math.pow(ix.seoul, .6) * (G.nm[id] || 1));
+  return Math.round(N.p * ix[N.g] * (G.nm[id] || 1) * (G.ask[id] && G.ask[id].end > G.t ? G.ask[id].m : 1));
+}
+function lagIdx(G, lag) { const want = G.t - lag; for (let i = G.hist.length - 1; i >= 0; i--) if (G.hist[i].t <= want) return G.hist[i].ix; return G.hist.length ? G.hist[0].ix : G.idx; }
+const isRent = G => !!NODES[G.h].rent;
+const noHomeNow = G => isRent(G) && !G.pend;
+function gajum(G) { const a = Math.min(32, 2 + 2 * Math.floor(G.noHome / YEAR)), b = Math.min(17, 1 + Math.floor(G.acct / YEAR)), c = Math.min(35, 5 + 5 * G.fam); return { total: a + b + c, a, b, c }; }
+function loanLimit(G, id, P, M) {
+  M = M || mods(G); const N = NODES[id];
+  let ltv = N.seoul ? .4 : .7; if (!G.owned) ltv = Math.max(ltv, .7);
+  ltv = clamp(ltv + M.ltv, .2, .85);
+  let lim = Math.min(P * ltv, G.Y * dsrK(G, M));
+  if (N.seoul && M.cap === 1) lim = Math.min(lim, P <= 150000 ? 60000 : P <= 250000 ? 40000 : 20000);
+  return Math.max(0, Math.floor(lim));
+}
+function cgt(G, V, M) { // 양도세
+  if (isRent(G)) return 0; const gain = V - G.buy; if (gain <= 0) return 0;
+  if (G.held >= M.exemptT) return V > 120000 ? Math.round(gain * (V - 120000) / V * .1) : 0;
+  return Math.round(gain * M.cgtShort);
+}
+function sale(G, M) { // 지금 집을 정리하면 손에 들어오는 돈
+  M = M || mods(G); const N = NODES[G.h];
+  if (N.rent) return { net: G.dep - G.Lj, V: G.dep, tax: 0, fee: 0 };
+  const V = price(G, G.h), tax = cgt(G, V, M), fee = Math.round(V * .004);
+  return { net: V - G.L - tax - fee, V, tax, fee };
+}
+function acqTax(G, P, two, M) { if (two && M.tax2) return Math.round(P * M.tax2); let r = P <= 60000 ? .01 : P <= 90000 ? .02 : .03; return Math.max(0, Math.round(P * r) - (G.owned ? 0 : 200)); }
+const tapAmt = G => Math.max(5, Math.round(G.Y / YEAR * .12));
+function income(G, M) { M = M || mods(G); const r = rate(G, M) / 100; const v = SAVE * G.Y / YEAR - (G.L * r + G.Lj * r * .8) / YEAR; return Math.max(.12 * G.Y / YEAR, v); }
+function netWorth(G) { const s = sale(G); let w = G.cash + s.net; if (G.pend && G.pend.type === "gap") w += price(G, G.pend.to) - G.pend.deposit; if (G.pend && G.pend.type === "bun") w += G.pend.paid; return Math.round(w); }
+const tierOf = id => NODES[id].t;
+const redevLocked = G => NODES[G.h].redev && G.st >= 3;
 
-// ───────── 소리 ─────────
+// 수단별 견적: {ok, why, need, have, loan, P, tax, p(성공 확률)...}
+function quote(G, to, m, arg) {
+  const M = mods(G), N = NODES[to], q = { to, m, ok: false, why: "", lines: [] };
+  if (G.done) { q.why = "완료"; return q; }
+  if (G.pend) { q.why = G.pend.type === "bun" ? "분양권 입주 대기 중" : G.pend.type === "gap" ? "전세 만기 대기 중" : "명도 대기 중"; return q; }
+  if (redevLocked(G) && m !== "c") { q.why = "관리처분 뒤 지위양도 금지 — 입주까지 기다리기"; q.term = "jiwi"; return q; }
+  const cdk = to + m; if (G.cd[cdk] > G.t) { q.why = `다시 시도까지 ${Math.ceil(G.cd[cdk] - G.t)}초`; q.cool = 1; return q; }
+  const s = sale(G, M), have = G.cash + s.net; q.have = have; q.sale = s;
+  const P = price(G, to); q.P = P;
+  if (m === "j") {
+    const loan = Math.min(Math.round(P * .8), 20000), need = P - loan + 50; Object.assign(q, { loan, need, p: .95 });
+    if (!N.rent) { q.why = "-"; return q; }
+  } else if (m === "m") {
+    const loan = loanLimit(G, to, P, M), tax = acqTax(G, P, false, M), need = P + tax + Math.round(P * .004) + 50 - loan;
+    Object.assign(q, { loan, tax, need, p: G.pk.deal ? 1 : ph(G).deal, permit: M.toheo && N.th ? .8 : 0, sure: G.pk.deal });
+  } else if (m === "a") {
+    const ap = Math.round(price(G, to, 25) * .97), b = arg || BIDS[1], bid = Math.round(ap * b), loan = loanLimit(G, to, bid, M), tax = acqTax(G, bid, false, M);
+    const [lo, hi] = bidRange(G); const need = bid + tax + Math.round(bid * .004) + 50 - loan;
+    Object.assign(q, { ap, bid, b, loan, tax, need, p: clamp((b - lo) / (hi - lo), 0, 1), deposit: Math.round(ap * .7 * .1) });
+  } else if (m === "g") {
+    if (M.toheo && N.th) { q.why = "토지거래허가구역: 실거주 의무라 갭투자 불가"; q.term = "toheo"; return q; }
+    const jr = clamp((N.g === "local" ? .75 : N.g === "seoul" ? .55 : .68) + M.jr, .3, .85), deposit = Math.round(P * jr), two = !isRent(G);
+    const tax = acqTax(G, P, two, M), need = P - deposit + tax + Math.round(P * .004);
+    Object.assign(q, { jr, deposit, tax, need, two, p: 1 });
+    q.have = G.cash; // 지금 집은 그대로 두고 산다
+  } else if (m === "c") {
+    const S = SUBS[to]; if (!S) { q.why = "-"; return q; }
+    if (G.rewin > G.t) { q.why = `재당첨 제한 ${Math.ceil(G.rewin - G.t)}초`; q.term = "rewin"; return q; }
+    if (G.subBan > G.t) { q.why = `부적격 청약 제한 ${Math.ceil(G.subBan - G.t)}초`; q.term = "unfit"; return q; }
+    if (redevLocked(G)) { q.why = "관리처분 뒤 지위양도 금지"; return q; }
+    const gj = gajum(G).total, cut = S.cut + M.cut, nh = noHomeNow(G), local = !S.seoul || NODES[G.h].seoulRes;
+    let draw = S.draw * M.draw; if (!nh) draw *= .5; if (!local) draw *= .5;
+    const pg = nh && local && gj >= cut ? .85 : 0, bp = Math.round(P * M.bun), dn = Math.round(bp * .1);
+    Object.assign(q, { gj, cut, draw, pg, bp, need: dn, nh, local, p: pg + (1 - pg) * draw, have: G.cash });
+  }
+  q.short = Math.max(0, q.need - q.have);
+  if (q.short > 0) { q.why = `현금 ${fmt(q.short)} 부족`; return q; }
+  q.ok = true; return q;
+}
+function fmt(n) { const neg = n < 0; n = Math.abs(Math.round(n)); let s; if (n < 10000) s = n.toLocaleString("en-US") + "만"; else { const e = n / 10000; s = (e >= 100 ? Math.round(e) : Math.round(e * 10) / 10) + "억"; } return (neg ? "-" : "") + s; }
+
+function moveIn(G, to, P, loan, cashOut, how) { // 지금 집 정리 + 새 집 입주
+  const s = sale(G); G.cash += s.net - cashOut; G.L = 0; G.Lj = 0; G.dep = 0;
+  const N = NODES[to];
+  if (N.rent) { G.dep = P; G.Lj = loan; } else { G.L = loan; G.buy = P; G.owned = 1; }
+  if (G.h !== to) { G.h = to; G.path.push(to); }
+  G.held = 0; G.moves++; G.lm = G.t; G.used[how] = (G.used[how] || 0) + 1;
+  if (N.redev) { G.st = 0; G.stEnd = G.t + STAGES[0].d; G.stDelay = 0; G.used.redev++; }
+  if (to === GOAL && !G.done) { G.done = 1; G.doneT = G.t; }
+}
+const pick = (G, arr) => { let r = G.R(), s = 0; for (const a of arr) { s += a[1]; if (r < s) return a; } return arr[arr.length - 1]; };
+const roll100 = G => 1 + Math.floor(G.R() * 100);
+// 실행: 결과 {ok, steps:[{label, need, roll, ok}], title, msg, kind}
+function act(G, to, m, arg) {
+  const q = quote(G, to, m, arg); if (!q.ok) return null;
+  G.tries++; const N = NODES[to], steps = [], res = { q, steps, ok: false, to, m };
+  if (m === "j") {
+    const r = roll100(G), ok = r <= 95; steps.push({ label: "전세 계약", need: 95, roll: r, ok });
+    if (ok) { moveIn(G, to, q.P, q.loan, q.need, "j"); res.ok = true; res.title = "전세 이사 성공!"; res.msg = `${N.r} ${N.n} 입주 · 전세대출 ${fmt(q.loan)}`; }
+    else { G.cd[to + m] = G.t + 6; res.title = "집주인이 다른 세입자와 계약"; res.msg = "6초 뒤 다른 집을 알아보자"; res.kind = "stay"; }
+    return res;
+  }
+  if (m === "m") {
+    if (q.permit) { const r = roll100(G), ok = r <= 80; steps.push({ label: "토지거래 허가 심사 (실거주)", need: 80, roll: r, ok }); if (!ok) { G.cd[to + m] = G.t + 18; res.title = "허가 불허"; res.msg = "자금 계획 소명이 부족했다 · 18초 뒤 재신청 (경매는 허가 예외)"; res.kind = "stay"; res.term = "toheo"; return res; } }
+    const need = Math.round(q.p * 100), r = roll100(G), ok = r <= need; steps.push({ label: q.sure ? "매매 계약 성사 (🔑 확정권)" : "매매 계약 성사", need, roll: r, ok }); if (q.sure) G.pk.deal = 0;
+    if (ok) { moveIn(G, to, q.P, q.loan, q.need, "m"); res.ok = true; res.title = "갈아타기 성공!"; res.msg = `대출 ${fmt(q.loan)} · 취득세 ${fmt(q.tax)}${q.sale.tax ? " · 양도세 " + fmt(q.sale.tax) : ""}`; return res; }
+    const o = G.ph === "up" ? pick(G, [["hoga", .45], ["baeak", .25], ["lost", .3]]) : pick(G, [["loan", .4], ["mind", .3], ["repair", .3]]);
+    res.kind = "stay"; res.out = o[0];
+    if (o[0] === "hoga") { G.ask[to] = { m: 1.04, end: G.t + 30 }; G.cd[to + m] = G.t + 4; res.title = "집주인이 호가를 올렸다"; res.msg = "이 집 값 +4% (30초) · 4초 뒤 다시"; res.term = "hoga"; }
+    else if (o[0] === "baeak") { const b = Math.round(q.P * .01); G.cash += b; G.cd[to + m] = G.t + 6; res.title = "매도자 계약 파기 → 배액배상"; res.msg = `계약금의 두 배를 돌려받아 +${fmt(b)}`; res.term = "baeak"; res.kind = "lucky"; }
+    else if (o[0] === "lost") { G.cd[to + m] = G.t + 6; res.title = "다른 매수자가 먼저 계약"; res.msg = "6초 뒤 다른 매물을 찾자"; }
+    else if (o[0] === "loan") { G.cd[to + m] = G.t + 12; res.title = "대출 심사 지연"; res.msg = "서류 보완 · 12초 뒤 다시"; res.term = "dsr"; }
+    else if (o[0] === "mind") { G.cd[to + m] = G.t + 6; res.title = "집주인이 매도를 미뤘다"; res.msg = "6초 뒤 다시"; }
+    else { const c = Math.round(q.P * .02); if (G.cash + q.sale.net - q.need >= c) { moveIn(G, to, q.P, q.loan, q.need + c, "m"); res.ok = true; res.kind = ""; res.title = "조건부 성사!"; res.msg = `누수가 발견돼 수리비 ${fmt(c)}를 더 내고 계약`; } else { G.cd[to + m] = G.t + 6; res.title = "누수 발견 → 계약 보류"; res.msg = "수리비까지 낼 돈이 부족"; } }
+    return res;
+  }
+  if (m === "a") {
+    const [lo, hi] = bidRange(G), rival = lo + (hi - lo) * G.R(), others = [rival, lo + (rival - lo) * G.R(), lo + (rival - lo) * G.R() * .8].sort((a, b) => b - a);
+    res.bids = others.map(b => Math.round(q.ap * b)); res.mine = q.bid; res.ap = q.ap;
+    if (G.pk.bid) G.pk.bid = 0; let win = q.b > rival; steps.push({ label: `입찰 (내 ${Math.round(q.b * 100)}% vs 최고 ${Math.round(rival * 100)}%)`, need: Math.round(q.p * 100), roll: win ? 0 : 101, ok: win, cmp: 1 });
+    if (!win && rival - q.b <= .04 && G.R() < .25) { win = true; res.chasun = 1; steps.push({ label: "차순위 매수신고 → 1등 잔금 미납", ok: true, cmp: 1 }); }
+    G.cd[to + m] = G.t + 10;
+    if (!win) { res.kind = "stay"; res.title = "패찰"; res.msg = `입찰보증금 ${fmt(q.deposit)}은 돌려받았다 · 10초 뒤 다음 물건`; res.term = "ipchal"; return res; }
+    const v = pick(G, AUCTION_VAR); steps.push({ label: "인수 변수: " + v[2], ok: v[0] === "clean", cmp: 1 }); res.var = v[0];
+    let extra = 0; if (v[0] === "repair") extra = Math.round(q.bid * .05);
+    const total = q.bid + q.tax + Math.round(q.bid * .004) + 50;
+    if (v[0] === "repair" && G.cash + q.sale.net - q.need < extra) { G.L += extra; extra = 0; } // 수리비 모자라면 대출로
+    moveIn(G, to, q.bid, q.loan, total - q.loan + extra, "a"); G.buy = q.bid;
+    res.ok = true; res.title = res.chasun ? "차순위로 낙찰!" : "낙찰!"; res.msg = `시세 ${fmt(q.P)}짜리를 ${fmt(q.bid)}에` + (v[0] === "repair" ? ` · 수리비 +${fmt(Math.round(q.bid * .05))}` : "");
+    if (v[0] === "myeong") { G.pend = { type: "myeong", to, end: G.t + 20 }; res.msg += " · 명도 지연 20초"; res.term = "myeongdo"; }
+    return res;
+  }
+  if (m === "g") {
+    G.cash -= q.need; G.pend = { type: "gap", to, deposit: q.deposit, end: G.t + 2 * YEAR, buy: q.P, two: q.two }; G.used.g++;
+    steps.push({ label: "전세 낀 매매", need: 100, roll: 1, ok: true });
+    res.ok = true; res.title = "갭투자 계약!"; res.msg = `전세 ${fmt(q.deposit)} 끼고 ${fmt(q.need)}만 냄 · 2년(80초) 뒤 입주`; res.term = "gap"; return res;
+  }
+  if (m === "c") {
+    let win = false;
+    if (q.pg) { const r = roll100(G), ok = r <= 85; steps.push({ label: `가점제 (내 ${q.gj}점 ≥ 커트 ${q.cut}점)`, need: 85, roll: r, ok }); win = ok; }
+    else steps.push({ label: q.nh && q.local ? `가점제 (내 ${q.gj}점 < 커트 ${q.cut}점)` : q.nh ? "가점제 (해당 지역 거주 아님)" : "가점제 (1주택자 불가)", ok: false, cmp: 1 });
+    if (!win) { const need = Math.max(1, Math.round(q.draw * 100)), r = roll100(G), ok = r <= need; steps.push({ label: "추첨제", need, roll: r, ok }); win = ok; }
+    G.cd[to + m] = G.t + 12;
+    if (!win && G.R() < .2) { const r = roll100(G), ok = r <= 30; steps.push({ label: "예비당첨 → 미계약분", need: 30, roll: r, ok }); if (ok) { win = true; res.yebi = 1; } }
+    if (!win) { res.kind = "stay"; res.title = "낙첨"; res.msg = q.nh ? "무주택 기간이 쌓여 가점이 오른다 · 12초 뒤 다음 공고" : "12초 뒤 다음 공고"; res.term = q.pg ? "gajum" : "draw"; return res; }
+    if (G.R() < .04) { G.subBan = G.t + YEAR; steps.push({ label: "자격 확인", ok: false, cmp: 1 }); res.kind = "down"; res.title = "부적격 당첨…"; res.msg = "부양가족 계산이 틀려 당첨 취소 · 1년(40초) 청약 제한"; res.term = "unfit"; return res; }
+    G.cash -= q.need; G.acct = 0; G.rewin = G.t + 5 * YEAR; G.used.c++;
+    G.pend = { type: "bun", to, bp: q.bp, paid: q.need, end: G.t + Math.round(2.5 * YEAR), nh: q.nh };
+    res.ok = true; res.title = res.yebi ? "예비당첨으로 내 집!" : "청약 당첨!"; res.msg = `분양가 ${fmt(q.bp)} (시세 ${fmt(q.P)}) · 계약금 ${fmt(q.need)} · 공사 2.5년(100초) 뒤 입주`; res.term = "bunyangkwon";
+    return res;
+  }
+}
+function settlePend(G) { // 대기 끝: 입주할 수 있으면 입주. 돈이 모자라면 계속 기다림(현금은 계속 쌓임)
+  const p = G.pend, M = mods(G), s = sale(G, M);
+  if (p.type === "myeong") { G.pend = null; return { t: "명도 완료 — 입주!", good: 1 }; }
+  if (p.type === "gap") {
+    const P = price(G, p.to), loan = loanLimit(G, p.to, P, M), need = p.deposit - loan;
+    if (G.cash + s.net >= need) { G.pend = null; const keep = G.cash + s.net - need; G.cash = 0; G.L = 0; G.Lj = 0; G.dep = 0; G.cash = keep; G.L = loan; G.buy = p.buy; G.owned = 1; G.h = p.to; G.path.push(p.to); G.held = 2 * YEAR; G.moves++; G.lm = G.t; if (p.to === GOAL) { G.done = 1; G.doneT = G.t; } return { t: `전세 만기 — ${NODES[p.to].s} 입주! (일시적 2주택 정리)`, good: 1, term: "temp2" }; }
+    p.end = G.t + 10; return { t: `보증금 돌려줄 돈 ${fmt(need - G.cash - s.net)} 부족 — 전세 연장, 10초 뒤 다시`, bad: 1 };
+  }
+  if (p.type === "bun") {
+    const loan = Math.round(p.bp * .6), tax = acqTax(G, p.bp, false, M), need = p.bp - p.paid - loan + tax;
+    if (G.cash + s.net >= need) { G.pend = null; moveIn(G, p.to, p.bp, loan, need, "bunIn"); return { t: `${NODES[p.to].s} 새 아파트 입주! 시세 ${fmt(price(G, p.to))}`, good: 1, term: "jungdo" }; }
+    p.end = G.t + 10; return { t: `잔금 ${fmt(need - G.cash - s.net)} 부족 — 입주 미루고 10초 뒤 다시`, bad: 1 };
+  }
+}
+function redevTick(G, M, out) {
+  if (!NODES[G.h].redev || G.pend || G.t < G.stEnd) return;
+  const S = STAGES[G.st];
+  if (G.st === 1 && G.stDelay === 0 && G.R() < .04) { G.st = 0; G.stEnd = G.t + 40; G.nm.rd = (G.nm.rd || 1) * .9; out.push({ t: "🏚️ 주민 반대로 구역 해제 위기 → 재추진 (40초)", bad: 1 }); G.stDelay = 9; return; }
+  const dp = clamp(.22 + M.delay, .05, .6);
+  if (G.stDelay < 2 && G.R() < dp) { const big = G.R() < .25; G.stDelay++; G.stEnd = G.t + S.d * (big ? 1 : .5) * M.speed; out.push({ t: `🏚️ ${STAGES[G.st + 1].n} ${big ? "소송으로 크게 지연" : "지연"} (+${Math.round(S.d * (big ? 1 : .5) * M.speed)}초)`, bad: 1 }); return; }
+  G.st++; G.stDelay = 0;
+  if (G.st >= 5) { // 입주: 분담금 = 새 집 시세의 22%, 60%는 이주비·중도금 대출
+    const P = price(G, "rdn"), bd = Math.round(P * .22), cash = Math.round(bd * .4);
+    if (G.cash < cash) { G.st = 4; G.stEnd = G.t + 8; G.stDelay = 2; out.push({ t: `분담금 현금 ${fmt(cash - G.cash)} 부족 — 입주 대기`, bad: 1, term: "bundam" }); return; }
+    G.cash -= cash; G.L += bd - cash; G.buy = P * .6; G.h = "rdn"; G.path.push("rdn"); G.held = 2 * YEAR; G.st = 0; G.moves++;
+    out.push({ t: `🌇 준공·입주! 몸테크 끝 — 시세 ${fmt(P)} 새 아파트 (분담금 ${fmt(bd)})`, good: 1, big: 1 }); return;
+  }
+  G.stEnd = G.t + STAGES[G.st].d * M.speed;
+  out.push({ t: `🏚️ ${STAGES[G.st].n} 통과! 빌라 값 ×${STAGES[G.st].mul}${G.st === 3 ? " · 이제 지위양도 금지" : ""}`, good: 1, term: STAGES[G.st].term });
+  if (G.st === 3) out.push({ t: "", term: "jiwi" });
+}
+// 보스 = 큰 시장 사건. 버텨 내면 보상 3개 중 하나를 고른다 (운을 선택으로 상쇄)
+const BOSS = { crash: "🔴 폭락기", loanTight: "🚫 대출 규제", toheo: "🗺️ 토지거래허가", rateUp: "📈 금리 인상" };
+const PERKS = [
+  { id: "cash", ic: "💰", n: "비상금", d: G => `현금 +${fmt(perkCash(G))}`, ok: () => 1, f: G => { G.cash += perkCash(G); } },
+  { id: "deal", ic: "🔑", n: "매매 확정권", d: () => "다음 매매 100% 성사", ok: G => !G.pk.deal, f: G => { G.pk.deal = 1; } },
+  { id: "bid", ic: "🔨", n: "경매 정보지", d: () => "다음 경매 경쟁 -6%p", ok: G => !G.pk.bid, f: G => { G.pk.bid = 1; } },
+  { id: "rate", ic: "🏦", n: "우대금리", d: () => "60초 금리 -1%p", ok: () => 1, f: G => { G.pk.rateEnd = G.t + 60; } },
+  { id: "pay", ic: "📈", n: "연봉 협상", d: () => "연봉 +8%", ok: () => 1, f: G => { G.Y *= 1.08; } },
+  { id: "acct", ic: "📝", n: "통장 관리", d: () => "청약 가점 +3", ok: G => isRent(G) && !G.pend, f: G => { G.acct += 3 * YEAR; } },
+  { id: "fast", ic: "⏩", n: "대기 단축", d: () => "기다림 -25초", ok: G => !!G.pend || !!NODES[G.h].redev, f: G => { if (G.pend) G.pend.end -= 25; else G.stEnd -= 25; } },
+];
+const perkCash = G => Math.max(500, Math.round(netWorth(G) * .04 / 100) * 100);
+function bossOffer(G, src) { const pool = PERKS.filter(p => p.ok(G)); const out = []; while (out.length < 3 && pool.length) out.push(pool.splice(Math.floor(G.R() * pool.length), 1)[0].id); G.boss = { src, opts: out }; G.bossN++; return G.boss; }
+function takePerk(G, id) { const p = PERKS.find(x => x.id === id); if (!p || !G.boss) return; p.f(G); G.boss = null; return p; }
+function nextPhase(G) {
+  const nx = { rec: "up", up: "adj", adj: G.R() < .5 ? "crash" : "rec", crash: "rec" }[G.ph];
+  G.ph = nx; const d = PHASES[nx].d; G.phEnd = G.t + d[0] + G.R() * (d[1] - d[0]); return nx;
+}
+// 한 틱: 수입·시세·사건·대기. 알림 목록 반환
+function tick(G, dt) {
+  const out = [], M = mods(G);
+  G.cash += income(G, M) * dt; G.t += dt; G.held += dt; G.acct += dt; if (noHomeNow(G)) G.noHome += dt;
+  G.Y *= Math.exp(YG * dt / YEAR);
+  for (const k in G.idx) G.idx[k] *= 1 + GR[k][G.ph] / 100 * dt;
+  if (!G.hist.length || G.t - G.hist[G.hist.length - 1].t >= 1) { G.hist.push({ t: G.t, ix: Object.assign({}, G.idx) }); if (G.hist.length > 40) G.hist.shift(); }
+  if (G.t >= G.phEnd) { const was = G.ph, nx = nextPhase(G); if (was === "crash" && !G.done) out.push({ boss: bossOffer(G, "crash") }); out.push({ phase: nx, t: `${PHASES[nx].ic} ${PHASES[nx].n} 시작`, term: "cycle" }); }
+  G.act = G.act.filter(a => { if (G.t >= a.end) { out.push({ t: `${EV[a.id].ic} '${EV[a.id].t}' 효과 끝`, end: 1 }); if (BOSS[a.id] && a.id !== "rateUp" && !G.done && !G.boss) out.push({ boss: bossOffer(G, a.id) }); return false; } return true; });
+  if (G.t >= G.nextEv && !G.done) {
+    G.nextEv = G.t + 22 + G.R() * 16;
+    const pool = EVENTS.filter(e => !(e.block && !e.block(G)) && !G.act.some(a => a.id === e.id)), ws = pool.map(e => e.w(G)), sum = ws.reduce((a, b) => a + b, 0);
+    let r = G.R() * sum, e = pool[0]; for (let i = 0; i < pool.length; i++) { r -= ws[i]; if (r <= 0) { e = pool[i]; break; } }
+    if (G.evN === 0) e = EV.promo; G.evN++;
+    // 반대 효과끼리는 서로 끈다
+    const opp = { rateUp: "rateDown", rateDown: "rateUp", loanTight: "loanEase", loanEase: "loanTight", capOn: "capOff", capOff: "capOn", redevTight: "redevEase", redevEase: "redevTight", taxHeavy: "taxFree", taxFree: "taxHeavy" }[e.id];
+    if (opp) G.act = G.act.filter(a => a.id !== opp);
+    if (e.d) G.act.push({ id: e.id, end: G.t + e.d });
+    if (e.shock) for (const k in e.shock) G.idx[k] *= e.shock[k];
+    if (e.nshock) for (const k in e.nshock) G.nm[k] = (G.nm[k] || 1) * e.nshock[k];
+    if (e.id === "promo") G.Y *= 1.12; if (e.id === "family") G.fam++;
+    if (e.id === "rateUp" && G.ph === "up" && G.R() < .5) G.phEnd = Math.min(G.phEnd, G.t + 8);
+    if (e.id === "rateDown" && G.ph === "crash") G.phEnd = Math.min(G.phEnd, G.t + 8);
+    out.push({ ev: e });
+  }
+  if (G.pend && G.t >= G.pend.end) out.push(settlePend(G));
+  redevTick(G, M, out);
+  if (G.h === GOAL && !G.done) { G.done = 1; G.doneT = G.t; }
+  return out;
+}
+// ───────── 봇 (자체 검사·자동 플레이) ─────────
+const STRATS = {
+  local: { n: "지방 상급지", nodes: "r1 v1 a1 g1 g2 g3 g4 s2 s4 PH", m: { m: 3, j: 3 } },
+  metro: { n: "수도권 매매", nodes: "r1 a1 k1 k2 k3 s1 s2 s3 PH", m: { m: 3, j: 3 } },
+  redev: { n: "재개발 몸테크", nodes: "r1 a1 k1 rd rdn s3 PH", m: { m: 3, j: 3 } },
+  sub: { n: "청약", nodes: "r1 r2 k2 s2 rdn s3 PH", m: { c: 5, m: 2, j: 3 }, waitSub: 1 },
+  auction: { n: "경매", nodes: "r1 v1 a1 g1 g2 g3 k1 s1 s2 s3 PH", m: { a: 4, m: 1, j: 3 }, pref: "a" },
+  gap: { n: "갭투자", nodes: "r1 a1 k1 k2 k3 s3 PH", m: { g: 4, m: 2, j: 3 }, pref: "g" },
+};
+for (const k in STRATS) { STRATS[k].rank = {}; ("r0 " + STRATS[k].nodes).split(" ").forEach((n, i) => STRATS[k].rank[n] = i); }
+function options(G) { // 지금 갈 수 있는 곳 목록 [{to, ms:[...]}]
+  const list = (EDGES[G.h] || []).map(e => ({ to: e.to, ms: e.m.split("") }));
+  for (const k in SUBS) if (G.h !== "r0" && tierOf(k) > tierOf(G.h)) { /* 첫 집(월세)에선 청약 길을 숨겨 화면을 단순하게 */ const o = list.find(x => x.to === k); if (o) o.ms.push("c"); else list.push({ to: k, ms: ["c"] }); }
+  return list;
+}
+function bestBid(G, to) { let best = null; for (const b of BIDS) { const q = quote(G, to, "a", b); if (!q.ok) continue; const ev = q.p * (q.P - q.bid) / q.P; if (q.bid <= q.P * 1.02 && (!best || ev > best.ev)) best = { b, ev, q }; } return best; }
+function botChoose(G, S) {
+  if (G.pend || G.done) return null; let best = null;
+  const won = G.used.c > 0 || G.pend;
+  for (const o of options(G)) {
+    const rk = S.rank[o.to]; if (rk === undefined || rk <= (S.rank[G.h] ?? -1)) continue;
+    for (const m of o.ms) {
+      const w = S.m[m]; if (!w) continue;
+      if (S.waitSub && !won && m === "m" && G.t < 900) continue;
+      if (S.pref && m !== S.pref && o.ms.includes(S.pref) && G.t - G.lm < 90) continue; // 좋아하는 수단이 있는 길이면 잠깐 기다린다 // 청약 봇: 당첨 전엔 집을 사지 않고 버틴다
+      let q, arg;
+      if (m === "a") { const bb = bestBid(G, o.to); if (!bb) continue; q = bb.q; arg = bb.b; } else q = quote(G, o.to, m);
+      if (!q.ok) continue;
+      let sc = rk * 10 + w + (m === "c" ? q.p * 30 : 0);
+      if (!best || sc > best.sc) best = { sc, to: o.to, m, arg };
+    }
+  }
+  return best;
+}
+function runBot(seed, strat, maxT, chaosT) { // chaosT초 동안 아무 데나 막 다니다가(갇힘 검사) 그 뒤 전략대로
+  const G = newGame(seed), pr = rng(seed * 31 + 7), dt = .25; let S = STRATS[strat], last = 0, gap = 0, key = "";
+  while (!G.done && G.t < maxT) {
+    if (pr() < TAP_RATE * dt) G.cash += tapAmt(G);
+    let c = null;
+    if (chaosT && G.t < chaosT) { if (pr() < .05) { const os = options(G).flatMap(o => o.ms.map(m => [o.to, m])); const [to, m] = os[Math.floor(pr() * os.length)] || []; if (to) c = { to, m, arg: BIDS[Math.floor(pr() * 4)] }; } }
+    else c = botChoose(G, S);
+    if (c) act(G, c.to, c.m, c.arg);
+    tick(G, dt); if (G.boss) takePerk(G, G.boss.opts[0]);
+    const k = G.h + G.st + (G.pend ? G.pend.type : ""); if (k !== key) { key = k; gap = Math.max(gap, G.t - last); last = G.t; }
+  }
+  return { G, min: (G.done ? G.doneT : G.t) / 60, done: G.done, gap: Math.max(gap, G.t - last) };
+}
+// ═════════ LOGIC END ═════════
+
+// ═════════ 화면 ═════════
+const $ = id => document.getElementById(id);
+const Q = new URLSearchParams(location.search);
+const JUICE = !Q.has("nojuice");
+const KEY = "g012v3";
+const store = { get() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) {} } };
+let save = Object.assign({ best: 0, clears: 0, bestMin: 0, seen: ["r0"], terms: [], routes: [], cur: null }, store.get());
+const ROUTES = [["sub", "📝 청약 루트"], ["redev", "🏚️ 재개발 루트"], ["auction", "🔨 경매 루트"], ["gap", "🧳 갭투자 루트"], ["local", "🌊 지방 상급지 루트"], ["metro", "🚆 수도권 루트"]];
+const GCOL = { rent: "#94a3b8", local: "#f59e0b", top: "#22d3ee", metro: "#a3e635", seoul: "#f472b6", lux: "#ffd166" };
+const MN = { m: "🤝 매매", a: "🔨 경매", g: "🧳 갭투자", c: "📝 청약", j: "🏠 전세 이사" };
+
+// ───────── 소리 (Web Audio 합성, 첫 터치 뒤) ─────────
 let ac = null;
-function beep(f, d = .06, type = "square", v = .04, w = 0, f2) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + w, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {} }
-const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
-const JUICE = !new URLSearchParams(location.search).has("nojuice");
-let workCombo = 0, workT = 0;
+function beep(f, d = .06, type = "square", v = .04, w = 0, f2) { if (!JUICE && v > 0 && !beep.force) return; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + w, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {} }
+const vary = () => 1 + (Math.random() - .5) * .12; // 피치 ±6%
+const buzz = ms => { try { JUICE && navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+let combo = 0, comboT = 0;
 const SFX = {
-  work() { const p = 1 + Math.min(workCombo, 20) * .03; beep(660 * p, .03, "square", .03); beep(990 * p, .04, "square", .02, .02); buzz(4); },
+  work() { const p = (1 + Math.min(combo, 20) * .03) * vary(); beep(660 * p, .03, "square", .03); beep(990 * p, .04, "square", .02, .02); buzz(4); },
+  tick(i) { beep((480 + i * 22) * vary(), .02, "square", .02); },
   heart() { beep(70, .09, "sine", .14); beep(58, .09, "sine", .11, .15); },
-  tick(i) { beep(500 + i * 18, .02, "square", .02); },
-  ok(s) { [523, 659, 784, 1046, 1319].forEach((f, i) => beep(f * (1 + s * .02), .1, "square", .045, i * .06)); buzz([20, 30, 40]); },
-  stay() { beep(440, .12, "triangle", .05); beep(392, .16, "triangle", .05, .1); },
+  ok(t) { [523, 659, 784, 1046, 1319].forEach((f, i) => beep(f * (1 + t * .03), .1, "square", .045, i * .06)); buzz([20, 30, 40]); },
+  stay() { beep(440 * vary(), .12, "triangle", .05); beep(392, .16, "triangle", .05, .1); },
   down() { beep(300, .35, "sawtooth", .05, 0, 120); buzz([50, 40, 50]); },
+  gavel() { beep(140, .08, "square", .09); beep(120, .1, "square", .08, .14); },
+  ball(i) { beep((900 + i * 60) * vary(), .025, "sine", .04); },
   clear() { [523, 659, 784, 1046, 784, 1046, 1319, 1568].forEach((f, i) => beep(f, .14, "square", .05, i * .1)); },
-  newsGood() { beep(880, .08, "triangle", .05); beep(1175, .12, "triangle", .05, .08); },
-  newsBad() { beep(330, .12, "triangle", .05); beep(262, .18, "triangle", .05, .1); },
+  good() { beep(880, .08, "triangle", .05); beep(1175, .12, "triangle", .05, .08); },
+  bad() { beep(330, .12, "triangle", .05); beep(262, .18, "triangle", .05, .1); },
+  rumble() { beep(55, .7, "sawtooth", .07, 0, 35); beep(80, .5, "sawtooth", .04, .1, 40); buzz([80, 40, 80]); },
+  term() { beep(1320, .05, "sine", .03); beep(1760, .07, "sine", .03, .05); },
 };
 function emit(ev, data = {}) { try { if (parent !== window) parent.postMessage({ type: "nhc-game", game: "G012", ev, data }, "*"); } catch (e) {} }
-let lastInputEmit = 0;
-addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastInputEmit > 4000) { lastInputEmit = t; emit("input"); } }, true);
+let lastInput = 0;
+addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastInput > 4000) { lastInput = t; emit("input"); } }, true);
 
-// ───────── 화면 ─────────
-let G = null, busy = false, auto = false, pick = "st", newsT = 0;
-const hn = s => `${HOMES[s][1]} ${HOMES[s][0]}`;
-function render(anim) {
-  const s = G.s, h = HOMES[s], last = s >= HOMES.length - 1;
-  $("house").textContent = h[2];
-  $("name").innerHTML = `${h[0]}<small>${h[1]}${G.k !== "none" && s > 0 ? " · " + KINDS[G.k].n + " 매물" : ""}</small><small>${s >= GOAL ? "목표 달성!" : `펜트하우스까지 ${GOAL - s}단계`}</small>`;
-  $("price").innerHTML = `<small>시세 약</small>${s === HOMES.length - 1 ? "∞" : fmt(h[3])}`;
-  $("lvl").textContent = "+" + s; $("scene").classList.toggle("night", s >= 11);
-  if (anim) { const el = $("house"); el.classList.remove("up", "crack"); void el.offsetWidth; el.classList.add(anim); }
-  $("p").textContent = last ? "-" : Math.round(P[s] * 100) + "%"; $("p").style.color = P[s] >= .7 ? "var(--ok)" : P[s] >= .45 ? "var(--acc)" : "var(--bad)";
-  const drop = Math.round(KINDS[G.k].drop * 100);
-  $("rule").textContent = last ? "끝까지 왔어요!" : s < 4 ? "실패해도 그대로 (4단계 전까지)" : `실패하면 ${drop}% 확률로 한 단계 아래로 이사${G.k === "edu" ? " (학군지라 덜 밀림)" : ""}`;
-  $("next").textContent = last ? "🏁" : HOMES[s + 1][2];
-  $("kinds").innerHTML = ["st", "edu", "dev"].map(k => `<button data-k="${k}" class="${k === pick ? "on" : ""}">${KINDS[k].n}<small>${KINDS[k].d}</small></button>`).join("");
-  $("dex").innerHTML = HOMES.map((x, i) => `<span class="${save.seen.includes(i) ? "got" : ""}" title="${hn(i)}">${x[2]}</span>`).join("");
-  hud();
+// ───────── 상태 ─────────
+let G = null, sel = null, busy = false, auto = false, autoStrat = "metro", showMoney = 0, routeUsed = null;
+const paused = () => busy || $("ov").classList.contains("on");
+const N = id => NODES[id];
+const nm = id => `${N(id).r} ${N(id).n}`;
+
+// ───────── 용어 도감 ─────────
+const toastQ = []; let toastT = 0;
+let newTerms = 0;
+function learn(k) { if (!k || !TERMS[k] || save.terms.includes(k)) return; save.terms.push(k); newTerms++; store.set(save); $("dexn").textContent = "+" + newTerms; $("dexn").style.background = "#c084fc"; if (JUICE) { SFX.term(); const b = $("dexb"); b.animate && b.animate([{ transform: "scale(1)" }, { transform: "scale(1.18)" }, { transform: "scale(1)" }], { duration: 350 }); } }
+function pumpToast() { return;
+  const el = $("toast"); if (toastT && Date.now() < toastT) return;
+  if (toastT) { el.classList.remove("on"); toastT = 0; return; }
+  const k = toastQ.shift(); if (!k) return; const [n, d] = TERMS[k];
+  el.innerHTML = `📖 <b>새 용어 · ${n}</b> — ${d} <span style="color:#8892b0">(${save.terms.length}/${Object.keys(TERMS).length})</span>`; el.classList.add("on"); toastT = Date.now() + 3600; if (JUICE) SFX.term();
 }
-function hud() {
-  const v = inc(G); $("money").textContent = fmt(G.m); $("inc").textContent = "+" + (v >= 10 ? fmt(v) : v.toFixed(1) + "만") + "/초"; $("tries").textContent = G.tries;
-  const c = cost(G, pick), last = G.s >= HOMES.length - 1;
-  $("cost").textContent = last ? "완료" : `${HOMES[G.s + 1][1]} · -${fmt(c)}`; $("workAmt").textContent = "+" + tapAmt(G.s) + "만";
-  $("up").disabled = busy || last || G.m < c; $("work").disabled = busy;
-  $("kinds").querySelectorAll("button").forEach(b => b.disabled = busy || last);
-  $("fx").textContent = G.fx.map(f => `${f.t.split(/[!.…]/)[0]} ${Math.ceil(f.end - G.t)}초`).join(" · ");
+
+// ───────── 지도 ─────────
+const MY = t => 224 - t * 28.6;
+function buildMap() {
+  let s = `<svg viewBox="0 6 400 244" preserveAspectRatio="xMidYMid meet"><g id="eg">`;
+  const seen = {};
+  for (const a in EDGES) for (const e of EDGES[a]) { const k = [a, e.to].sort().join(); if (seen[k]) continue; seen[k] = 1; s += `<line class="eg" data-a="${a}" data-b="${e.to}" x1="${N(a).x}" y1="${MY(N(a).t)}" x2="${N(e.to).x}" y2="${MY(N(e.to).t)}"/>`; }
+  s += `<line class="eg" data-a="rd" data-b="rdn" x1="${N("rd").x}" y1="${MY(3)}" x2="${N("rdn").x}" y2="${MY(6)}" style="stroke-dasharray:3 3"/>`;
+  s += `</g><g id="sb"></g>`;
+  for (const id in NODES) { const n = N(id), y = MY(n.t); s += `<g class="nd" data-id="${id}"><circle class="ring" cx="${n.x}" cy="${y}" r="15" fill="none" stroke="#ffd166" stroke-width="2" opacity="0"/><circle cx="${n.x}" cy="${y}" r="21" fill="transparent"/><circle class="b" cx="${n.x}" cy="${y}" r="13.5" fill="${GCOL[n.g]}40"/><text x="${n.x}" y="${y + 5}" text-anchor="middle" font-size="14">${n.e}</text><text class="lb" x="${n.x}" y="${y + 21.5}">${n.s}</text></g>`; }
+  s += `</svg><div class="disc">게임용 단순화 · 실제와 다를 수 있음</div>`;
+  $("map").innerHTML = s;
+  $("map").addEventListener("pointerdown", e => { const g = e.target.closest(".nd"); if (!g || auto) return; const id = g.dataset.id; if (options(G).some(o => o.to === id)) { sel = id; beep(700, .03, "square", .03); render(); } else { showInfo(id); } });
+}
+function showInfo(id) { const n = N(id), el = $("news"); el.className = "news on"; el.innerHTML = `<b>${n.e} ${nm(id)}</b> · 시세 약 ${fmt(price(G, id))}<br><span class="c">${id === G.h ? "지금 사는 집" : "빛나는 길로만 갈 수 있어요"}</span>`; newsT = Date.now() + 2500; }
+function paintMap() {
+  const opts = options(G), can = new Set(opts.map(o => o.to));
+  document.querySelectorAll("#map .nd").forEach(g => { const id = g.dataset.id; g.classList.toggle("cur", id === G.h); g.classList.toggle("sel", id === sel); g.classList.toggle("can", can.has(id)); g.classList.toggle("dim", !can.has(id) && id !== G.h && !save.seen.includes(id)); g.querySelector(".ring").setAttribute("opacity", id === G.h ? ".9" : "0"); });
+  document.querySelectorAll("#map .eg").forEach(l => { const a = l.dataset.a, b = l.dataset.b; l.classList.toggle("hot", (a === G.h && can.has(b)) || (b === G.h && can.has(a)) || (a === "rd" && b === "rdn" && G.h === "rd")); });
+  let sb = ""; for (const o of opts) if (o.ms.includes("c") && !(EDGES[G.h] || []).some(e => e.to === o.to)) sb += `<line class="eg sub" x1="${N(G.h).x}" y1="${MY(N(G.h).t)}" x2="${N(o.to).x}" y2="${MY(N(o.to).t)}"/>`;
+  $("sb").innerHTML = sb;
+}
+
+// ───────── 렌더 ─────────
+let newsT = 0;
+function methodBtn(o, m) {
+  let q = m === "a" ? (bestBid(G, o.to) || { q: quote(G, o.to, "a", BIDS[0]) }).q : quote(G, o.to, m);
+  if (m === "a" && !q.ok) q = quote(G, o.to, "a", BIDS[0]);
+  let sub = "";
+  if (q.ok || q.short) {
+    if (m === "j") sub = `95% · ${fmt(q.need)}`;
+    if (m === "m") sub = `${Math.round(q.p * 100)}%${q.permit ? "×허가80%" : ""} · ${fmt(Math.max(0, q.need))}`;
+    if (m === "a") sub = `감정가 ${fmt(q.ap)}`;
+    if (m === "g") sub = `${fmt(q.need)} · 80초 뒤`;
+    if (m === "c") sub = `${Math.max(1, Math.round(q.p * 100))}% · 가점 ${q.gj}/${q.cut}`;
+  }
+  if (!q.ok) sub = `🔒 ${q.why}` + (q.short && m !== "c" && m !== "g" ? "" : "");
+  if (!q.ok && q.short) sub = `🔒 ${fmt(q.short)} 부족`;
+  return `<button data-m="${m}" class="${q.ok ? m : "lock"}">${MN[m]}<small>${sub}</small></button>`;
+}
+function render(anim) {
+  const h = N(G.h), opts = options(G);
+  if (!sel || !opts.some(o => o.to === sel)) { const ok = opts.find(o => o.ms.some(m => quote(G, o.to, m, BIDS[0]).ok)); sel = (ok || opts[0] || {}).to || null; }
+  $("house").textContent = G.pend && G.pend.type !== "myeong" ? h.e : h.e;
+  if (anim) { const el = $("house"); el.classList.remove("up", "crack"); void el.offsetWidth; el.classList.add(anim); }
+  $("dests").innerHTML = opts.map(o => { const ok = o.ms.some(m => (m === "a" ? bestBid(G, o.to) : quote(G, o.to, m).ok)); return `<button data-to="${o.to}" class="${o.to === sel ? "on " : ""}${ok ? "ok" : ""}">${N(o.to).e} ${N(o.to).s}<small>${ok ? "● " : "🔒 "}${fmt(price(G, o.to))}</small></button>`; }).join("") || `<button>🏁<small>끝</small></button>`;
+  paintMap(); panel(); hud(true);
+}
+function panel() {
+  const p = $("panel");
+  if (G.done && G.h === GOAL) { p.innerHTML = `<div class="wait">🌆 목표 달성! 한강뷰 펜트하우스<br><button class="sec" id="again" style="margin-top:6px;border:0;border-radius:10px;padding:10px 16px;font-weight:900;background:var(--acc);color:#3b2a00">다른 갈래로 다시</button></div>`; $("again").onclick = () => newRun(); return; }
+  if (G.pend) {
+    const pd = G.pend, to = N(pd.to), left = Math.max(0, Math.ceil(pd.end - G.t));
+    const what = pd.type === "bun" ? `📝 분양권 · ${to.e} ${to.s} 공사 중` : pd.type === "gap" ? `🧳 갭투자 · ${to.e} ${to.s} 전세 중` : `🔨 명도 중 · ${to.e} ${to.s}`;
+    p.innerHTML = `<div class="wait">${what}<br><b>입주까지 ${left}초</b><br><span style="color:var(--sub);font-size:11px">${pd.type === "bun" ? `분양가 ${fmt(pd.bp)} → 시세 ${fmt(price(G, pd.to))}` : pd.type === "gap" ? `입주 때 보증금 ${fmt(pd.deposit)} 반환` : "곧 입주"}</span></div>`;
+    return;
+  }
+  if (!sel) { p.innerHTML = `<div class="wait">갈 수 있는 곳이 없어요</div>`; return; }
+  const o = options(G).find(x => x.to === sel), n = N(sel), P = price(G, sel), prev = price(G, sel, 3), tr = P > prev ? `<b style="color:var(--ok)">▲</b>` : P < prev ? `<b style="color:var(--bad)">▼</b>` : "";
+  const M = mods(G), lim = loanLimit(G, sel, P, M), ltv = Math.round(clamp((n.seoul ? .4 : .7) + (G.owned ? 0 : (n.seoul ? .3 : 0)) + M.ltv, .2, .85) * 100);
+  let info = "";
+  if (o.ms.includes("m") || o.ms.includes("a")) info = `🏦 대출 한도 ${fmt(lim)} (LTV ${ltv}%${n.seoul && M.cap === 1 ? "·고가 한도" : ""})`;
+  else if (o.ms.includes("j")) info = `🏦 전세대출 80%`;
+  if (NODES[G.h].redev && G.st >= 3) info = `🔒 관리처분 뒤엔 못 팔아요`;
+  p.innerHTML = `<div class="hd">${n.e} ${n.r} ${n.n}<span>${fmt(P)} ${tr}</span></div><div class="meths">${o.ms.map(m => methodBtn(o, m)).join("")}</div><div class="info">${info}</div>`;
+}
+function hud(force) {
+  const nw = netWorth(G); showMoney += (G.cash - showMoney) * (JUICE ? .25 : 1); if (Math.abs(G.cash - showMoney) < 1) showMoney = G.cash;
+  $("money").textContent = fmt(showMoney); $("nw").textContent = fmt(nw); $("inc").textContent = "+" + fmt(income(G)) + "/초"
+  $("workAmt").textContent = "+" + fmt(tapAmt(G));
+  const P = PHASES[G.ph]; $("phase").innerHTML = `${P.ic} ${P.n} ${Math.max(0, Math.ceil(G.phEnd - G.t))}초`; $("phase").style.color = P.c;
+  $("yr").textContent = `${Math.floor(G.t / YEAR) + 1}년차`;
+  $("scene").className = "scene " + G.ph;
+  const h = N(G.h), V = G.pend ? 0 : price(G, G.h);
+  $("name").innerHTML = `${h.n} · ${h.r}<small>${h.rent ? `보증금 ${fmt(G.dep)}` : `시세 ${fmt(V)}`}${G.h === GOAL ? " · 🏁" : ""}</small>`;
+  // 진행 막대: 대기·재개발 단계
+  const pb = $("pbar"); let frac = -1, txt = "";
+  if (G.pend) { const tot = G.pend.type === "bun" ? 2.5 * YEAR : G.pend.type === "gap" ? 2 * YEAR : 20; frac = 1 - Math.max(0, G.pend.end - G.t) / tot; txt = `${G.pend.type === "bun" ? "📝" : G.pend.type === "gap" ? "🧳" : "🔨"} → ${N(G.pend.to).e} ${Math.max(0, Math.ceil(G.pend.end - G.t))}초`; }
+  else if (h.redev) { const d = STAGES[G.st].d * mods(G).speed || 1; frac = (G.st + clamp(1 - (G.stEnd - G.t) / d, 0, 1)) / 5; txt = `🏚️ ${G.st + 1}/5 ${STAGES[G.st + 1].n} ${Math.max(0, Math.ceil(G.stEnd - G.t))}초`; }
+  pb.classList.toggle("on", frac >= 0); if (frac >= 0) { $("pbi").style.width = clamp(frac, 0, 1) * 100 + "%"; $("pbt").textContent = txt; }
+  // 효과 칩
+  const M = mods(G); let fx = G.act.map(a => `<span class="${EV[a.id].bad ? "bad" : "good"}">${EV[a.id].ic} ${EV[a.id].s} ${Math.ceil(a.end - G.t)}</span>`);
+  if (G.pk.deal) fx.push(`<span class="good">🔑 매매 100%</span>`); if (G.pk.bid) fx.push(`<span class="good">🔨 경쟁 -6%p</span>`); if (G.pk.rateEnd > G.t) fx.push(`<span class="good">🏦 금리 -1% ${Math.ceil(G.pk.rateEnd - G.t)}</span>`);
+  if (G.rewin > G.t) fx.push(`<span>📝 재당첨 제한 ${Math.ceil(G.rewin - G.t)}</span>`);
+  if (!fx.length) fx.push(`<span style="opacity:.6">사건 없음</span>`);
+  const fh = fx.join(""); if ($("fx").innerHTML !== fh) $("fx").innerHTML = fh;
   if (newsT && Date.now() > newsT) { $("news").classList.remove("on"); newsT = 0; }
 }
-function showNews(f) {
-  if (auto && !JUICE) return; const el = $("news"), good = f.n.good, mine = f.hit;
-  const tail = !mine ? `<br><span style="color:var(--sub);font-weight:600">내 집(${G.k === "none" ? "해당 없음" : KINDS[G.k].n})엔 영향 없음</span>` : f.bonus ? `<br><span style="color:var(--ok)">+${fmt(f.bonus)} 들어왔어요</span>` : `<br><span style="color:${good ? "var(--ok)" : "var(--bad)"}">내 집에 적용!</span>`;
-  el.className = "news on " + (mine ? (good ? "good" : "bad") : ""); el.innerHTML = `<span class="left">📰 뉴스</span>${f.n.t}${tail}`; newsT = Date.now() + 4500;
-  if (mine && JUICE) (good ? SFX.newsGood : SFX.newsBad)();
-}
-function coinPop(x, y, txt) { if (!JUICE) return; const d = document.createElement("div"); d.className = "coin"; d.textContent = txt; d.style.left = x - 20 + "px"; d.style.top = y - 30 + "px"; document.body.appendChild(d); setTimeout(() => d.remove(), 820); }
-function confetti(n) { if (!JUICE) return; for (let i = 0; i < n; i++) { const c = document.createElement("div"); c.className = "conf"; c.style.background = ["#ffd166", "#4ade80", "#60a5fa", "#ff6b6b", "#fff"][i % 5]; c.style.left = "50%"; c.style.top = "40%"; c.style.setProperty("--dx", (Math.random() - .5) * 420 + "px"); c.style.setProperty("--dy", (Math.random() - .2) * 520 + "px"); document.body.appendChild(c); setTimeout(() => c.remove(), 1450); } }
-function flash() { if (!JUICE) return; const f = $("flash"); f.style.transition = "none"; f.style.opacity = .85; requestAnimationFrame(() => { f.style.transition = "opacity .4s"; f.style.opacity = 0; }); }
-function persist() { save.cur = { s: G.s, k: G.k, m: G.m, tries: G.tries, pick }; store.set(save); }
 
+// ───────── 효과 ─────────
+function coinPop(x, y, txt) { if (!JUICE) return; const d = document.createElement("div"); d.className = "coin"; d.textContent = txt; d.style.left = x - 20 + "px"; d.style.top = y - 30 + "px"; document.body.appendChild(d); setTimeout(() => d.remove(), 820); }
+function confetti(n) { if (!JUICE) return; for (let i = 0; i < n; i++) { const c = document.createElement("div"); c.className = "conf"; c.style.background = ["#ffd166", "#4ade80", "#60a5fa", "#ff6b6b", "#fff", "#c084fc"][i % 6]; c.style.left = "50%"; c.style.top = "28%"; c.style.setProperty("--dx", (Math.random() - .5) * 420 + "px"); c.style.setProperty("--dy", (Math.random() - .2) * 520 + "px"); document.body.appendChild(c); setTimeout(() => c.remove(), 1450); } }
+function flash(c = "#fff") { if (!JUICE) return; const f = $("flash"); f.style.background = c; f.style.transition = "none"; f.style.opacity = .8; requestAnimationFrame(() => { f.style.transition = "opacity .45s"; f.style.opacity = 0; }); }
+function shake() { if (!JUICE) return; const a = $("app"); a.classList.remove("shake"); void a.offsetWidth; a.classList.add("shake"); }
+function banner(html, cls, ms) { const el = $("news"); el.className = "news on " + (cls || ""); el.innerHTML = html; newsT = Date.now() + (ms || 6500); }
+
+// ───────── 행동 ─────────
 function work(e) {
-  if (busy) return; const a = tapAmt(G.s); G.m += a; workCombo = Date.now() - workT < 400 ? workCombo + 1 : 0; workT = Date.now(); SFX.work();
-  const r = (e && e.clientX !== undefined) ? { x: e.clientX, y: e.clientY } : (() => { const b = $("work").getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top }; })();
-  coinPop(r.x + (Math.random() - .5) * 30, r.y, "+" + a); hud();
+  if (paused() || G.done && G.h === GOAL) return; const a = tapAmt(G); G.cash += a; combo = Date.now() - comboT < 400 ? combo + 1 : 0; comboT = Date.now(); SFX.work();
+  const r = e && e.clientX !== undefined ? { x: e.clientX, y: e.clientY } : (() => { const b = $("work").getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top }; })();
+  coinPop(r.x + (Math.random() - .5) * 30, r.y, "+" + fmt(a)); hud();
 }
-function enhance() {
-  if (busy) return; const kind = pick, res = attempt(G, kind); if (!res) return;
-  busy = true; hud(); const fast = auto ? .35 : 1;
-  const ro = $("roll"); ro.classList.add("on"); $("rmsg").innerHTML = `${hn(res.from)}<br>→ ${hn(res.from + 1)} <small style="font-size:15px">${KINDS[kind].n}</small>`; $("rmsg").style.color = "#fff"; $("rmsg").style.fontSize = "19px"; $("rmsg").style.textAlign = "center"; $("rsub").textContent = `성공 확률 ${res.need}% · 1~${res.need}이 나오면 성공`;
-  $("rline").style.left = res.need + "%"; $("rbar").style.width = "0"; $("rnum").textContent = "··"; $("rnum").style.color = "#fff";
-  const D = 1100 * fast, t0 = performance.now(); let lastI = -1;
-  if (JUICE) SFX.heart();
-  (function spin(t) {
-    const u = Math.min(1, (t - t0) / D), shown = u < 1 ? 1 + Math.floor(Math.random() * 100) : res.roll;
-    $("rnum").textContent = shown; $("rbar").style.width = (u < 1 ? u * 100 : res.roll) + "%";
-    const i = Math.floor(u * 14); if (i !== lastI && JUICE) { lastI = i; SFX.tick(i); if (i === 7) SFX.heart(); }
-    if (u < 1) { requestAnimationFrame(spin); return; }
-    const near = !res.ok && res.roll - res.need <= 5; $("rmsg").style.fontSize = "26px";
-    if (res.ok) { $("rmsg").textContent = "갈아타기 성공!"; $("rmsg").style.color = "var(--ok)"; $("rnum").style.color = "var(--ok)"; SFX.ok(res.to); }
-    else if (res.to < res.from) { $("rmsg").textContent = "실패… 이사 갑니다"; $("rmsg").style.color = "var(--bad)"; $("rnum").style.color = "var(--bad)"; SFX.down(); }
-    else { $("rmsg").textContent = "실패! 그래도 그대로"; $("rmsg").style.color = "var(--acc)"; $("rnum").style.color = "var(--acc)"; SFX.stay(); }
-    $("rsub").textContent = `나온 수 ${res.roll} / 필요 ${res.need} 이하${near ? " — 아깝다!" : ""}`;
-    setTimeout(() => {
-      ro.classList.remove("on"); busy = false;
-      if (res.ok) {
-        if (!save.seen.includes(res.to)) save.seen.push(res.to);
-        save.best = Math.max(save.best, res.to); flash(); confetti(res.to >= 10 ? 60 : 24); render("up"); emit("level_clear", { level: res.to, tries: G.tries, kind });
-        if (res.to === GOAL) setTimeout(cleared, 700);
-      } else { render("crack"); if (res.to < res.from && JUICE) { const tr = $("truck"); tr.classList.remove("go"); void tr.offsetWidth; tr.classList.add("go"); } emit("fail", { level: res.from, roll: res.roll, kind }); }
-      persist();
-    }, 900 * fast);
-  })(t0);
+function tryMethod(m) {
+  if (paused() || !sel) return; const to = sel;
+  if (m === "a") { const q = quote(G, to, "a", BIDS[0]); if (!q.ok && !q.short) return lockedTap(q); return openBid(to); }
+  const q = quote(G, to, m); if (!q.ok) return lockedTap(q);
+  run(to, m);
+}
+function lockedTap(q) { SFX.stay(); banner(`<b>🔒</b> ${q.why}${q.short ? " · 🔨부업 or 다른 길" : ""}`, "bad", 2500); if (q.term) learn(q.term); }
+const TERM_OF = { j: ["jeonse", "jlLoan"], m: ["maemae", "ltv", "dsr"], a: ["gamjung", "ipchal"], g: ["gap", "jr"], c: ["gajum", "draw"] };
+function run(to, m, arg) {
+  const from = G.h, res = act(G, to, m, arg); if (!res) return;
+  (TERM_OF[m] || []).forEach(learn); if (!G.owned && m === "m") learn("first"); if (N(to).seoul && m !== "c") learn("regzone"); if (res.q.permit) learn("toheo"); if (m === "a" && mods(G).toheo && N(to).th) learn("toheoAuc"); if (res.q.sale && res.q.sale.tax) learn("cgt"); else if (res.ok && !N(from).rent && m !== "g" && m !== "c") learn("exempt");
+  if (N(to).redev && res.ok) { learn("redev"); learn("momtech"); }
+  animate(res, from);
+}
+function animate(res, from) {
+  busy = true; const fast = auto ? .35 : 1, ro = $("roll"), m = res.m, to = res.to;
+  $("rttl").innerHTML = `${N(from).e} ${N(from).s} → ${N(to).e} ${N(to).s}<br><small style="font-size:13px;color:var(--sub)">${MN[m]}</small>`;
+  $("rmsg").textContent = ""; $("rsub").textContent = ""; $("rbids").innerHTML = "";
+  $("rsteps").innerHTML = res.steps.map((s, i) => `<div class="st" id="st${i}"><div class="row"><span>${s.label}</span><span class="n" id="sn${i}">${s.cmp ? "" : "··"}</span></div>${s.cmp ? "" : `<div class="g"><u style="width:${s.need}%"></u><i id="sb${i}"></i><em style="left:${s.need}%"></em></div><div style="font-size:10.5px;color:var(--sub);margin-top:3px">${s.need} 이하면 통과 · ${s.need}%</div>`}</div>`).join("");
+  ro.classList.add("on");
+  let delay = 0;
+  if (res.bids) { // 경매: 입찰가 공개
+    const rows = [...res.bids.map(b => ({ b, me: 0 })), { b: res.mine, me: 1 }].sort((a, b) => b.b - a.b);
+    $("rbids").innerHTML = `<div class="on" style="background:none;justify-content:center;color:var(--sub)">감정가 ${fmt(res.ap)} · 개찰 결과</div>` + rows.map((r, i) => `<div id="bd${i}" class="${r.me ? "me" : ""}"><span>${r.me ? "🙋 나" : "입찰자 " + String.fromCharCode(65 + i)}</span><b>${fmt(r.b)} (${Math.round(r.b / res.ap * 100)}%)</b></div>`).join("");
+    rows.forEach((r, i) => setTimeout(() => { const el = $("bd" + i); el.classList.add("on"); if (i === 0) el.classList.add("win"); if (JUICE) SFX.tick(i * 3); }, (300 + i * 380) * fast));
+    delay = (300 + rows.length * 380 + 200) * fast;
+  }
+  if (JUICE && !res.bids) SFX.heart();
+  const stepT = 900 * fast;
+  res.steps.forEach((s, i) => setTimeout(() => {
+    $("st" + i).classList.add("on");
+    if (s.cmp) { $("sn" + i).textContent = s.ok ? "✅" : "❌"; if (m === "a" && i === 0 && s.ok && JUICE) SFX.gavel(); return; }
+    const t0 = performance.now(), D = stepT * .8; let last = -1;
+    (function spin(t) { const u = Math.min(1, (t - t0) / D); const shown = u < 1 ? 1 + Math.floor(Math.random() * 100) : s.roll;
+      $("sn" + i).textContent = shown; $("sb" + i).style.width = (u < 1 ? u * 100 : s.roll) + "%";
+      const k = Math.floor(u * 12); if (k !== last && JUICE) { last = k; m === "c" ? SFX.ball(k) : SFX.tick(k); }
+      if (u < 1) requestAnimationFrame(spin); else { $("sn" + i).style.color = s.ok ? "var(--ok)" : "var(--bad)"; $("sn" + i).textContent = s.roll + (s.ok ? " ✅" : " ❌"); } })(t0);
+  }, delay + i * stepT));
+  const endT = delay + res.steps.length * stepT + 150 * fast;
+  setTimeout(() => { // 히트 스톱 뒤 결과
+    $("rmsg").textContent = res.title; $("rmsg").style.color = res.ok ? "var(--ok)" : res.kind === "lucky" ? "var(--acc)" : res.kind === "down" ? "var(--bad)" : "#ffb4a8"; $("rsub").textContent = res.msg || "";
+    if (res.ok) { SFX.ok(N(to).t); flash(); } else if (res.kind === "down") { SFX.down(); shake(); } else if (res.kind === "lucky") SFX.good(); else SFX.stay();
+    if (res.term) learn(res.term);
+  }, endT);
+  setTimeout(() => {
+    ro.classList.remove("on"); busy = false;
+    if (res.ok) {
+      const lands = G.pend ? null : G.h; if (lands && !save.seen.includes(lands)) save.seen.push(lands);
+      if (lands) save.best = Math.max(save.best, N(lands).t);
+      confetti(N(to).t >= 5 ? 50 : 22); render("up"); emit("level_clear", { level: N(to).t, node: to, method: m, tries: G.tries });
+      if (G.done && G.h === GOAL) setTimeout(cleared, 600);
+    } else { render(res.kind === "down" ? "crack" : null); emit("fail", { level: N(G.h).t, node: to, method: m, outcome: res.out || res.kind || "fail" }); }
+    persist();
+  }, endT + 1250 * fast);
+}
+function openBid(to) {
+  const ap = quote(G, to, "a", BIDS[0]).ap, P = price(G, to), [lo, hi] = bidRange(G);
+  learn("gamjung"); learn("ipchal");
+  const rows = BIDS.map(b => { const q = quote(G, to, "a", b); return `<button class="bidb ${q.ok ? "" : "lock"}" data-b="${b}"><span>${Math.round(b * 100)}% · ${fmt(q.bid)}<small>시세 ${Math.round(q.bid / P * 100)}%${q.bid > P ? " ⚠️" : ""}</small></span><span style="text-align:right">낙찰 ${Math.round(q.p * 100)}%<small>${q.ok ? fmt(Math.max(0, q.need)) : "🔒 " + fmt(q.short) + " 부족"}</small></span></button>`; }).join("");
+  $("box").innerHTML = `<h2>🔨 법원 경매 · ${N(to).e} ${N(to).s}</h2><p>감정가 <b style="color:#fff">${fmt(ap)}</b> · 시세 <b style="color:#fff">${fmt(P)}</b><br>경쟁자 ${Math.round(lo * 100)}~${Math.round(hi * 100)}%</p>${rows}
+  <div class="tbl">낙찰 뒤: 깔끔 60 · 명도 지연 25 · 수리비 15 (%)<br>패찰하면 보증금 돌려받음</div><button class="sec" id="bidx">그만두기</button>`;
+  $("ov").classList.add("on");
+  $("box").querySelectorAll(".bidb").forEach(b => b.onclick = () => { const v = +b.dataset.b, q = quote(G, to, "a", v); if (!q.ok) { SFX.stay(); return; } $("ov").classList.remove("on"); run(to, "a", v); });
+  $("bidx").onclick = () => $("ov").classList.remove("on");
+}
+function showBoss(b) {
+  const src = BOSS[b.src] || "시장 위기";
+  if (auto) { const p = takePerk(G, b.opts[0]); banner(`<b>🏆 ${src} 극복!</b> 보상: ${p.ic} ${p.n}`, "good", 2500); return; }
+  SFX.clear(); confetti(40);
+  $("box").innerHTML = `<h2>🏆 ${src} 버팀!</h2><p>보상 1개 고르기</p>` + b.opts.map(id => { const p = PERKS.find(x => x.id === id); return `<button class="sec" data-p="${id}" style="text-align:left">${p.ic} <b>${p.n}</b><br><small style="font-weight:700;opacity:.8">${p.d(G)}</small></button>`; }).join("");
+  $("ov").classList.add("on");
+  $("box").querySelectorAll("[data-p]").forEach(el => el.onclick = () => { const p = takePerk(G, el.dataset.p); $("ov").classList.remove("on"); SFX.good(); banner(`<b>${p.ic} ${p.n}</b> 받음`, "good", 2000); emit("reward", { perk: p.id, src: b.src }); render(); });
+}
+function routeOf() {
+  if (G.used.c) return "sub"; if (G.path.includes("rdn") && G.used.redev) return "redev"; if (G.used.a >= 2) return "auction"; if (G.used.g) return "gap"; if (G.path.includes("g3") || G.path.includes("g4")) return "local"; return "metro";
 }
 function cleared() {
-  save.clears++; if (!save.bestTries || G.tries < save.bestTries) save.bestTries = G.tries; store.set(save); SFX.clear(); confetti(120);
-  const min = Math.round((Date.now() - G.t0) / 6000) / 10;
-  $("box").innerHTML = `<h2>🌆 한강뷰 펜트하우스 입성!</h2><p>지방 원룸 월세에서 시작해 갈아타기 ${G.tries}번 · ${min}분</p><p>최소 시도 기록: ${save.bestTries}번 · 클리어 ${save.clears}회</p><p style="font-size:12.5px">하나 더 남았어요… 🌙 (확률 33%)</p>
-    <button id="cont">계속하기</button><button class="sec" id="newg">처음부터 다시</button>`;
-  $("ov").classList.add("on"); $("cont").onclick = () => $("ov").classList.remove("on"); $("newg").onclick = () => { newRun(); $("ov").classList.remove("on"); };
+  const r = routeOf(), min = Math.round(G.doneT / 6) / 10; save.clears++; if (!save.routes.includes(r)) save.routes.push(r); if (!save.bestMin || min < save.bestMin) save.bestMin = min; store.set(save); SFX.clear(); confetti(120);
+  emit("level_clear", { level: 7, node: GOAL, goal: 1, route: r, min });
+  $("box").innerHTML = `<h2>🌆 한강뷰 펜트하우스 입성!</h2><p>${Math.floor(G.t / YEAR) + 1}년차 · ${min}분 · 이사 ${G.moves}번 · 시도 ${G.tries}번</p><p style="font-size:20px">${G.path.map(id => N(id).e).join("→")}</p>
+  <p>이번 갈래: <b style="color:#fff">${ROUTES.find(x => x[0] === r)[1]}</b></p><div class="badges">${ROUTES.map(([k, n]) => `<span class="${save.routes.includes(k) ? "got" : ""}">${n}</span>`).join("")}</div>
+  <p style="font-size:12px">루트 도감 ${save.routes.length}/6 · 최단 ${save.bestMin}분 · 용어 ${save.terms.length}/${Object.keys(TERMS).length}</p>
+  <button id="newg">다른 갈래로 다시</button><button class="sec" id="cont">이 집 구경하기</button><p style="font-size:10.5px">게임용 단순화 · 실제 제도·시세와 다를 수 있음 · 투자 권유가 아닙니다</p>`;
+  $("ov").classList.add("on"); $("newg").onclick = () => { $("ov").classList.remove("on"); newRun(); }; $("cont").onclick = () => $("ov").classList.remove("on");
 }
-function newRun(seed) { G = newGame(seed ?? Date.now() % 1e6); save.cur = null; render(); persist(); emit("level_start", { level: 1 }); }
+function openDex() {
+  if (busy) return; newTerms = 0; $("dexn").textContent = save.terms.length; $("dexn").style.background = ""; const keys = Object.keys(TERMS);
+  $("box").innerHTML = `<h2>📖 부동산 용어 도감 ${save.terms.length}/${keys.length}</h2><p style="font-size:11px">게임용 단순화 · 실제 제도와 다를 수 있음</p><div class="terms">${keys.map(k => save.terms.includes(k) ? `<div><b>${TERMS[k][0]}</b> — ${TERMS[k][1]}</div>` : `<div class="no">??? — 플레이하다 만나면 열려요</div>`).join("")}</div>
+  <h3>🗺️ 루트 도감 ${save.routes.length}/6</h3><div class="badges" style="text-align:left">${ROUTES.map(([k, n]) => `<span class="${save.routes.includes(k) ? "got" : ""}">${n}</span>`).join("")}</div>
+  <h3>🏠 가 본 집 ${save.seen.length}/${Object.keys(NODES).length}</h3><p style="font-size:20px;text-align:left;letter-spacing:2px">${Object.keys(NODES).map(id => save.seen.includes(id) ? N(id).e : "▫️").join("")}</p>
+  <h3>📰 사건 사전 ${(save.evs || []).length}/${EVENTS.length}</h3><div class="terms">${EVENTS.map(e => (save.evs || []).includes(e.id) ? `<div><b>${e.ic} ${e.t}</b> · ${e.s}<br><span style="color:var(--sub)">원인: ${e.cause}<br>결과: ${e.eff}<br>💡 ${e.resp}</span></div>` : `<div class="no">??? 사건</div>`).join("")}</div>
+  <button id="dexc">닫기</button><button class="sec" id="dexr">처음부터 다시</button>`;
+  $("ov").classList.add("on"); $("dexc").onclick = () => $("ov").classList.remove("on"); $("dexr").onclick = () => { $("ov").classList.remove("on"); newRun(); };
+}
+function onNotice(f) {
+  if (!f) return;
+  if (f.boss) return showBoss(f.boss);
+  if (f.ev) {
+    const e = f.ev; G.log.push(`${Math.floor(G.t / YEAR) + 1}년차 ${e.ic} ${e.t}`); if (e.term) learn(e.term);
+    if (!save.evs) save.evs = []; if (!save.evs.includes(e.id)) save.evs.push(e.id);
+    banner(`<b>${e.ic} ${e.t}</b> · ${e.s}${e.d ? ` <span class="c">${e.d}초</span>` : ""}`, e.bad ? "bad" : "good", 4500);
+    if (JUICE) (e.bad ? SFX.bad : SFX.good)(); if (e.bad && (e.id === "rateUp" || e.id === "loanTight")) shake();
+    emit("news", { id: e.id }); render(); return;
+  }
+  if (f.phase) {
+    const P = PHASES[f.phase]; G.log.push(`${Math.floor(G.t / YEAR) + 1}년차 ${P.ic} ${P.n}`); learn("cycle");
+    const tip = { rec: "집값 ↗ · 성사 85%", up: "집값 ⬆ · 성사 70%", adj: "집값 → · 성사 90%", crash: "집값 ⬇ · 버티면 🏆" }[f.phase];
+    banner(`<b style="color:${P.c}">${P.ic} ${P.n}</b> · ${tip}`, "ph " + (f.phase === "crash" ? "bad" : "good"), 3500);
+    if (f.phase === "crash") { SFX.rumble(); shake(); flash("#ff6b6b"); } else if (JUICE) SFX.good();
+    render(); return;
+  }
+  if (f.t) { if (f.term) learn(f.term); if (f.end) return; banner(f.t, f.good ? "good" : f.bad ? "bad" : "", 3500); if (f.good) { SFX.ok(3); if (f.big) { flash(); confetti(60); } } else if (f.bad) SFX.bad();
+    if (G.h === GOAL && G.done && !$("ov").classList.contains("on")) setTimeout(cleared, 600);
+    if (!save.seen.includes(G.h)) save.seen.push(G.h); render(f.good ? "up" : null); persist(); }
+}
+function persist() { const c = Object.assign({}, G); delete c.R; delete c.hist; save.cur = G.done ? null : c; store.set(save); }
+function newRun(seed) { G = newGame(seed ?? (Date.now() % 1e6)); sel = null; showMoney = G.cash; persist(); render(); emit("level_start", { level: 1 }); learn("wolse"); }
 function menu() {
   const c = save.cur;
-  $("box").innerHTML = `<h1>🏠 집 강화하기</h1><ul><li><b>✨ 갈아타기</b>: 돈을 내고 확률에 걸어 한 단계 비싼 동네로</li><li>지방 원룸 → 광역시 → 해운대·수성구 → 서울 → 🌆 한강뷰 펜트하우스</li><li>갈아탈 매물을 골라요: <b>🚇 역세권</b>(수입↑) · <b>🎓 학군지</b>(덜 밀림) · <b>🏗️ 호재 기대</b>(싸지만 뉴스 운)</li><li>📰 뉴스가 터지면 내 집 종류에 따라 득실이 생겨요</li><li>실패하면 그대로이거나(초반), 한 단계 아래로 이사(4단계부터)</li><li><b>🔨 알바</b>를 탭하거나, 가만있어도 수입이 들어와요</li></ul>
-    <p style="font-size:20px;letter-spacing:1px">${HOMES.slice(0, 15).map(h => h[2]).join("")}</p>
-    ${c ? `<button id="resume">이어 하기 (${hn(c.s)})</button><button class="sec" id="go">처음부터</button>` : '<button id="go">시작</button>'}<p style="font-size:11px">실제 돈·결제 없음 · 시세는 2025~26년 84㎡ 안팎을 크게 어림한 게임용 숫자예요(특정 단지와 무관)</p>`;
+  $("box").innerHTML = `<h1>🏠 집 갈아타기</h1><p style="margin:2px 0 0">지방 원룸 월세에서 🌆 한강뷰 펜트하우스까지</p><ul>
+  <li>🗺️ 지도에서 다음 집 고르기</li>
+  <li>🤝매매 📝청약 🔨경매 🧳갭 🏚️재개발</li>
+  <li>📰 사건이 길을 막으면 우회</li>
+  <li>🏆 위기를 버티면 보상</li>
+  <li>🔨 부업 탭 = 돈</li></ul>
+  ${c ? `<button id="resume">이어 하기 (${N(c.h).e} ${N(c.h).s})</button><button class="sec" id="go">처음부터</button>` : '<button id="go">시작</button>'}
+  <p style="font-size:10.5px;line-height:1.5">게임용 단순화 · 실제와 다를 수 있음<br>실제 돈 없음 · 확률 공개 · 투자 권유 아님</p>`;
   $("ov").classList.add("on");
-  $("go").onclick = () => { newRun(); $("ov").classList.remove("on"); };
-  if (c) $("resume").onclick = () => { G = newGame(Date.now() % 1e6); Object.assign(G, { s: c.s, k: c.k || "none", m: c.m, tries: c.tries }); pick = c.pick || "st"; render(); $("ov").classList.remove("on"); emit("level_start", { level: G.s + 1 }); };
+  $("go").onclick = () => { $("ov").classList.remove("on"); newRun(); };
+  if (c) $("resume").onclick = () => { G = newGame(c.seed || 1); Object.assign(G, c); G.R = rng((c.seed || 1) + Math.floor(c.t * 7)); G.hist = []; showMoney = G.cash; $("ov").classList.remove("on"); render(); emit("level_start", { level: N(G.h).t + 1 }); };
 }
 
 $("work").addEventListener("pointerdown", e => { e.preventDefault(); if (!auto) work(e); });
-$("up").addEventListener("pointerdown", e => { e.preventDefault(); if (!auto) enhance(); });
-$("kinds").addEventListener("pointerdown", e => { const b = e.target.closest("button"); if (!b || busy || auto) return; e.preventDefault(); pick = b.dataset.k; beep(700, .03, "square", .03); render(); });
-addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); work(); } if (e.code === "Enter") enhance(); if (["Digit1", "Digit2", "Digit3"].includes(e.code) && !busy) { pick = ["st", "edu", "dev"][+e.code.slice(5) - 1]; render(); } });
-let lastT = performance.now(), saveT = 0;
+$("dexb").addEventListener("pointerdown", e => { e.preventDefault(); openDex(); });
+$("dests").addEventListener("pointerdown", e => { const b = e.target.closest("button[data-to]"); if (!b || auto) return; sel = b.dataset.to; beep(700, .03, "square", .03); render(); });
+$("panel").addEventListener("click", e => { const b = e.target.closest("button[data-m]"); if (!b || auto) return; tryMethod(b.dataset.m); });
+$("news").addEventListener("pointerdown", () => { $("news").classList.remove("on"); newsT = 0; });
+addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); work(); } if (e.key >= "1" && e.key <= "5") { const b = $("panel").querySelectorAll("button[data-m]")[+e.key - 1]; if (b) tryMethod(b.dataset.m); } });
+
+let lastT = performance.now(), saveT = 0, panelT = 0, autoT = 0;
 function loop(t) {
   const dt = Math.min(.25, (t - lastT) / 1000); lastT = t;
-  if (G && !$("ov").classList.contains("on")) {
-    const f = step(G, dt); saveT += dt; if (f) { showNews(f); emit("news", { k: f.n.k, hit: f.hit }); }
-    if (auto && !busy) { if (G.m >= cost(G, pick) && G.s < HOMES.length - 1) { pick = ["st", "edu", "dev"][Math.floor(Math.random() * 3)]; render(); enhance(); } else if (Math.random() < .3) work(); }
-    if (saveT > 2) { saveT = 0; persist(); }
-    hud();
+  if (G && !paused() && !(G.done && G.h === GOAL)) {
+    const sp = auto ? 3 : 1;
+    for (const f of tick(G, dt * sp)) { onNotice(f); if (paused()) break; }
+    saveT += dt; panelT += dt;
+    if (auto && !paused()) { autoT += dt; if (Math.random() < .3) work(); if (autoT > .5) { autoT = 0; const c = botChoose(G, STRATS[autoStrat]); if (c) { sel = c.to; run(c.to, c.m, c.arg); } } }
+    if (panelT > .5) { panelT = 0; const prev = $("dests").innerHTML; render(); }
+    if (saveT > 3) { saveT = 0; persist(); }
   }
+  if (G) hud(); pumpToast();
   requestAnimationFrame(loop);
 }
 
-// ───────── 자체 검사: 봇(돈 있으면 갈아타기, 없으면 알바 · 초당 4번)이 매물 전략별로 펜트하우스까지 가는지 ─────────
-const q = new URLSearchParams(location.search);
-if (q.has("selftest")) {
-  const rows = []; let ok = 0, total = 0;
-  for (const strat of ["st", "edu", "dev", "mix"]) for (let seed = 1; seed <= 20; seed++) {
-    const g = newGame(seed), pr = rng(seed * 7 + 1); let act = 0; total++;
-    while (g.s < GOAL && act < 100000) { act++; const k = strat === "mix" ? ["st", "edu", "dev"][Math.floor(pr() * 3)] : strat; if (g.m >= cost(g, k)) attempt(g, k); else g.m += tapAmt(g.s); step(g, .25); }
-    const min = act * .25 / 60, pass = g.s >= GOAL && min >= 1.5 && min <= 40; if (pass) ok++;
-    rows.push(`${strat}\t${seed}\t${pass ? "OK" : "FAIL"}\t도달 ${hn(g.s)}\t시도 ${g.tries}번\t약 ${min.toFixed(1)}분(초당 4탭 기준)`);
+// ───────── 자체 검사 ─────────
+// 갈래별 전략 봇 6개 × 시드 20 = 120판 (초당 1.5탭, 사람 근사) + 균형(중앙값 ±30%) + 갇힘(아무렇게나 20분 다닌 뒤에도 끝까지 갈 수 있나 20판)
+function selftest() {
+  const t0 = performance.now(), rows = [], meds = {}; let ok = 0, total = 0; const allT = [];
+  for (const s in STRATS) {
+    const ts = []; let pass = 0;
+    for (let seed = 1; seed <= 20; seed++) { const o = runBot(seed, s, 60 * 60); const good = o.done && o.min >= 5 && o.min <= 30; total++; if (good) { ok++; pass++; } ts.push(o.min); allT.push(o.min); if (!good) rows.push(`  FAIL ${s} seed ${seed}: ${o.min.toFixed(1)}분 · ${o.G.path.join(">")}`); }
+    ts.sort((a, b) => a - b); meds[s] = ts[10];
+    rows.push(`${STRATS[s].n.padEnd(7, "　")} ${pass}/20 도달 · 중앙 ${ts[10].toFixed(1)}분 · 최소 ${ts[0].toFixed(1)} · 최대 ${ts[19].toFixed(1)}`);
   }
-  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px;overflow:auto;font-size:11px">${rows.join("\n")}</pre>`);
+  allT.sort((a, b) => a - b); const mAll = allT[allT.length >> 1], vals = Object.values(meds).sort((a, b) => a - b), mMed = vals[vals.length >> 1];
+  const bal = Object.values(meds).every(v => Math.abs(v / mMed - 1) <= .3); total++; if (bal) ok++;
+  rows.push(`균형: 전략별 중앙값 / 전체 = ${Object.entries(meds).map(([k, v]) => k + " " + (v / mMed).toFixed(2)).join(" · ")} → ${bal ? "OK (±30% 안)" : "FAIL"}`);
+  let stuck = 0; for (let seed = 1; seed <= 20; seed++) { const o = runBot(500 + seed, "metro", 90 * 60, 20 * 60); if (!o.done) stuck++; }
+  total++; if (!stuck) ok++;
+  rows.push(`갇힘: 20분 무작위로 돌아다닌 뒤 끝까지 가기 20판 → 못 간 판 ${stuck}건 ${stuck ? "FAIL" : "OK"}`);
+  rows.push(`전체 중앙 시간 ${mAll.toFixed(1)}분 (120판) · 검사 ${(performance.now() - t0 | 0)}ms`);
+  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px;overflow:auto;font-size:11px;white-space:pre-wrap">SELFTEST ${ok}/${total}\n${rows.join("\n")}</pre>`);
   document.title = `SELFTEST ${ok}/${total}`;
-} else if (q.has("autoplay")) { auto = true; G = newGame(Number(q.get("autoplay")) || 1); G.m = 2000; render(); }
+  window.__selftest = { ok, total, meds, mAll, stuck };
+}
+
+buildMap();
+if (Q.has("selftest")) { G = newGame(1); render(); selftest(); }
+else if (Q.has("autoplay")) { auto = true; const n = Number(Q.get("autoplay")) || 1; autoStrat = Object.keys(STRATS)[n % 6]; G = newGame(n); showMoney = G.cash; render(); emit("level_start", { level: 1 }); }
 else { G = newGame(Date.now() % 1e6); render(); menu(); }
-window.__g012 = { newGame, attempt, step, cost, inc, HOMES };
+$("dexn").textContent = save.terms.length;
+window.__g012 = { newGame, act, tick, quote, runBot, STRATS, NODES, get G() { return G; } };
 requestAnimationFrame(loop);
 </script>
 </body>
