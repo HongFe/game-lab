@@ -377,7 +377,7 @@ function step(run, inp = {}) {
       else { e.atkT -= DT; if (e.atkT <= 0) { e.atkT = 1; const d = e.atk * (run.syn.guard ? .6 : 1); b.hp -= d; run.ev.push({ k: "bearHit", id: b.id, v: Math.round(d), eid: e.id }); if (b.hp <= 0) { b.hp = 0; b.ko = 5; run.enemies.forEach(x => { if (x.block === b.id) x.block = 0; }); run.ev.push({ k: "ko", id: b.id }); } } continue; }
     }
     e.s += e.spd * (e.slowT > 0 ? 1 - e.slowA : 1) * DT; [e.x, e.y] = pathAt(e.s);
-    if (e.s >= PLEN) { e.hp = 0; e.leaked = true; run.lives -= e.leak; run.leaked++; run.ev.push({ k: "leak", kind: e.kind, n: e.leak }); if (run.lives <= 0) { run.lives = 0; run.over = true; run.ev.push({ k: "over" }); } }
+    if (e.s >= PLEN) { e.hp = 0; e.leaked = true; run.lives -= e.leak; run.leaked++; run.ev.push({ k: "leak", kind: e.kind, n: e.leak }); if (run.lives <= 0 && !run.over) { run.lives = 0; run.over = true; run.ev.push({ k: "over" }); } }
   }
   // 웅덩이 감속
   run.puddles = run.puddles.filter(p => (p.t -= DT) > 0); run.puddles.forEach(p => run.enemies.forEach(e => { if (e.hp > 0 && dist2(e, p) < p.r * p.r) { e.slowT = Math.max(e.slowT, .3); e.slowA = Math.max(e.slowA * (e.slowT > .3 ? 1 : 0), p.a); } }));
@@ -389,7 +389,7 @@ function step(run, inp = {}) {
     if (u.type === "bear") {
       const cap = Math.min(5, T.cap + u.star - 1), mine = run.enemies.filter(e => e.hp > 0 && e.block === u.id);
       if (mine.length < cap) for (const e of inRange(run, u, T.rng).filter(e => !e.block && e.kind !== "boss").sort((a, b) => b.s - a.s)) { if (mine.length >= cap) break; e.block = u.id; mine.push(e); run.ev.push({ k: "taunt", id: u.id, eid: e.id }); }
-      run.units.forEach(p => { if (p.type === "peng" && p.ko === 0 && dist2(p, u) < TYPES.peng.rng ** 2 && u.hp < u.max) u.hp = Math.min(u.max, u.hp + T.heal * 0 + TYPES.peng.heal * p.star * DT); });
+      run.units.forEach(p => { if (p.type === "peng" && p.ko === 0 && dist2(p, u) < TYPES.peng.rng ** 2 && u.hp < u.max) u.hp = Math.min(u.max, u.hp + TYPES.peng.heal * p.star * DT); });
     }
     const haste = (1 + (aura[u.id] || 0)) * (run.syn.quick && (u.type === "cat" || u.type === "bun") ? 1.25 : 1) * (run.buffT > 0 ? 1.5 : 1);
     u.cd -= DT * haste; if (u.cd > 0) continue;

@@ -19,7 +19,7 @@ window.CATALOG = [
  {
   "id": "G002",
   "title": "인형뽑기 군단",
-  "one_liner": "집게로 뽑은 인형이 그대로 내 부대가 된다. 못 뽑으면 맨몸으로 싸운다.",
+  "one_liner": "슬롯을 멈춰 인형을 뽑고, 같은 인형을 합쳐 등급업. 곰은 막고 공룡은 불태우고 펭귄은 치료 — 몰려오는 적을 실시간으로 막는 인형 디펜스.",
   "type": "엄청난 중독성",
   "stage": "프로토",
   "deadline": "2026-12-03",
@@ -27,7 +27,7 @@ window.CATALOG = [
   "path": "../G002_claw-army/game/index.html",
   "color": "#ff7ab6",
   "icon": "🧸",
-  "version": "2026-11-26 19:07",
+  "version": "2026-11-26 19:29",
   "note": "3릴 슬롯 뽑기 + 실시간 웨이브 디펜스, 인형 역할 행동·시너지, 5…",
   "rating": null,
   "hot": false
@@ -91,7 +91,7 @@ window.CATALOG = [
   "path": "../G011_commute-dodge/game/index.html",
   "color": "#2fc4c4",
   "icon": "🚇",
-  "version": "2026-11-26 19:09",
+  "version": "2026-11-26 19:29",
   "note": "이모지 불투명, ?에 멈추는 봇 곡선 추가·재조정, 모자·조끼 예고…",
   "rating": null,
   "hot": false
@@ -108,7 +108,7 @@ window.CATALOG = [
   "color": "#4d9dff",
   "icon": "🏠",
   "version": "2026-11-26 19:10",
-  "note": "갈림길 지도 6갈래(상급지·수도권·재개발·청약·경매·갭투자), 수단별…",
+  "note": "오락실 플레이 시간은 사람 입력·레벨 신호로만 측정, G012 이름 '…",
   "rating": null,
   "hot": false
  }
