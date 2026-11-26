@@ -22,10 +22,10 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .goal .g2.ok{color:var(--ok)}
 .goal.bump{animation:bump .35s cubic-bezier(.3,1.8,.6,1)}
 @keyframes bump{40%{transform:scale(1.05)}}
-.warnb{width:70px;flex:none;background:rgba(15,20,30,.8);border:1px solid var(--line);border-radius:14px;padding:6px 4px;text-align:center;font-size:10.5px;color:var(--sub)}
+.warnb{width:70px;flex:none;background:rgba(15,20,30,.8);border:1px solid var(--line);border-radius:14px;padding:6px 4px;text-align:center;font-size:12px;color:var(--sub)}
 .warnb b{display:block;font:900 17px ui-monospace,Menlo,monospace;color:var(--red);letter-spacing:1px;margin-top:3px}
 #hold{position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));height:74px;border:0;border-radius:20px;background:linear-gradient(#ffcc5c,#ff9f1a);color:#3a2300;font:900 18px -apple-system,sans-serif;box-shadow:0 6px 0 #b86a00,0 10px 24px rgba(0,0,0,.35);touch-action:none;overflow:hidden;z-index:2}
-#hold small{display:block;font-size:11.5px;font-weight:700;opacity:.8}
+#hold small{display:block;font-size:12.5px;font-weight:700;opacity:.8}
 #hold .bar{position:absolute;left:0;bottom:0;height:7px;background:#3a2300;opacity:.55;width:0}
 #hold.on{transform:translateY(4px);box-shadow:0 2px 0 #b86a00;background:linear-gradient(#ffb020,#f08800)}
 #hold.danger{background:linear-gradient(#ff7a6b,#e0362b);color:#fff;box-shadow:0 6px 0 #8f1d15,0 10px 24px rgba(0,0,0,.35);animation:dz .18s infinite alternate}
@@ -36,7 +36,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #coach{position:absolute;left:12px;right:12px;top:calc(76px + env(safe-area-inset-top));z-index:3;display:none;background:#fff8ee;color:#2a1c06;border-radius:16px;padding:10px 12px 10px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 #coach.on{display:block;animation:rise .25s ease-out}
 #coach .top{display:flex;align-items:center;gap:8px}
-#coach .dots{flex:1;font-size:11px;font-weight:800;color:#9a7a3a;letter-spacing:2px}
+#coach .dots{flex:1;font-size:12px;font-weight:800;color:#9a7a3a;letter-spacing:2px}
 #coach #skip{border:0;background:#e9dcc4;color:#5a4320;border-radius:10px;font:800 12px -apple-system,sans-serif;min-height:40px;min-width:76px;padding:0 10px;cursor:pointer}
 #coach .msg{font-size:18px;font-weight:900;line-height:1.35;margin-top:2px}
 #coach .msg em{font-style:normal;color:#e0362b}
@@ -61,7 +61,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .list{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
 .list button{margin:0;padding:9px 6px;font-size:13px;background:#3b4862;color:var(--tx)}
 .list button.done{background:#3c5a4a} .list button:disabled{opacity:.35}
-.list small{display:block;font-size:11px;color:var(--acc)}
+.list small{display:block;font-size:12px;color:var(--acc)}
 </style>
 </head>
 <body>
@@ -102,6 +102,8 @@ const SHOPS = [
 const TUT_SHOP = { name: "연습 김밥", food: "🍙" };
 // 가게별 속도(every)는 반응형 봇 최소 통과값 + 사람 반응 여유 (2026-11-26 조정)
 const DT = 1 / 60, PASS_TIME = .7, WATCH = 2, CAUGHT_PUSH = 2;
+// 새로 '지켜보는 사람'이 된 손님은 이 시간 동안 들킴 판정에서 빠진다 (이미 돌아본 상태로 들어와도 반응할 틈을 준다, QA 2026-11-26)
+let GRACE = .35;
 const $ = id => document.getElementById(id);
 const cv = $("cv"), ctx = cv.getContext("2d");
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -153,7 +155,7 @@ function stepLevel(L, hold, ev) {
   L.time += DT; L.cool = Math.max(0, L.cool - DT); L.glare = Math.max(0, L.glare - DT);
   // 손님 고개 돌리기 (noTurn: 연습 단계 — 앞보기에서 스스로 돌아보지 않음)
   for (const n of L.line) {
-    if (n.me) continue; n.t += DT;
+    if (n.me) continue; n.t += DT; if (n.grace > 0) n.grace -= DT;
     if (n.st === "fwd" && L.noTurn) { n.t = 0; continue; }
     if (n.t >= n.dur) {
       const T = TYPES[n.type]; n.t = 0;
@@ -174,12 +176,17 @@ function stepLevel(L, hold, ev) {
     }
   }
   // 살금살금
-  const p = meIdx(L);
+  const p = meIdx(L), ws = watchers(L), wid = ws.map(n => n.id).join(",");
+  if (wid !== L.wid) { const old = (L.wid || "").split(","); ws.forEach(n => { if (!old.includes(String(n.id))) n.grace = GRACE; }); L.wid = wid; }
   const moving = hold && p > 0 && L.cool <= 0;
   if (moving) {
-    if (watchers(L).some(n => n.st === "look")) {   // 들킴
+    if (ws.some(n => n.st === "look" && !(n.grace > 0))) {   // 들킴
       if (!L.noStrike) L.strikes++; L.caughtN++; L.prog = 0; L.cool = 1.1; L.glare = 1.1;
-      const me = L.line.splice(p, 1)[0], np = Math.min(L.line.length, p + CAUGHT_PUSH); L.line.splice(np, 0, me);
+      while (L.line.length - 1 - p < CAUGHT_PUSH) {   // 뒤에 사람이 모자라면 새 손님이 줄 끝에 온다 (항상 두 칸 뒤로)
+        const ks = L.shop.mix ? Object.keys(L.shop.mix) : ["office"], type = ks[(L.newcomer = (L.newcomer || 0) + 1) % ks.length];
+        L.line.push({ id: 500 + L.newcomer, type, st: "fwd", t: 0, dur: TYPES[type].fwd[0], me: false });
+      }
+      const me = L.line.splice(p, 1)[0]; L.line.splice(p + CAUGHT_PUSH, 0, me);
       ev && ev("caught"); if (L.strikes >= 3) { L.over = "kicked"; ev && ev("kicked"); } return;
     }
     L.prog += DT / PASS_TIME; ev && ev("sneak");
@@ -219,7 +226,7 @@ function tutTick(L, hold, ev) {
     if (L.passed >= 1) { tutSay(U, "한 명 앞질렀다! 👍 누르면 앞으로 가요", true); ev && ev("tgood"); U.okT = 1.3; tutGo(L, 1); }
   } else if (U.s === 1) {
     if (U.ph === "wait") {
-      tutSay(U, "다시 꾹 눌러서 앞으로… <em>앞사람 머리 위</em>를 잘 보세요");
+      tutSay(U, "다시 꾹 눌러서 앞으로… <em>앞사람</em>을 잘 보세요");
       if (L.cool <= 0 && U.t > .3 && ((hold && L.prog >= .2 && L.prog < .6) || U.t > 3)) { U.n = tutForce(L, ev, 1.7); U.ph = "tele"; U.c0 = L.caughtN; }
     } else if (U.ph === "tele") tutSay(U, "<em>❗ 떴다! 지금 손 떼요!</em> 곧 뒤돌아봐요");
     else if (U.ph === "look") {
@@ -237,7 +244,7 @@ function tutTick(L, hold, ev) {
     } else if (U.ph === "tele") tutSay(U, "<em>❗</em> 그래도 계속 꾹~");
     else if (U.ph === "look") {
       if (L.caughtN > U.c0) { tutSay(U, "들키면 <em>두 칸 뒤로 + 경고 1개</em>. 경고 3번이면 쫓겨나요!", true); U.okT = 2.4; tutGo(L, 3); }
-      else { tutSay(U, "돌아봤을 때 누르고 있어야 해요 — <em>꾹!</em>"); if (U.n.st === "fwd") { U.ph = "wait"; U.t = 0; } }
+      else { tutSay(U, "돌아봤을 때 누르고 있어야 해요 — <em>꾹!</em>"); if (U.n.st === "fwd") { U.ph = "wait"; U.t = 0; if ((U.tries = (U.tries || 0) + 1) >= 2) { tutSay(U, "손 떼기는 완벽! 들키면 <em>두 칸 뒤로 + 경고</em>, 3번이면 쫓겨나요", true); U.okT = 2.4; tutGo(L, 3); } } }
     }
   } else if (U.s === 3) {
     if (!U.ran) { U.ran = true; tutRun(L); }
@@ -268,9 +275,10 @@ function onEv(k, n) {
   else if (k === "caught") {
     SFX.caught(); fx.combo = 0; fx.shake = 16; fx.allLook = 1.7; fx.flash = .35; if (JUICE) fx.stop = .09;
     // 줄 전체가 돌아보고 여기저기서 한마디
-    const others = L.line.filter(x => !x.me), p = meIdx(L), near = others.filter(x => Math.abs(L.line.indexOf(x) - p) <= 4);
-    const pick = (near.length ? near : others).slice().sort(() => Math.random() - .5).slice(0, 4);
-    const txt = CAUGHT_TXT.slice().sort(() => Math.random() - .5);
+    // 말풍선은 내 앞쪽 가까운 3명만 (아래 '들켰다!'·위 안내칸과 안 겹치게), 문구는 겹치지 않게
+    const p = meIdx(L), ahead = L.line.slice(Math.max(0, p - 3), p).filter(x => !x.me).reverse();
+    const pick = ahead.length ? ahead : L.line.filter(x => !x.me).slice(-1);
+    const txt = CAUGHT_TXT.filter(x => x !== fx.lastTxt).sort(() => Math.random() - .5); fx.lastTxt = txt[0]; fx.bubbles = [];
     pick.forEach((x, i) => fx.bubbles.push({ id: x.id, txt: txt[i], t: -i * .18, side: i % 2 ? 1 : -1, face: ANGRY[Math.floor(Math.random() * ANGRY.length)] }));
     L.line.forEach(x => { if (!x.me) x.angry = ANGRY[Math.floor(Math.random() * ANGRY.length)]; });
   }
@@ -282,7 +290,15 @@ function onEv(k, n) {
 function puff(x, y, n, col) { if (!JUICE) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = 40 + Math.random() * 80; fx.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .5, max: .5, r: 2 + Math.random() * 3, col }); } }
 function bumpGoal() { if (!JUICE) return; const g = $("goal"); g.classList.remove("bump"); void g.offsetWidth; g.classList.add("bump"); }
 function resetFx() { fx.bubbles = []; fx.parts = []; fx.pops = []; fx.allLook = 0; fx.combo = 0; fx.flash = 0; }
-function start(n, seed) {
+const HABIT = { office: "휴대폰 보느라 거의 안 돌아봐요", kid: "자주 돌아봐요. ❗가 아주 짧아요", granny: "❗는 길게 뜨지만, 한번 보면 오래 봐요", uncle: "자주, 오래 봐요. 제일 무서운 손님" };
+function newGuests(n) { const before = new Set(); SHOPS.slice(0, n).forEach(S => Object.keys(S.mix).forEach(k => before.add(k))); return n === 0 ? [] : Object.keys(SHOPS[n].mix).filter(k => !before.has(k) && !(save.met || {})[k]); }
+function start(n, seed, seen) {
+  const ng = auto || seen ? [] : newGuests(n);
+  if (ng.length) {   // 새 손님 첫 등장: 습관 안내 카드
+    mode = "menu"; L = null; resetHud(); coach(false);
+    $("box").innerHTML = `<h2>새 손님 등장!</h2>${ng.map(k => `<div class="food">${TYPES[k].e}</div><p><b style="color:#fff8ee;font-size:17px">${TYPES[k].name}</b><br>${HABIT[k]}</p>`).join("")}<p>${SHOPS[n].food} ${SHOPS[n].name} 줄에 섞여 있어요.</p><button id="go">줄 서기</button>`;
+    $("ov").classList.add("on"); save.met = Object.assign({}, save.met); ng.forEach(k => save.met[k] = 1); store.set(save); $("go").onclick = () => start(n, seed, true); return;
+  }
   li = n; L = newLevel(n, seed ?? (Date.now() % 1e6)); mode = "play"; holding = false; camY = posY(meIdx(L)); resetFx();
   coach(false); $("ov").classList.remove("on"); emit("level_start", { level: n + 1 });
 }
@@ -291,7 +307,7 @@ function startTut() {
   $("ov").classList.remove("on"); coach(true);
 }
 function endTut(skipped) {
-  save.tut = 1; store.set(save); coach(false); mode = "done"; holding = false; $("hold").classList.remove("on");
+  if (!auto) { save.tut = 1; store.set(save); } coach(false); mode = "done"; holding = false; $("hold").classList.remove("on");
   if (skipped) return menu();
   setTimeout(() => {
     $("box").innerHTML = `<h2>연습 끝! 🎉</h2><div class="food">🍢</div><p><b>꾹 누르기</b> = 살금살금 앞으로<br><b>❗ 보이면 손 떼기</b> = 안 들킴<br>들키면 두 칸 뒤로 + 경고</p><p>위의 <b>“최소 N명 앞질러야 먹음”</b>을 0으로 만들면 먹을 수 있어요.</p><button id="go">첫 가게 줄 서기</button><button class="sec" id="mn">가게 목록</button>`;
@@ -303,7 +319,7 @@ function finish(win, why) {
   mode = "done"; holding = false; $("hold").classList.remove("on");
   const S = SHOPS[li];
   if (win) {
-    const st = 3 - L.strikes; save.stars[li] = Math.max(save.stars[li] || 0, st); save.unlocked = Math.max(save.unlocked, li + 2); store.set(save);
+    const st = 3 - L.strikes; if (!auto) { save.stars[li] = Math.max(save.stars[li] || 0, st); save.unlocked = Math.max(save.unlocked, li + 2); store.set(save); }
     SFX.win(); emit("level_clear", { level: li + 1, strikes: L.strikes, passed: L.passed });
     setTimeout(() => { $("box").innerHTML = `<h2>입장 성공!</h2><div class="food">${S.food}</div><div class="stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</div>
       <p>${S.name} · ${L.passed}명 앞질러 · 경고 ${L.strikes}</p><button id="nx">${li + 1 < SHOPS.length ? "다음 가게" : "가게 목록"}</button><button class="sec" id="rt">다시</button>`;
@@ -314,9 +330,13 @@ function finish(win, why) {
       <button id="rt">다시 줄 서기</button><button class="sec" id="mn">가게 목록</button>`; $("ov").classList.add("on"); $("rt").onclick = () => start(li); $("mn").onclick = menu; }, 500);
   }
 }
+function resetHud() {
+  $("bowl").textContent = "-"; $("ahead").textContent = "-"; $("warn").textContent = "○○○"; const need = $("need"); need.className = "g2"; need.textContent = "줄을 골라 주세요"; lastNeed = -9;
+  const h = $("hold"); h.classList.remove("on", "danger"); h.disabled = true; $("holdT").textContent = "🤫 살금살금"; $("holdS").textContent = "누르고 있기 · ❗ 뜨면 손 떼기"; $("bar").style.width = "0";
+}
 function menu() {
-  mode = "menu"; coach(false);
-  $("box").innerHTML = `<h1>🍜 맛집 새치기</h1><p>그릇은 얼마 안 남았다. 앞사람이 <b>안 볼 때만</b> 살금살금 앞으로!</p><ul><li><b>꾹 누르면</b> 앞사람을 살금살금 지나가요</li><li>머리 위에 <b>❗</b> → 곧 돌아봐요 → <b>손 떼기</b></li><li>들키면 두 칸 뒤로 + 경고. 3번이면 쫓겨나요</li></ul>
+  mode = "menu"; coach(false); L = null; holding = false; resetFx(); resetHud();
+  $("box").innerHTML = `<h1>🍜 맛집 새치기</h1><p>그릇은 얼마 안 남았다. 앞사람이 <b>안 볼 때만</b> 살금살금 앞으로!</p><ul><li><b>꾹 누르면</b> 앞사람을 살금살금 지나가요</li><li>앞사람에게 <b>❗</b> → 곧 돌아봐요 → <b>손 떼기</b></li><li>들키면 두 칸 뒤로 + 경고. 3번이면 쫓겨나요</li></ul>
     <div class="list">${SHOPS.map((s, i) => `<button ${i + 1 > save.unlocked ? "disabled" : ""} class="${save.stars[i] ? "done" : ""}" data-i="${i}">${s.food} ${s.name}<small>${save.stars[i] ? "★".repeat(save.stars[i]) : i + 1 > save.unlocked ? "🔒" : "도전"}</small></button>`).join("")}</div>
     <button class="sec" id="tutb">📖 연습(튜토리얼) 다시 보기</button>`;
   $("ov").classList.add("on"); $("box").querySelectorAll("[data-i]").forEach(b => b.onclick = () => start(+b.dataset.i)); $("tutb").onclick = startTut;
@@ -362,7 +382,7 @@ function drawPerson(x, y, n, t, sneak, isW, dt) {
     ctx.fillStyle = "#ffb020"; rr(-14, -4 + crouch, 28, 26 - crouch, 10); ctx.fill();
     ctx.fillStyle = "rgba(255,255,255,.25)"; rr(-10, -1 + crouch, 8, 10, 4); ctx.fill();
     ctx.font = "30px sans-serif"; ctx.fillText(sneak ? "🫣" : L && L.glare > 0 ? "😳" : "😋", 0, -16 + crouch + bob);
-    ctx.fillStyle = "#ffb020"; ctx.font = "800 10px -apple-system"; ctx.fillText("나", 0, 32);
+    ctx.fillStyle = "#ffb020"; ctx.font = "900 13px -apple-system"; ctx.fillText("나", 0, 33);
   } else {
     // 고개 회전: vt 0(뒤통수) → 1(얼굴). 가로로 접히듯 돌아간다
     const target = n.st === "look" || fx.allLook > 0 ? 1 : n.st === "tele" ? .18 : 0;
@@ -432,9 +452,10 @@ function draw(t, dt) {
   const [mx, my] = pos.get(99);
   // 줄 서 있는 사람들 (뒤에서부터 그려 앞사람이 위에)
   for (let i = L.line.length - 1; i >= 0; i--) {
-    const n = L.line[i], [x, yy] = pos.get(n.id); if (yy < -60 || yy > H + 60) continue;
-    drawPerson(x, yy, n, t, n.me && holding && L.prog > 0, ws.includes(n), dt);
+    const n = L.line[i], [x, yy] = pos.get(n.id); if (n.me || yy < -60 || yy > H + 60) continue;
+    drawPerson(x, yy, n, t, false, ws.includes(n), dt);
   }
+  drawPerson(mx, my, L.line[p], t, holding && L.prog > 0, false, dt);   // 나는 맨 위에 (앞지르는 동안 가려지지 않게)
   // 레이저 시야선 (지켜보는 사람이 돌아봤을 때)
   ws.forEach(n => { if (n.st === "look" && (n.vt ?? 1) > .5) { const [x, yy] = pos.get(n.id); drawLaser(x, yy, mx, my - 6, t, true); } });
   if (fx.allLook > 0 && JUICE) L.line.forEach(n => { if (!n.me && !ws.includes(n)) { const q = pos.get(n.id); if (q[1] > -60 && q[1] < H + 60 && Math.abs(q[1] - my) < SP * 5) drawLaser(q[0], q[1], mx, my - 6, t, false); } });
@@ -447,7 +468,8 @@ function draw(t, dt) {
     if (b.t < 0) return; const q = pos.get(b.id); if (!q) return;
     const k = JUICE ? Math.min(1, b.t / .12) * (1 + .15 * Math.max(0, 1 - b.t / .25)) : 1, a = Math.min(1, (1.9 - b.t) * 3);
     ctx.font = "900 14px -apple-system"; const tw = ctx.measureText(b.txt).width + 20;
-    let bx = q[0] + b.side * (tw / 2 + 14); bx = Math.max(tw / 2 + 6, Math.min(W - tw / 2 - 6, bx)); const by = q[1] - 30;
+    let bx = q[0] + b.side * (tw / 2 + 14); bx = Math.max(tw / 2 + 6, Math.min(W - tw / 2 - 6, bx));
+    const top = $("coach").classList.contains("on") ? $("coach").getBoundingClientRect().bottom - $("app").getBoundingClientRect().top + 24 : 96, by = Math.max(top, q[1] - 30);
     ctx.save(); ctx.globalAlpha = a; ctx.translate(bx, by); ctx.scale(k, k);
     ctx.fillStyle = "rgba(0,0,0,.25)"; rr(-tw / 2 + 2, -15, tw, 32, 12); ctx.fill();
     ctx.fillStyle = "#fff"; rr(-tw / 2, -17, tw, 32, 12); ctx.fill();
@@ -459,7 +481,7 @@ function draw(t, dt) {
   ctx.restore();
   // 들킴 번쩍
   if (fx.flash > 0 && JUICE) { ctx.fillStyle = `rgba(255,60,50,${fx.flash})`; ctx.fillRect(0, 0, W, H); fx.flash -= dt; }
-  if (fx.allLook > 0) { fx.allLook -= dt; ctx.fillStyle = "#fff"; ctx.font = "900 34px -apple-system"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.globalAlpha = Math.min(1, fx.allLook * 2); ctx.strokeStyle = "#8f1d15"; ctx.lineWidth = 6; ctx.strokeText("들켰다!", W / 2, H * .82 - 40); ctx.fillText("들켰다!", W / 2, H * .82 - 40); ctx.globalAlpha = 1; }
+  if (fx.allLook > 0) { fx.allLook -= dt; ctx.fillStyle = "#fff"; ctx.font = "900 34px -apple-system"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.globalAlpha = Math.min(1, fx.allLook * 2); ctx.strokeStyle = "#8f1d15"; ctx.lineWidth = 6; const gy = Math.min(H - 120, my + 74); ctx.strokeText("들켰다!", W / 2, gy); ctx.fillText("들켰다!", W / 2, gy); ctx.globalAlpha = 1; }
   // 휴… / 긴장 테두리
   if (fx.phew > 0 && JUICE) { ctx.globalAlpha = fx.phew; ctx.fillStyle = "#fff"; ctx.font = "900 30px -apple-system"; ctx.textAlign = "center"; ctx.fillText("휴…", W / 2, H * .45); ctx.globalAlpha = 1; fx.phew -= dt * 1.2; }
   const danger = ws.some(n => n.st === "tele"); if (danger && JUICE) { ctx.strokeStyle = `rgba(255,90,79,${.35 + .25 * Math.sin(t * 20)})`; ctx.lineWidth = 10; ctx.strokeRect(0, 0, W, H); }
@@ -469,7 +491,7 @@ function hud() {
   if (!L) return; const p = meIdx(L), k = needPass(L);
   $("bowl").textContent = L.bowls; $("ahead").textContent = p; $("warn").textContent = L.tut ? "연습" : "✕".repeat(L.strikes) + "○".repeat(3 - L.strikes);
   const need = $("need");
-  const practice = L.tut && L.tut.s < 3;
+  const practice = L.tut && (L.tut.s < 3 || !L.tut.ran);
   if (practice) { if (lastNeed !== -2) { need.className = "g2"; need.textContent = "🧪 연습 중 · 줄은 아직 안 움직여요"; lastNeed = -2; } }
   else if (k * 2 + (p === 0) !== lastNeed) { need.className = "g2" + (k === 0 ? " ok" : ""); need.innerHTML = k === 0 ? (p === 0 ? "🚪 맨 앞! 곧 들어가요" : "✓ 이대로 기다리면 먹어요!") : `→ 최소 <b>${k}</b>명 앞질러야 먹음`; lastNeed = k * 2 + (p === 0); }
   $("bar").style.width = Math.round(L.prog * 100) + "%"; $("hold").disabled = mode !== "play" || L.cool > 0;
@@ -517,6 +539,15 @@ function runTutHeadless(maxSec = 180) {
 if (q.has("selftest")) {
   const rows = []; let ok = 0, total = 0;
   SHOPS.forEach((S, i) => { let win = 0, minB = 99; for (let s = 1; s <= 5; s++) { const T = newLevel(i, s * 101 + i); let k = 0; while (!T.over && k++ < 60 * 300) stepLevel(T, botHold(T)); if (T.over === "win") { win++; minB = Math.min(minB, T.bowls); } } total++; const pass = win === 5; if (pass) ok++; rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${S.name}\t봇 성공 ${win}/5\t남은 그릇 최소 ${minB === 99 ? "-" : minB}`); });
+  // 반응 0.25초 봇(사람 근사): 위험(❗/돌아봄)이 생기고 0.25초 뒤에야 손을 뗀다. 가게마다 시드 200개
+  const reactRate = (i, grace, rt = .25) => { const g0 = GRACE; GRACE = grace; let win = 0, caught = 0, noWarn = 0; for (let s = 1; s <= 200; s++) { const T = newLevel(i, s * 7919 + i); let k = 0, d = 0; while (!T.over && k++ < 60 * 300) { const ws = watchers(T), danger = meIdx(T) > 0 && ws.some(n => n.st !== "fwd"); d = danger ? d + DT : 0; const c0 = T.caughtN; stepLevel(T, meIdx(T) > 0 && T.cool <= 0 && (!danger || d < rt)); if (T.caughtN > c0) { caught++; if (d <= DT * 1.5) noWarn++; } } if (T.over === "win") win++; } GRACE = g0; return { rate: win / 2, caught, noWarn }; };
+  const rr0 = SHOPS.map((S, i) => reactRate(i, 0)), rr1 = SHOPS.map((S, i) => reactRate(i, GRACE));
+  total++; const rp = rr1[0].rate >= 84 && rr1.every((r, i) => r.rate >= rr0[i].rate); if (rp) ok++;
+  rows.push(`R\t${rp ? "OK" : "FAIL"}\t반응0.25초\t가게1 ${rr1[0].rate}% (기준 84% 이상, 유예 없을 때 ${rr0[0].rate}%) · 모든 가게 유예 전보다 같거나 높음`);
+  rows.push(`  \t가게별 성공률 유예 전→후: ${rr0.map((r, i) => `${i + 1}:${r.rate}→${rr1[i].rate}`).join(" ")}`);
+  rows.push(`  \t예고 없는 들킴(반응 0초) 전→후: ${rr0.map((r, i) => `${i + 1}:${r.noWarn}/${r.caught}→${rr1[i].noWarn}/${rr1[i].caught}`).join(" ")}`);
+  const rr4 = SHOPS.map((S, i) => reactRate(i, GRACE, .4));
+  rows.push(`  \t(참고) 반응 0.4초 봇 성공률: ${rr4.map((r, i) => `${i + 1}:${r.rate}`).join(" ")}`);
   const tr = runTutHeadless(); total++; const tp = tr.done && tr.sec <= 60; if (tp) ok++;
   rows.push(`T\t${tp ? "OK" : "FAIL"}\t연습\t끝까지 ${tr.done ? "완료" : "미완"}\t${tr.sec.toFixed(1)}초 (60초 이내) · 들킴 ${tr.caught}`);
   document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px">${rows.join("\n")}</pre>`);
