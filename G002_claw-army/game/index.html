@@ -60,50 +60,93 @@ html,body{margin:0;height:100%;background:radial-gradient(120% 80% at 50% 0%,#4a
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 92px);transform:translateX(-50%);z-index:6;pointer-events:none;background:rgba(30,14,50,.92);border:1px solid rgba(255,216,77,.5);border-radius:14px;padding:8px 12px;font-size:13px;line-height:1.45;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.4);animation:toast 2.2s ease-out forwards;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
 .toast b{color:var(--yel)}
 @keyframes toast{0%{opacity:0;transform:translate(-50%,-12px) scale(.9)}10%{opacity:1;transform:translate(-50%,0) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-6px)}}
+.syn{display:flex;gap:4px;min-height:40px;align-items:center;justify-content:center;flex-wrap:wrap;margin:5px 0;touch-action:manipulation}
+.syn span{font-size:12px;line-height:1.2;padding:4px 6px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#8f7aa3;white-space:nowrap}
+.syn span.on{color:#2a1640;background:var(--yel);border-color:#fff;font-weight:900;box-shadow:0 0 10px rgba(255,216,77,.5)}
+.btns button.spd,.btns button.ic{flex:0 0 52px;background:#5a3a80;color:#fff;box-shadow:0 4px 0 #2a1640;font-size:14px;padding:13px 0}
+.up{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 76px);transform:translateX(-50%);width:min(360px,94vw);background:rgba(36,18,58,.97);border:1px solid var(--yel);border-radius:16px;padding:8px;z-index:6;display:none;box-shadow:0 10px 24px rgba(0,0,0,.5)}
+.up.on{display:block;animation:rise .2s ease-out}
+.up .hd{display:flex;align-items:center;gap:8px;font:900 16px -apple-system,sans-serif;margin:0 2px 6px}
+.up .hd i{font-style:normal;font-size:13px;padding:2px 8px;border-radius:99px;color:#1a0a2a}
+.up .hd .x{margin-left:auto;width:40px;height:40px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:16px}
+.up .row{display:flex;gap:6px}
+.up .row button{flex:1;min-height:44px;border:0;border-radius:11px;background:var(--yel);color:#2a1640;font:900 14px -apple-system,sans-serif}
+.up .row button:disabled{filter:grayscale(1) brightness(.6)}
+.up .row.sw{margin-top:6px}.up .row.sw button{background:#5a3a80;color:#fff;font-size:20px;padding:0}
+.box table{width:100%;font-size:13px;border-collapse:collapse;color:#f0e2f7;text-align:left}.box td{padding:4px 2px;border-bottom:1px solid var(--line)}.box td:last-child{text-align:right;color:var(--yel);font-weight:900}
+.box .opt{display:flex;align-items:center;gap:10px;text-align:left;background:#3d2160;color:#fff;border:1px solid var(--line);min-height:56px}
+.box .opt b{font-size:26px}
+.btns button.spin{background:#ff5f6d;color:#fff;box-shadow:0 4px 0 #a01830}
 </style>
 </head>
 <body>
 <div id="app">
-  <div class="hud"><div>라운드<b id="rd">1</b></div><div class="coin">코인<b id="cn">4</b></div><div>최고<b id="bst">-</b></div><div class="mutegap"></div></div>
+  <div class="hud"><div>웨이브<b id="rd">0</b></div><div class="coin">코인<b id="cn">30</b></div><div>최고<b id="bst">-</b></div><div class="mutegap"></div></div>
   <div class="sign" id="sign">인형뽑기 군단</div>
   <canvas id="cv"></canvas>
-  <div class="squad" id="squad"></div>
-  <div class="btns"><button id="drop">🕹 뽑기 (탭)</button><button class="fight" id="fight">⚔️ 전투 시작</button></div>
-  <div class="tip" id="tip">집게가 인형 바로 위에 올 때 탭! 가운데일수록 잘 잡혀요</div>
+  <div class="syn" id="syn"></div>
+  <div class="btns"><button id="drop">🎰 10🪙</button><button class="ic" id="mis" aria-label="미션">🎯</button><button class="ic" id="prob" aria-label="확률표">📊</button><button class="spd" id="spd">▶1</button></div>
+  <div class="tip" id="tip">릴을 탭해서 멈춰요</div>
 </div>
 <button class="mute" id="mute" aria-label="소리 켜기/끄기">🔊</button>
+<div class="up" id="up"></div>
 <div class="ov" id="ov"><div class="box" id="box"></div></div>
 <div class="cardbg" id="cardbg"><div class="card" id="card"></div></div>
 <script>
 "use strict";
-const q = new URLSearchParams(location.search), SELFTEST = q.has("selftest");
-// ───────── 데이터 ─────────
+const q = new URLSearchParams(location.search), SELFTEST = q.has("selftest"), JUICE = !q.has("nojuice");
+// ───────── 데이터: 인형 6종 (역할이 행동으로 드러나게) ─────────
+// rng=사거리(px), cd=공격 간격(초), chg=필살기까지 공격 횟수
 const TYPES = {
-  bear: { e: "🐻", name: "곰", role: "탱커", col: "#c98a52", hp: 30, atk: 3, w: 0, rare: 3, desc: "체력 높음 · 맨 앞에서 버팀" },
-  bun: { e: "🐰", name: "토끼", role: "연타", col: "#f5d0e3", hp: 14, atk: 2, w: 0, rare: 3, desc: "한 턴에 두 번 공격" },
-  dino: { e: "🦖", name: "공룡", role: "딜러", col: "#5fcf7a", hp: 18, atk: 6, w: .1, rare: 2, desc: "공격력 높음" },
-  cat: { e: "🐱", name: "고양이", role: "치명타", col: "#ffb36b", hp: 15, atk: 4, w: .1, rare: 2, desc: "30% 확률 치명타 ×3" },
-  peng: { e: "🐧", name: "펭귄", role: "회복", col: "#7fa7d9", hp: 16, atk: 1, w: .22, rare: 1, desc: "매 턴 맨 앞 아군 회복" },
-  octo: { e: "🐙", name: "문어", role: "광역", col: "#ff7aa8", hp: 16, atk: 3, w: .22, rare: 1, desc: "맨 앞 적 둘을 동시에 공격" },
+  bear: { e: "🐻", ic: "🛡️", name: "곰", role: "탱커", col: "#c98a52", rare: 3, hp: 80, atk: 4, cd: 1, rng: 100, cap: 2, chg: 7, desc: "앞으로 나가 적을 붙잡고(도발) 앞발로 쓸어 침" },
+  bun: { e: "🐰", ic: "🥕", name: "토끼", role: "연타", col: "#f5d0e3", rare: 3, atk: 3, cd: .75, rng: 130, pspd: 420, chg: 8, desc: "깡충 뛰며 당근 두 발을 연달아 던짐" },
+  dino: { e: "🦖", ic: "🔥", name: "공룡", role: "광역 화염", col: "#5fcf7a", rare: 2, atk: 8, cd: 1.5, rng: 160, aoe: 36, pspd: 250, chg: 5, desc: "불덩이를 뿜어 떨어진 자리 주변을 모두 태움" },
+  cat: { e: "🐱", ic: "🗡️", name: "고양이", role: "암살", col: "#ffb36b", rare: 2, atk: 5, cd: .55, rng: 115, crit: .3, chg: 12, desc: "가장 약한 적에게 순식간에 달려가 할큄 · 30% 치명타 ×3" },
+  peng: { e: "🐧", ic: "💚", name: "펭귄", role: "회복·버프", col: "#7fa7d9", rare: 2, atk: 2, cd: 1.1, rng: 140, pspd: 300, heal: 5, chg: 6, desc: "옆 칸 인형 공격 속도 +15% · 곰 회복 · 눈덩이" },
+  octo: { e: "🐙", ic: "🌀", name: "문어", role: "감속", col: "#ff7aa8", rare: 2, atk: 4, cd: 1.4, rng: 175, aoe: 42, slow: .4, pspd: 220, chg: 5, desc: "먹물탄으로 넓게 맞히고 웅덩이로 적을 느리게" },
 };
-// 필살기: 게이지(GMAX)가 차면 그 인형 차례에 자동 발동. gain=행동 1번에 차는 양, dur/hit=연출 시간(로직과 무관)
-const GMAX = 100, HIT_G = 12;
 const SP = {
-  bear: { name: "대지진", desc: "땅을 내리쳐 모든 적에게 피해 (공격력×1.6)", gain: 20, col: "#e0a060", dur: .85, hit: .05 },
-  dino: { name: "불꽃 브레스", desc: "앞쪽 적 셋을 불태움 (공격력×1.8)", gain: 25, col: "#ff6a20", dur: .7, hit: .1 },
-  cat: { name: "연속 할퀴기", desc: "맨 앞 적을 4번 할퀴고 마지막 일격은 치명타", gain: 25, col: "#ffd84d", dur: .55, hit: .17 },
-  bun: { name: "분신 연타", desc: "분신 셋과 함께 적을 6번 때림", gain: 22, col: "#ff9ed2", dur: .6, hit: .1 },
-  peng: { name: "회복 오로라", desc: "아군 전원 회복", gain: 30, col: "#5fffc8", dur: .85, hit: .07 },
-  octo: { name: "먹물 폭탄", desc: "모든 적에게 피해 + 2턴 동안 적 공격력 40% 감소", gain: 25, col: "#9a6cff", dur: .75, hit: .05 },
+  bear: { name: "대지진", desc: "주변 적 모두에게 큰 피해 + 1.2초 기절", short: "주변 적 기절", col: "#e0a060" },
+  dino: { name: "불꽃 브레스", desc: "사거리 안 모든 적을 불태움 (공격×3)", short: "범위 적 불태우기", col: "#ff6a20" },
+  cat: { name: "연속 할퀴기", desc: "가장 강한 적을 5번 할퀴고 마지막은 치명타", short: "강적 5연속 할퀴기", col: "#ffd84d" },
+  bun: { name: "분신 연타", desc: "분신이 나타나 적들을 6번 때림", short: "분신 6연타", col: "#ff9ed2" },
+  peng: { name: "회복 오로라", desc: "목숨 +1 · 곰 완전 회복 · 전원 5초간 공격 속도 ×1.5", short: "❤️+1·공속 업", col: "#5fffc8" },
+  octo: { name: "먹물 폭탄", desc: "화면의 모든 적에게 피해 + 3초간 60% 감속", short: "전체 감속", col: "#9a6cff" },
 };
-const KEYS = Object.keys(TYPES), STAR = [0, 1, 1.8, 3.2], ORDER = ["bear", "dino", "cat", "bun", "octo", "peng"];
-const DT = 1 / 120, CAB_W = 360, CAB_H = 430, FLOOR = 395, TOPY = 58, CHUTE_X = 46, PIT_L = 96, PIT_R = 336;
+// 시너지: 조합이 갖춰지면 켜짐 (아래 칩·필드 연결선으로 표시)
+const SYN = [
+  { id: "guard", e: "🐻🐧", name: "", desc: "곰이 받는 피해 -40%" },
+  { id: "fireink", e: "🦖🐙", name: "", desc: "느려진 적에게 불 피해 +50%" },
+  { id: "quick", e: "🐱🐰", name: "", desc: "고양이·토끼 공격 속도 +25%" },
+  { id: "div", e: "3종", name: "", desc: "3종 이상: 전원 공격 +10%" },
+  { id: "all6", e: "6종", name: "", desc: "6종 모두: 전원 공격 +30%" },
+];
+const KEYS = Object.keys(TYPES);
+// 등급 5단계: 힘 배수·색·판매가 (신화는 판매 불가). 합성 = 같은 종류·같은 등급 2개 → 한 단계 위(70% 같은 종류, 30% 무작위 종류)
+const GRADE = ["", "일반", "희귀", "영웅", "전설", "신화"], GCOL = ["", "#d9d2e6", "#4db8ff", "#c07cff", "#ff9a2e", "#ff3b6b"], SELL = [0, 5, 12, 30, 70, 0], MAXG = 5, MERGE_SAME = .7, SWAP_COST = 15, SWAP_P = .6;
+// 미션 5개 + 히든 2개 (보상: 코인 또는 뽑기권)
+const MISSIONS = [
+  { id: "six", name: "6종 모두 모으기", rw: { coins: 40 }, test: r => new Set(r.units.map(u => u.type)).size >= 6 },
+  { id: "hero", name: "영웅 등급 만들기", rw: { tickets: 2 }, test: r => r.units.some(u => u.star >= 3) },
+  { id: "syn2", name: "시너지 2개 켜기", rw: { coins: 25 }, test: r => ["guard", "fireink", "quick"].filter(k => r.syn[k]).length >= 2 },
+  { id: "jack3", name: "잭팟 3번", rw: { tickets: 1 }, test: r => (r.stats.jackpot || 0) >= 3 },
+  { id: "legend", name: "전설 등급 만들기", rw: { coins: 80 }, test: r => r.units.some(u => u.star >= 4) },
+  { id: "dust", name: "먼지 수집가 (💨💨💨)", hidden: true, rw: { tickets: 3 }, test: r => (r.stats.dust || 0) >= 1 },
+  { id: "bears", name: "곰 사단 (곰 3마리 동시에)", hidden: true, rw: { coins: 50 }, test: r => r.units.filter(u => u.type === "bear").length >= 3 },
+];
+// 보스 보상: 3개 중 하나 골라 받기
+const REWARDS = [
+  { id: "hero", name: "영웅 인형", desc: "영웅 등급 소환 (칸이 없으면 60🪙)" },
+  { id: "coins", name: "코인 꾸러미", desc: "+40+10×웨이브 🪙" },
+  { id: "tickets", name: "뽑기권 3장", desc: "공짜 뽑기 3번" },
+  { id: "lives", name: "목숨 +3", desc: "❤️ +3 (최대 10)" },
+  { id: "power", name: "전원 강화", desc: "모든 인형 공격 +15% (계속)" },
+];
 const $ = id => document.getElementById(id);
 const cv = $("cv"), ctx = cv.getContext("2d");
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const store = { get() { try { return JSON.parse(localStorage.getItem("g002") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g002", JSON.stringify(v)); } catch (e) {} } };
 let save = Object.assign({ best: 0, runs: 0, seen: {}, mute: false }, store.get());
-const JUICE = !q.has("nojuice");
 
 // ───────── 소리 (Web Audio 합성) ─────────
 let ac = null, master = null, NB = null;
@@ -128,37 +171,39 @@ function noise(d = .1, v = .05, f = 1200, w = 0, type = "bandpass", f2, dest, at
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 const vary = () => 1 + (Math.random() - .5) * .16;   // 피치 ±8%
 const SFX = {
-  coin() { beep(988, .05); beep(1319, .1, "square", .04, .05); },
-  motor() { beep(90, .5, "sawtooth", .025, 0, 70); },
-  grab() { beep(260, .05, "square", .06); beep(180, .08, "triangle", .07, .04); buzz(15); },
-  miss() { beep(200, .25, "triangle", .06, 0, 110); },
-  slip() { [600, 450, 300].forEach((f, i) => beep(f, .08, "square", .045, i * .08)); buzz([20, 30, 20]); },
-  wobble() { beep(520 + Math.random() * 60, .04, "square", .025); },
-  get() { [523, 659, 784, 1046].forEach((f, i) => beep(f, .09, "square", .045, i * .06)); buzz(20); },
+  lever() { beep(120, .18, "sawtooth", .05, 0, 60); noise(.15, .05, 900, 0, "lowpass", 200); buzz(10); },
+  tick() { beep(1800 * vary(), .015, "square", .012); },
+  stop(i) { beep([330, 392, 523][i] || 523, .07, "square", .06); noise(.05, .05, 2500); buzz(12); },
+  pair() { [659, 880].forEach((f, i) => beep(f, .1, "square", .05, i * .07)); },
+  jackpot() { [523, 659, 784, 1046, 1319, 1568, 2093].forEach((f, i) => beep(f, .12, "square", .05, i * .06)); [0, .1, .2, .3, .4, .5].forEach(w => beep(2637, .05, "triangle", .04, .5 + w)); buzz([30, 30, 60]); },
+  blank() { beep(220, .3, "triangle", .06, 0, 110); },
+  heart() { beep(70, .12, "sine", .2); beep(60, .14, "sine", .16, .16); },
   card() { [784, 1046, 1319, 1568, 2093].forEach((f, i) => beep(f, .12, "triangle", .05, i * .05)); },
+  summon() { beep(523, .06, "square", .04); beep(784, .1, "square", .04, .05); },
   merge() { [784, 988, 1175, 1568, 2093].forEach((f, i) => beep(f, .08, "square", .04, i * .05)); buzz([15, 30, 15]); },
-  hit(c, v = 3) { const k = vary() / (1 + Math.min(1.4, v / 25)); beep((c ? 150 : 240) * k, c ? .16 : .06, c ? "sawtooth" : "square", c ? .075 : .045, 0, (c ? 60 : 120) * k); noise(c ? .12 : .05, c ? .07 : .04, 1800 * k); if (c) buzz(25); },
-  weak() { beep(300 * vary(), .03, "square", .02); },
-  heal() { beep(880 * vary(), .08, "sine", .05, 0, 1320); },
-  die() { beep(330 * vary(), .2, "triangle", .05, 0, 110); noise(.18, .05, 900, 0, "lowpass", 200); },
-  vs(boss) { noise(.35, .09, 400, 0, "lowpass", 3000); beep(70, .5, "sine", .22, .02, 35); if (boss) [0, .3, .6, .9].forEach((w, i) => beep(i % 2 ? 660 : 880, .28, "sawtooth", .04, w + .1)); },
-  whoosh() { noise(.3, .07, 400, 0, "bandpass", 4000); },
-  ready() { beep(1568, .06, "square", .03); beep(2093, .08, "square", .03, .05); },
+  hit(c, v = 3) { const k = vary() / (1 + Math.min(1.4, v / 30)); beep((c ? 150 : 260) * k, c ? .14 : .04, c ? "sawtooth" : "square", c ? .06 : .022, 0, (c ? 60 : 140) * k); if (c) noise(.1, .06, 1800 * k); },
+  shoot(t) { if (t === "dino") noise(.18, .05, 600 * vary(), 0, "lowpass", 2000); else if (t === "octo") beep(400 * vary(), .12, "sine", .05, 0, 150); else if (t === "bun") beep(900 * vary(), .04, "square", .02, 0, 1300); else if (t === "peng") beep(1200 * vary(), .05, "sine", .03, 0, 700); },
+  boom() { noise(.25, .07, 500 * vary(), 0, "lowpass", 120); },
+  swipe() { noise(.08, .05, 3000 * vary(), 0, "highpass"); },
+  taunt() { beep(160, .15, "sawtooth", .04, 0, 120); },
+  heal() { beep(880 * vary(), .08, "sine", .035, 0, 1320); },
+  kill() { beep(330 * vary(), .12, "triangle", .04, 0, 120); },
+  leak() { beep(200, .3, "sawtooth", .06, 0, 80); buzz(60); },
+  ko() { [400, 300, 200].forEach((f, i) => beep(f, .12, "triangle", .06, i * .1)); },
+  wave(boss) { noise(.3, .07, 400, 0, "lowpass", 3000); beep(70, .45, "sine", .2, .02, 35); if (boss) [0, .3, .6, .9].forEach((w, i) => beep(i % 2 ? 660 : 880, .28, "sawtooth", .04, w + .1)); },
+  clear() { [659, 784, 988, 1319].forEach((f, i) => beep(f, .12, "square", .045, i * .08)); },
   special(t) {
-    SFX.whoosh(); beep(330, .25, "square", .04, 0, 990);
-    if (t === "bear") { beep(55, .9, "sine", .3, .7, 28); noise(.8, .14, 300, .7, "lowpass", 60); }
-    if (t === "dino") noise(1.1, .1, 600, .25, "lowpass", 2400);
+    noise(.3, .07, 400, 0, "bandpass", 4000); beep(330, .25, "square", .04, 0, 990);
+    if (t === "bear") { beep(55, .8, "sine", .3, .15, 28); noise(.7, .14, 300, .15, "lowpass", 60); }
+    if (t === "dino") noise(1, .1, 600, .1, "lowpass", 2400);
     if (t === "peng") [1046, 1319, 1568, 2093, 2637, 3136].forEach((f, i) => beep(f, .4, "sine", .035, .1 + i * .08));
-    if (t === "octo") { beep(500, .5, "sine", .09, .1, 70); noise(.4, .08, 700, .35, "lowpass", 150); }
+    if (t === "octo") { beep(500, .5, "sine", .09, .1, 70); noise(.4, .08, 700, .3, "lowpass", 150); }
     if (t === "bun") [0, .1, .2].forEach(w => beep(900, .06, "square", .03, .2 + w, 1400));
-    if (t === "cat") beep(1400, .12, "sawtooth", .03, .3, 300);
+    if (t === "cat") beep(1400, .12, "sawtooth", .03, .1, 300);
   },
-  slash() { noise(.07, .07, 5000 * vary(), 0, "highpass"); },
   final() { beep(60, 1.2, "sine", .3, 0, 30); noise(1, .12, 2500, 0, "lowpass", 100); buzz([40, 40, 80]); },
-  win() { [523, 659, 784, 1046, 0, 784, 1046, 1319].forEach((f, i) => f && beep(f, i === 7 ? .5 : .14, "square", .05, i * .1)); [262, 330, 392].forEach(f => beep(f, .9, "triangle", .05, .7)); },
   lose() { [392, 330, 262, 196].forEach((f, i) => beep(f, .25, "triangle", .06, i * .18)); },
 };
-// 전투 BGM: 16스텝 리듬 루프. lvl(0~3)이 오를수록 악기가 쌓인다. 보스는 빠르고 긴장되는 진행
 const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 const BGM = {
   on: false, step: 0, next: 0, tid: 0, lvl: 0, boss: false, g: null,
@@ -183,379 +228,454 @@ const BGM = {
   },
 };
 function setMute(m) { save.mute = m; store.set(save); $("mute").textContent = m ? "🔇" : "🔊"; if (master) try { master.gain.setTargetAtTime(m ? 0 : .9, ac.currentTime, .02); } catch (e) {} }
-
 function emit(ev, data = {}) { try { if (parent !== window) parent.postMessage({ type: "nhc-game", game: "G002", ev, data }, "*"); } catch (e) {} }
 let lastInputEmit = 0;
 addEventListener("pointerdown", () => { audio(); const t = Date.now(); if (t - lastInputEmit > 4000) { lastInputEmit = t; emit("input"); } }, true);
 
-// ───────── 런·라운드 (순수 로직: 봇과 실제 플레이 공통) ─────────
-function newRun(seed) { return { seed, R: rng(seed), round: 1, coins: 4, squad: [], pit: [], claw: null, log: [] }; }
-function pickType(R) { const pool = []; KEYS.forEach(k => { for (let i = 0; i < TYPES[k].rare; i++) pool.push(k); }); return pool[Math.floor(R() * pool.length)]; }
-function fillPit(run) {
-  const n = 9 - run.pit.length;
-  for (let i = 0; i < n; i++) {
-    const type = pickType(run.R), r = 21 + run.R() * 5;
-    run.pit.push({ id: Math.floor(run.R() * 1e9), type, r, x: PIT_L + r + run.R() * (PIT_R - PIT_L - 2 * r), y: FLOOR - r - run.R() * 26, rot: (run.R() - .5) * .6 });
+// ═════════ 로직 (순수 시뮬레이션: 실제 플레이·봇·자체 검사 공통, 고정 1/30초 틱) ═════════
+const DT = 1 / 30, FIELD_H = 318, MACH_Y = 322;
+// 길: 왼쪽 위 입구 → 위 → 오른쪽 → 아래 → 왼쪽으로 올라가 배출구(집)
+const PATH = [[-16, 44], [338, 44], [338, 294], [22, 294], [22, 150]], SEG = []; let PLEN = 0;
+for (let i = 0; i < PATH.length - 1; i++) { const [x0, y0] = PATH[i], [x1, y1] = PATH[i + 1], l = Math.hypot(x1 - x0, y1 - y0); SEG.push({ x0, y0, x1, y1, l, s0: PLEN }); PLEN += l; }
+function pathAt(s) { for (const g of SEG) if (s <= g.s0 + g.l) { const k = Math.max(0, (s - g.s0) / g.l); return [g.x0 + (g.x1 - g.x0) * k, g.y0 + (g.y1 - g.y0) * k]; } return PATH[PATH.length - 1]; }
+const CELLS = [[81, 136], [147, 136], [213, 136], [279, 136], [81, 202], [147, 202], [213, 202], [279, 202]], FILL = [1, 2, 5, 6, 0, 3, 4, 7];
+const GOAL = PATH[PATH.length - 1];
+// 릴: 16칸 (곰이 조금 더 많고 💨 꽝 3칸)
+const STRIP = ["bear", "bear", "bear", "bun", "bun", "dino", "dino", "cat", "cat", "peng", "peng", "octo", "octo", "blank", "blank", "blank"], NSYM = STRIP.length;
+const REEL_V = 12, NEAR_V = 8, AUTO_STOP = 1.3, LIVES = 10, BOARD = 8;
+// 적 곡선 (자체 검사 σ 봇 승률표로 조정)
+// 적 체력 h0+h1·w+h2·w²+h3·w³ (초반 완만·후반 가파름), 보스 체력 = b5 × (w/5)^bexp, 보스는 도발 안 통하고 배출구에 닿으면 즉시 패배
+const E = { h0: 6, h1: 8, h2: 4, h3: .9, b5: 1300, bexp: 1.6, gm: 2.2, sp0: 45, sp1: 1.5, a0: 3, a1: 1.6, n0: 5, n1: 2, nMax: 26, gap: .6, bsp: 30, bmin: 3, coin: 1, bcoin: 15, bonus0: 5, start: 30, prep: 6, brk: 4, c0: 10, c1: 1 };
+const cost = run => Math.round(E.c0 + E.c1 * run.draws);   // 뽑을수록 조금씩 비싸짐
+const gm = g => Math.pow(E.gm, g - 1);   // 등급 힘 배수: 한 단계마다 ×gm (2개 합성 > 2개 따로 → 합성이 항상 이득)
+const enemyHp = w => Math.round(E.h0 + E.h1 * w + E.h2 * w * w + E.h3 * w * w * w), enemySpd = w => E.sp0 + E.sp1 * w, enemyAtk = w => E.a0 + E.a1 * w;
+const isBoss = w => w % 5 === 0;
+function waveSpec(w) {
+  const out = [];
+  if (isBoss(w)) { out.push({ kind: "boss", hp: Math.round(E.b5 * Math.pow(w / 5, E.bexp)), spd: E.bsp, atk: enemyAtk(w) * 2.5, coin: E.bcoin, leak: LIVES /* 보스가 배출구에 닿으면 즉시 패배 */ }); for (let i = 0; i < E.bmin * w / 5; i++) out.push({ kind: "dust", hp: enemyHp(w), spd: enemySpd(w), atk: enemyAtk(w), coin: E.coin, leak: 1 }); }
+  else { const n = Math.min(E.nMax, E.n0 + E.n1 * w); for (let i = 0; i < n; i++) { const sock = i % 3 === 2; out.push({ kind: sock ? "sock" : "dust", hp: Math.round(enemyHp(w) * (sock ? .6 : 1)), spd: enemySpd(w) * (sock ? 1.5 : 1), atk: enemyAtk(w), coin: E.coin, leak: 1 }); } }
+  return out;
+}
+function shuffle(a, R) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function newRun(seed) {
+  const R = rng(seed);
+  return { seed, R, t: 0, wave: 0, phase: "prep", phaseT: E.prep, lives: LIVES, coins: E.start, units: [], enemies: [], projs: [], puddles: [], delayed: [], spawnQ: [], spawnT: 0, nextId: 1, draws: 0, buffT: 0, over: false, syn: {}, ev: [], waveT: 0, tickets: 0, pow: 0, leaked: 0, done: {}, reward: null, stats: { waves: [], sp: 0, jackpot: 0, pair: 0, blank: 0, merges: 0, recipes: 0, swaps: 0 },
+    strips: [0, 1, 2].map(() => shuffle(STRIP.slice(), R)), slot: { state: "idle", t: 0, n: 0, last: 0, reels: [0, 1, 2].map(() => ({ p: 0, v: 0, stopped: true, sym: null })), res: null } };
+}
+const mod = (a, n) => ((a % n) + n) % n;
+function calcSyn(run) {
+  const kinds = new Set(run.units.map(u => u.type)), has = k => kinds.has(k);
+  run.syn = { guard: has("bear") && has("peng"), fireink: has("dino") && has("octo"), quick: has("cat") && has("bun"), div: kinds.size >= 3, all6: kinds.size >= 6 };
+}
+function addUnit(run, type, star, cell, quiet) {
+  const used = new Set(run.units.map(u => u.cell)); if (cell === undefined) cell = FILL.find(c => !used.has(c));
+  if (cell === undefined) { run.coins += 6; run.ev.push({ k: "full", type }); return null; }
+  const T = TYPES[type], u = { id: run.nextId++, type, star, cell, x: CELLS[cell][0], y: CELLS[cell][1], cd: .3, g: Math.ceil(T.chg / 2), ko: 0 };   // 게이지 절반에서 시작 → 첫 웨이브부터 필살기
+  if (type === "bear") { u.max = Math.round(T.hp * gm(star)); u.hp = u.max; }
+  run.units.push(u); if (!quiet) run.ev.push({ k: "summon", id: u.id, type, star, cell }); calcSyn(run); return u;
+}
+function removeUnit(run, u) { run.units = run.units.filter(x => x !== u); run.enemies.forEach(e => { if (e.block === u.id) e.block = 0; }); }
+function setType(u, type) { u.type = type; if (type === "bear") { u.max = Math.round(TYPES.bear.hp * gm(u.star)); u.hp = u.max; } else { delete u.max; delete u.hp; } u.ko = 0; u.g = Math.min(u.g, TYPES[type].chg); }
+const mergePartner = (run, a) => a && a.star < MAXG && run.units.find(u => u !== a && u.type === a.type && u.star === a.star);
+const recipeParts = (run, a) => { if (!a || a.star >= MAXG) return null; const out = [], seen = new Set([a.type]); for (const u of run.units) if (u !== a && u.star === a.star && !seen.has(u.type)) { seen.add(u.type); out.push(u); if (out.length === 2) return out; } return null; };
+// 플레이어 행동: 합성·레시피·판매·바꾸기·보스 보상 고르기 (모두 로직 안에서 처리 → 봇·검사도 같은 규칙)
+function actions(run, inp) {
+  const find = id => run.units.find(u => u.id === id);
+  if (inp.merge) { const a = find(inp.merge), b = mergePartner(run, a); if (b) { removeUnit(run, a); removeUnit(run, b); const type = run.R() < MERGE_SAME ? a.type : KEYS[Math.floor(run.R() * KEYS.length)], n = addUnit(run, type, a.star + 1, a.cell, true); run.stats.merges++; run.ev.push({ k: "merged", id: n.id, type, star: n.star, from: a.type, changed: type !== a.type }); } }
+  if (inp.recipe) { const a = find(inp.recipe), parts = recipeParts(run, a); if (parts) { [a, ...parts].forEach(u => removeUnit(run, u)); const n = addUnit(run, a.type, a.star + 1, a.cell, true); run.stats.recipes++; run.ev.push({ k: "recipe", id: n.id, type: a.type, star: n.star, used: parts.map(p => p.type) }); } }
+  if (inp.sell) { const a = find(inp.sell); if (a && SELL[a.star]) { removeUnit(run, a); run.coins += SELL[a.star]; calcSyn(run); run.ev.push({ k: "sell", type: a.type, x: a.x, y: a.y, v: SELL[a.star] }); } }
+  if (inp.swap) { const a = find(inp.swap.id); if (a && a.type !== inp.swap.type && run.coins >= SWAP_COST) { run.coins -= SWAP_COST; const ok = run.R() < SWAP_P; if (ok) setType(a, inp.swap.type); calcSyn(run); run.stats.swaps++; run.ev.push({ k: "swap", id: a.id, ok, type: inp.swap.type }); } }
+  if (inp.pick !== undefined && run.reward) {
+    const o = run.reward.opts[inp.pick]; if (!o) return; run.reward = null; run.ev.push({ k: "picked", id: o.id, type: o.type });
+    if (o.id === "hero") { if (!addUnit(run, o.type, 3)) run.coins += 54; }
+    else if (o.id === "coins") run.coins += o.v; else if (o.id === "tickets") run.tickets += 3; else if (o.id === "lives") run.lives = Math.min(LIVES, run.lives + 3); else if (o.id === "power") { run.pow += .15; }
   }
-  run.pit.sort((a, b) => b.y - a.y);
 }
-function newClaw(run) { return { phase: "swing", x: (PIT_L + PIT_R) / 2, y: TOPY, t: 0, open: 1, held: null, quality: 0, sw: 0, speed: 1.4 + Math.min(1.2, run.round * .08) }; }
-// 집게 한 틱 진행. 반환: 이벤트 문자열(소리·연출용)
-function clawStep(run, tap) {
-  const c = run.claw, evs = [];
-  c.t += DT;
-  if (c.phase === "swing") {
-    c.sw += DT * c.speed; c.x = (PIT_L + PIT_R) / 2 + Math.sin(c.sw) * ((PIT_R - PIT_L) / 2 - 8);
-    if (tap && run.coins > 0) { run.coins--; c.phase = "drop"; c.t = 0; evs.push("coin"); }
-  } else if (c.phase === "drop") {
-    c.y += 300 * DT; c.open = 1;
-    const under = run.pit.filter(p => Math.abs(p.x - c.x) < p.r * .95), stop = under.length ? Math.min(...under.map(p => p.y - p.r)) - 6 : FLOOR - 16;
-    if (c.y >= stop) { c.y = stop; c.phase = "grab"; c.t = 0; }
-  } else if (c.phase === "grab") {
-    c.open = Math.max(0, 1 - c.t / .25);
-    if (c.t >= .3) {
-      const cand = run.pit.filter(p => Math.abs(p.x - c.x) < p.r * .95).sort((a, b) => Math.abs(a.x - c.x) - Math.abs(b.x - c.x))[0];
-      if (cand) {
-        const q = 1 - Math.abs(cand.x - c.x) / (cand.r * .95), p = Math.min(.95, .12 + q * .88 - TYPES[cand.type].w * .4);
-        if (run.R() < p) { c.held = cand; c.quality = q; run.pit = run.pit.filter(x => x !== cand); evs.push("grab"); } else evs.push("miss");
-      } else evs.push("miss");
-      c.phase = "lift"; c.t = 0; c.slipChecked = false;
+function missions(run) { for (const m of MISSIONS) if (!run.done[m.id] && m.test(run)) { run.done[m.id] = 1; run.coins += m.rw.coins || 0; run.tickets += m.rw.tickets || 0; run.ev.push({ k: "mission", id: m.id, name: m.name, hidden: !!m.hidden, rw: m.rw }); } }
+// ── 슬롯 뽑기 ──
+function slotStep(run, inp) {
+  const S = run.slot;
+  if (S.state === "idle") {
+    if (inp.pull && !run.over && run.units.length < BOARD && (run.tickets > 0 || run.coins >= cost(run))) {
+      if (run.tickets > 0) run.tickets--; else { run.coins -= cost(run); run.draws++; } S.state = "spin"; S.t = 0; S.n = 0; S.last = 0; S.res = null; S.near = false;
+      S.reels.forEach(r => { r.p = Math.floor(run.R() * NSYM); r.v = REEL_V; r.stopped = false; r.sym = null; }); run.ev.push({ k: "lever" });
     }
-  } else if (c.phase === "lift") {
-    c.y -= 170 * DT;
-    if (c.held && !c.slipChecked && c.y < TOPY + 120) {
-      c.slipChecked = true; const slip = (1 - c.quality) * .45 + TYPES[c.held.type].w * .5;
-      if (run.R() < slip) { c.dropped = { ...c.held, vy: 0, fy: c.y + 30 }; c.held.y = FLOOR - c.held.r; c.held.x = Math.max(PIT_L + c.held.r, Math.min(PIT_R - c.held.r, c.x)); run.pit.push(c.held); run.pit.sort((a, b) => b.y - a.y); c.held = null; c.open = .7; evs.push("slip"); }
-    }
-    if (c.held && Math.floor(c.t * 12) !== Math.floor((c.t - DT) * 12) && (1 - c.quality) > .35) evs.push("wobble");
-    if (c.y <= TOPY) { c.y = TOPY; c.phase = c.held ? "carry" : "swing"; c.t = 0; c.open = 1; if (!c.held) { c.sw = Math.asin(Math.max(-1, Math.min(1, (c.x - (PIT_L + PIT_R) / 2) / ((PIT_R - PIT_L) / 2 - 8)))); } }
-  } else if (c.phase === "carry") {
-    c.x -= 220 * DT;
-    if (c.x <= CHUTE_X) { c.x = CHUTE_X; c.phase = "release"; c.t = 0; }
-  } else if (c.phase === "release") {
-    c.open = Math.min(1, c.t / .2);
-    if (c.t >= .35) { const got = c.held; c.held = null; evs.push(addPlush(run, got.type)); c.phase = "return"; c.t = 0; }
-  } else if (c.phase === "return") {
-    c.x += 220 * DT;
-    if (c.x >= (PIT_L + PIT_R) / 2) { c.x = (PIT_L + PIT_R) / 2; c.phase = "swing"; c.sw = 0; c.t = 0; }
+    return;
   }
-  return evs;
-}
-const MAX_SQUAD = 6;
-function addPlush(run, type) {
-  const same = run.squad.find(u => u.type === type && u.star < 3);
-  if (same) { same.star++; return "merge:" + type + ":" + same.star; }
-  if (run.squad.length >= MAX_SQUAD) { run.coins++; return "full:" + type; }   // 부대 6칸이 꽉 차면 코인으로 돌려받음
-  run.squad.push({ type, star: 1 }); return "get:" + type;
-}
-// 전투: 결정적 시뮬레이션 → 연출용 사건 기록 (연출은 이 기록을 재생만 한다)
-// 적 성장 곡선 (QA 2026-11-26 반영: R5·R10 보스 벽과 라운드 역전 없앰)
-// 일반 적 체력 hp0+hp1·r+hp2·r², 공격 atk0+atk1·r / 보스(한 턴 2번 공격)는 한 마리라 광역기가 덜 먹히므로 직선 곡선 bhp0+bhp1·r, 졸개 ⌊r/5⌋
-const E = { hp0: 0, hp1: 12, hp2: .9, atk0: 2, atk1: 2, bhp0: 105, bhp1: 34, batk0: 9, batk1: 1, nMax: 6, n6: 1, g0: 70 };
-const hpN = r => Math.round(E.hp0 + E.hp1 * r + E.hp2 * r * r), atkN = r => Math.round(10 * (E.atk0 + E.atk1 * r)) / 10, nN = r => Math.min(E.nMax, 2 + Math.floor(r / 2) + (r >= 6 ? E.n6 : 0));
-function makeEnemies(r) {
-  const out = [], boss = r % 5 === 0, n = boss ? Math.floor(r / 5) : nN(r);
-  if (boss) out.push({ e: "🦆", name: "고무 오리", hp: Math.round(E.bhp0 + E.bhp1 * r), atk: Math.round(E.batk0 + E.batk1 * r), boss: true });
-  for (let i = 0; i < n; i++) out.push({ e: i % 3 === 2 ? "🧦" : "🌫️", name: i % 3 === 2 ? "짝 잃은 양말" : "먼지뭉치", hp: hpN(r), atk: atkN(r) });
-  return out.map(x => ({ ...x, max: x.hp }));
-}
-function makeSquad(run) {
-  const list = run.squad.length ? run.squad.slice().sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type)).map(u => { const T = TYPES[u.type], m = STAR[u.star]; return { type: u.type, e: T.e, star: u.star, hp: Math.round(T.hp * m), atk: T.atk * m }; })
-    : [{ type: "hand", e: "🦾", star: 1, hp: 10, atk: 2 }];
-  return list.map(x => ({ ...x, max: x.hp, g: SP[x.type] ? E.g0 : 0 }));   // 게이지는 70%에서 시작 → 첫 전투부터 필살기
-}
-function battle(run) {
-  const A = makeSquad(run), B = makeEnemies(run.round), ev = [], R = run.R;
-  let turn = 0, ink = 0;
-  const alive = s => s.filter(u => u.hp > 0);
-  const hit = (i, t, d, x) => { d = Math.max(1, Math.round(d)); t.hp -= d; ev.push({ k: "atk", s: "A", i, to: B.indexOf(t), v: d, ...x }); if (t.hp <= 0) ev.push({ k: "die", s: "B", i: B.indexOf(t) }); };
-  const special = (u, i) => {
-    const sp = { sp: u.type };
-    if (u.type === "bear") alive(B).forEach(t => hit(i, t, u.atk * 1.6, sp));
-    else if (u.type === "dino") alive(B).slice(0, 3).forEach(t => hit(i, t, u.atk * 1.8, sp));
-    else if (u.type === "cat") for (let k = 0; k < 5; k++) { const t = alive(B)[0]; if (!t) break; hit(i, t, k === 4 ? u.atk * 3 : u.atk * .8, { sp: "cat", crit: k === 4, n: k }); }
-    else if (u.type === "bun") for (let k = 0; k < 6; k++) { const f = alive(B); if (!f.length) break; hit(i, f[Math.floor(R() * Math.min(3, f.length))], u.atk, { sp: "bun", n: k }); }
-    else if (u.type === "peng") alive(A).forEach(f => { const h = Math.round(5 * STAR[u.star]); f.hp = Math.min(f.max, f.hp + h); ev.push({ k: "heal", s: "A", i, to: A.indexOf(f), v: h, sp: "peng" }); });
-    else if (u.type === "octo") { ink = 2; alive(B).forEach(t => hit(i, t, u.atk * 1.1, sp)); }
-  };
-  while (alive(A).length && alive(B).length && turn < 300) {
-    turn++;
-    for (let i = 0; i < A.length; i++) {
-      const u = A[i]; if (u.hp <= 0) continue; if (!alive(B).length) break;
-      const S = SP[u.type];
-      if (S && u.g >= GMAX) { u.g = 0; ev.push({ k: "sp", s: "A", i, type: u.type }); special(u, i); ev.push({ k: "spEnd", i, type: u.type }); continue; }
-      if (u.type === "peng") { const f = alive(A)[0]; const h = Math.round(4 * STAR[u.star]); f.hp = Math.min(f.max, f.hp + h); ev.push({ k: "heal", s: "A", i, to: A.indexOf(f), v: h }); }
-      const times = u.type === "bun" ? 2 : 1;
-      for (let k = 0; k < times; k++) {
-        const targets = u.type === "octo" ? alive(B).slice(0, 2) : alive(B).slice(0, 1);
-        targets.forEach(t => { let d = u.atk, crit = false; if (u.type === "cat" && R() < .3) { d *= 3; crit = true; } hit(i, t, d, { crit }); });
+  S.t += DT;
+  if (S.state === "spin") {
+    S.reels.forEach(r => { if (!r.stopped) r.p += r.v * DT; });
+    const n = S.n;
+    if (n === 2 && !S.near && S.reels[0].sym !== "blank" && S.reels[0].sym === S.reels[1].sym) { S.near = true; S.reels[2].v = NEAR_V; run.ev.push({ k: "near", type: S.reels[0].sym }); }
+    if (inp.stop || S.t - S.last >= AUTO_STOP + (S.near ? .9 : 0)) {
+      const r = S.reels[n], idx = mod(Math.round(r.p), NSYM); r.p = Math.round(r.p); r.stopped = true; r.sym = run.strips[n][idx]; S.last = S.t; S.n++;
+      run.ev.push({ k: "reel", i: n, sym: r.sym });
+      if (S.n === 3) {
+        const [a, b, c] = S.reels.map(x => x.sym); let res;
+        if (a === b && b === c) res = a === "blank" ? { kind: "dust", coins: 20 } : { kind: "jackpot", type: a, star: 2, coins: 5 };
+        else if (a === b || a === c || b === c) { const t = a === b || a === c ? a : b; res = t === "blank" ? { kind: "single", type: [a, b, c].find(x => x !== "blank"), star: 1, coins: 0 } : { kind: "pair", type: t, star: 1, coins: 4 }; }
+        else res = b === "blank" ? { kind: "blank", coins: 4 } : { kind: "single", type: b, star: 1, coins: 0 };
+        // 니어미스: 앞 두 개가 같았는데 셋째가 빗나감 → 한 칸 위·아래에 그 그림이 있으면 표시
+        if (S.near && res.kind !== "jackpot") { const s3 = run.strips[2], i3 = mod(S.reels[2].p, NSYM); res.nearMiss = s3[mod(i3 - 1, NSYM)] === a || s3[mod(i3 + 1, NSYM)] === a; }
+        run.coins += res.coins; S.res = res; S.state = "show"; S.t = 0; run.stats[res.kind] = (run.stats[res.kind] || 0) + 1;
+        run.ev.push({ k: "result", ...res, reels: [a, b, c] });
       }
-      if (S) { u.g = Math.min(GMAX, u.g + S.gain); ev.push({ k: "g", i, v: u.g }); }
     }
-    const front = alive(B)[0], mul = ink > 0 ? .6 : 1;
-    const hitA = (e, d, weak) => { const t = alive(A)[0]; if (!t) return; d = Math.max(1, Math.round(d * mul)); t.hp -= d; ev.push({ k: "atk", s: "B", i: B.indexOf(e), to: A.indexOf(t), v: d, weak }); if (t.hp <= 0) ev.push({ k: "die", s: "A", i: A.indexOf(t) }); else if (SP[t.type]) { t.g = Math.min(GMAX, t.g + (weak ? 4 : HIT_G)); ev.push({ k: "g", i: A.indexOf(t), v: t.g }); } };
-    if (front) {
-      for (let k = 0; k < (front.boss ? 2 : 1); k++) hitA(front, front.atk, false);
-      alive(B).slice(1, 3).forEach(e => hitA(e, e.atk * .35, true));   // 뒤쪽 적은 약하게 거든다
-    }
-    if (ink > 0 && --ink === 0) ev.push({ k: "ink" });
+  } else if (S.state === "show") {
+    if (S.t >= .35) { if (S.res.type) { S.state = "deliver"; S.t = 0; } else S.state = "idle"; }
+  } else if (S.state === "deliver") {
+    if (S.t >= .45) { addUnit(run, S.res.type, S.res.star); S.state = "idle"; }
   }
-  const win = alive(A).length > 0 && !alive(B).length, flawless = win && A.every(u => u.hp > 0);
-  return { A: makeSquad(run), B: makeEnemies(run.round), ev, win, flawless, turns: turn };
 }
-function afterBattle(run, res) { if (res.win) { run.round++; run.coins += 2 + (res.flawless ? 1 : 0); return true; } return false; }
-// 연출 시간(초, 보통 속도) — 로직 결과와 무관, 재생 속도만 정한다
-function evDur(e) {
-  if (e.k === "g" || e.k === "ink") return 0;
-  if (e.k === "sp") return SP[e.type].dur;
-  if (e.k === "spEnd") return .15;
-  if (e.k === "heal") return e.sp ? SP.peng.hit : .18;
-  if (e.k === "die") return .14;
-  if (e.k === "atk") return e.sp ? SP[e.sp].hit : e.weak ? .07 : e.crit ? .32 : .2;
-  return .1;
+// ── 웨이브 ──
+function startWave(run) {
+  run.wave++; run.phase = "wave"; run.waveT = 0; run.spawnQ = waveSpec(run.wave); run.spawnT = 0;
+  run.ev.push({ k: "waveStart", w: run.wave, boss: isBoss(run.wave) });
 }
-// 재생 속도: 전투가 길어질수록 빨라짐(2초 뒤부터, 5.5초에 2배, 최대 3배). 6라운드부터 기본 1.3배
-function pace(ft, round) { return (round >= 6 ? 1.3 : 1) * (1 + Math.min(2, Math.max(0, ft - 2) / 3.5)); }
-const HS = e => e.k === "atk" && !e.weak ? (e.crit ? .12 : .08) : e.k === "sp" ? .06 : 0;
-// 탭 없이 볼 때 전투 한 판 걸리는 시간(초) 추정 — 연출 코드와 같은 규칙
-function battleSecs(res, round) {
-  const boss = res.B.some(u => u.boss); let ft = 0, wall = boss ? 2.4 : 1.5, fin = finalIdx(res);
-  res.ev.forEach((e, j) => { const sp = pace(ft, round), d = evDur(e) / sp; ft += d; wall += d + (j === fin ? .2 + 1.2 * .78 : HS(e) / sp); });
-  return wall + (res.win ? 1.9 : 1.8);
+function spawn(run, sp) { run.enemies.push({ id: run.nextId++, ...sp, max: sp.hp, s: 0, x: PATH[0][0], y: PATH[0][1], slowT: 0, slowA: 0, stun: 0, block: 0, atkT: 1 }); }
+function unitAtkMul(run) { return (run.syn.all6 ? 1.3 : run.syn.div ? 1.1 : 1) * (1 + run.pow); }
+function damage(run, e, v, src, x) {
+  if (e.hp <= 0) return;
+  if (src === "dino" && run.syn.fireink && e.slowT > 0) v *= 1.5;
+  v = Math.max(1, Math.round(v)); e.hp -= v; run.ev.push({ k: "hit", id: e.id, x: e.x, y: e.y, v, src, crit: !!(x && x.crit), sp: !!(x && x.sp) });
+  if (e.hp <= 0) { run.coins += e.coin; run.ev.push({ k: "kill", id: e.id, x: e.x, y: e.y, kind: e.kind, coin: e.coin }); }
 }
-function finalIdx(res) { let last = -1; res.ev.forEach((e, j) => { if (e.k === "die" && e.s === "B") last = j; }); if (res.win) for (let j = last - 1; j >= 0; j--) if (res.ev[j].k === "atk") return j; return -1; }
+const dist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+function inRange(run, u, r) { return run.enemies.filter(e => e.hp > 0 && dist2(u, e) <= r * r); }
+function special(run, u) {
+  const T = TYPES[u.type], atk = T.atk * gm(u.star) * unitAtkMul(run), all = run.enemies.filter(e => e.hp > 0);
+  run.stats.sp++; run.ev.push({ k: "sp", id: u.id, type: u.type, x: u.x, y: u.y });
+  if (u.type === "bear") inRange(run, u, 150).forEach(e => { damage(run, e, atk * 4, "bear", { sp: 1 }); e.stun = Math.max(e.stun, 1.2); });
+  else if (u.type === "dino") inRange(run, u, T.rng + 20).forEach(e => damage(run, e, atk * 3, "dino", { sp: 1 }));
+  else if (u.type === "cat") { const t = inRange(run, u, T.rng + 30).sort((a, b) => b.hp - a.hp)[0]; if (t) for (let k = 0; k < 5; k++) run.delayed.push({ at: run.t + .09 * k, id: t.id, v: k === 4 ? atk * 4 : atk, src: "cat", crit: k === 4, ux: u.id }); }
+  else if (u.type === "bun") for (let k = 0; k < 6; k++) run.delayed.push({ at: run.t + .08 * k, pick: true, v: atk * 1.6, src: "bun", ux: u.id, k });
+  else if (u.type === "peng") { run.lives = Math.min(LIVES, run.lives + 1); run.buffT = 5; run.units.forEach(b => { if (b.type === "bear") { b.hp = b.max; b.ko = 0; } }); run.ev.push({ k: "lifeUp" }); }
+  else if (u.type === "octo") all.forEach(e => { damage(run, e, atk * 1.5, "octo", { sp: 1 }); e.slowT = 3; e.slowA = .6; });
+}
+function step(run, inp = {}) {
+  run.ev.length = 0;
+  if (run.over) return;
+  actions(run, inp);
+  if (run.reward) return;   // 보스 보상 고르는 동안 정지
+  run.t += DT; slotStep(run, inp);
+  if (run.phase !== "wave") { run.phaseT -= DT; if (run.phaseT <= 0) startWave(run); }
+  else {
+    run.waveT += DT;
+    if (run.spawnQ.length) { run.spawnT -= DT; if (run.spawnT <= 0) { spawn(run, run.spawnQ.shift()); run.spawnT = E.gap; } }
+  }
+  if (run.buffT > 0) run.buffT -= DT;
+  // 펭귄 오라: 옆 칸(대각 포함) 공격 속도 +15%×별
+  const aura = {}; run.units.forEach(p => { if (p.type !== "peng" || p.ko > 0) return; run.units.forEach(o => { if (o !== p && dist2(o, p) < 100 * 100) aura[o.id] = Math.max(aura[o.id] || 0, .1 + .05 * p.star); }); });
+  // 적 이동·곰 공격
+  for (const e of run.enemies) {
+    if (e.hp <= 0) continue;
+    if (e.slowT > 0) e.slowT -= DT;
+    if (e.stun > 0) { e.stun -= DT; continue; }
+    if (e.block) {
+      const b = run.units.find(u => u.id === e.block);
+      if (!b || b.ko > 0) e.block = 0;
+      else { e.atkT -= DT; if (e.atkT <= 0) { e.atkT = 1; const d = e.atk * (run.syn.guard ? .6 : 1); b.hp -= d; run.ev.push({ k: "bearHit", id: b.id, v: Math.round(d), eid: e.id }); if (b.hp <= 0) { b.hp = 0; b.ko = 5; run.enemies.forEach(x => { if (x.block === b.id) x.block = 0; }); run.ev.push({ k: "ko", id: b.id }); } } continue; }
+    }
+    e.s += e.spd * (e.slowT > 0 ? 1 - e.slowA : 1) * DT; [e.x, e.y] = pathAt(e.s);
+    if (e.s >= PLEN) { e.hp = 0; e.leaked = true; run.lives -= e.leak; run.leaked++; run.ev.push({ k: "leak", kind: e.kind, n: e.leak }); if (run.lives <= 0) { run.lives = 0; run.over = true; run.ev.push({ k: "over" }); } }
+  }
+  // 웅덩이 감속
+  run.puddles = run.puddles.filter(p => (p.t -= DT) > 0); run.puddles.forEach(p => run.enemies.forEach(e => { if (e.hp > 0 && dist2(e, p) < p.r * p.r) { e.slowT = Math.max(e.slowT, .3); e.slowA = Math.max(e.slowA * (e.slowT > .3 ? 1 : 0), p.a); } }));
+  // 인형 행동
+  const mul = unitAtkMul(run);
+  for (const u of run.units) {
+    const T = TYPES[u.type];
+    if (u.ko > 0) { u.ko -= DT; if (u.ko <= 0) { u.ko = 0; u.hp = u.max; run.ev.push({ k: "up", id: u.id }); } continue; }
+    if (u.type === "bear") {
+      const cap = Math.min(5, T.cap + u.star - 1), mine = run.enemies.filter(e => e.hp > 0 && e.block === u.id);
+      if (mine.length < cap) for (const e of inRange(run, u, T.rng).filter(e => !e.block && e.kind !== "boss").sort((a, b) => b.s - a.s)) { if (mine.length >= cap) break; e.block = u.id; mine.push(e); run.ev.push({ k: "taunt", id: u.id, eid: e.id }); }
+      run.units.forEach(p => { if (p.type === "peng" && p.ko === 0 && dist2(p, u) < TYPES.peng.rng ** 2 && u.hp < u.max) u.hp = Math.min(u.max, u.hp + T.heal * 0 + TYPES.peng.heal * p.star * DT); });
+    }
+    const haste = (1 + (aura[u.id] || 0)) * (run.syn.quick && (u.type === "cat" || u.type === "bun") ? 1.25 : 1) * (run.buffT > 0 ? 1.5 : 1);
+    u.cd -= DT * haste; if (u.cd > 0) continue;
+    const cand = inRange(run, u, T.rng); if (!cand.length) continue;
+    u.cd = T.cd;
+    if (u.g >= T.chg) { u.g = 0; special(run, u); continue; }
+    u.g++;
+    const atk = T.atk * gm(u.star) * mul;
+    if (u.type === "bear") { const mine = cand.filter(e => e.block === u.id), tg = mine.length ? mine : [cand.sort((a, b) => dist2(a, u) - dist2(b, u))[0]]; run.ev.push({ k: "atk", id: u.id, type: u.type, x: tg[0].x, y: tg[0].y }); tg.forEach(e => damage(run, e, atk, "bear")); }
+    else if (u.type === "cat") { const t = cand.sort((a, b) => a.hp - b.hp)[0], crit = run.R() < T.crit; run.ev.push({ k: "atk", id: u.id, type: u.type, x: t.x, y: t.y }); damage(run, t, crit ? atk * 3 : atk, "cat", { crit }); }
+    else {
+      const t = cand.sort((a, b) => b.s - a.s)[0]; run.ev.push({ k: "atk", id: u.id, type: u.type, x: t.x, y: t.y });
+      const shots = u.type === "bun" ? 2 : 1;
+      for (let k = 0; k < shots; k++) run.projs.push({ id: run.nextId++, kind: u.type, x: u.x + (k ? 6 : -6), y: u.y - 8, tid: t.id, tx: t.x, ty: t.y, spd: T.pspd * (k ? .9 : 1), dmg: atk, aoe: T.aoe || 0, slow: T.slow || 0 });
+    }
+  }
+  // 배출구 집게 팔(약한 기본 방어)
+  run.armT = (run.armT || 0) - DT;
+  if (run.armT <= 0) { const t = run.enemies.filter(e => e.hp > 0 && (e.x - GOAL[0]) ** 2 + (e.y - GOAL[1]) ** 2 < 90 * 90).sort((a, b) => b.s - a.s)[0]; if (t) { run.armT = .8; run.ev.push({ k: "arm", x: t.x, y: t.y }); damage(run, t, 2 + run.wave * .5, "arm"); } }
+  // 투사체
+  for (const p of run.projs) {
+    const t = run.enemies.find(e => e.id === p.tid && e.hp > 0); if (t) { p.tx = t.x; p.ty = t.y; }
+    const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy), mv = p.spd * DT;
+    if (d <= mv + 4) {
+      p.done = true;
+      if (p.aoe) { run.ev.push({ k: "boom", kind: p.kind, x: p.tx, y: p.ty, r: p.aoe }); run.enemies.filter(e => e.hp > 0 && (e.x - p.tx) ** 2 + (e.y - p.ty) ** 2 < p.aoe * p.aoe).forEach(e => damage(run, e, p.dmg, p.kind)); if (p.slow) run.puddles.push({ x: p.tx, y: p.ty, r: p.aoe, t: 2, a: p.slow }); }
+      else if (t) damage(run, t, p.dmg, p.kind);
+    } else { p.x += dx / d * mv; p.y += dy / d * mv; }
+  }
+  run.projs = run.projs.filter(p => !p.done);
+  // 필살기 지연 타격
+  run.delayed = run.delayed.filter(h => {
+    if (h.at > run.t) return true;
+    let t = h.pick ? null : run.enemies.find(e => e.id === h.id && e.hp > 0);
+    if (h.pick) { const al = run.enemies.filter(e => e.hp > 0); t = al[Math.floor(run.R() * al.length)]; }
+    if (t) { run.ev.push({ k: "spHit", src: h.src, x: t.x, y: t.y, ux: h.ux, n: h.k || 0 }); damage(run, t, h.v, h.src, { crit: h.crit, sp: 1 }); }
+    return false;
+  });
+  run.enemies = run.enemies.filter(e => e.hp > 0);
+  if (run.phase === "wave" && !run.spawnQ.length && !run.enemies.length && !run.over) {
+    const bonus = E.bonus0 + run.wave; run.coins += bonus; if (isBoss(run.wave)) run.lives = Math.min(LIVES, run.lives + 2);
+    run.stats.waves.push({ w: run.wave, t: run.waveT }); run.phase = "break"; run.phaseT = E.brk; run.ev.push({ k: "waveClear", w: run.wave, bonus, t: run.waveT });
+    if (isBoss(run.wave)) { const pool = REWARDS.slice(); shuffle(pool, run.R); run.reward = { opts: pool.slice(0, 3).map(o => ({ ...o, type: KEYS[Math.floor(run.R() * KEYS.length)], v: 40 + 10 * run.wave })) }; run.ev.push({ k: "reward" }); }
+  }
+  missions(run);
+}
 
-// ───────── 봇 ─────────
-function botValue(run, p) { const has = run.squad.find(u => u.type === p.type && u.star < 3); return (has ? 3 : 0) + (4 - TYPES[p.type].rare) + (1 - TYPES[p.type].w * 2); }
-function botTap(run) {
-  const c = run.claw; if (c.phase !== "swing" || run.coins <= 0) return false;
-  const top = run.pit.filter(p => !run.pit.some(q => q !== p && Math.abs(q.x - p.x) < q.r && q.y < p.y - 4));
-  const tgt = top.sort((a, b) => botValue(run, b) - botValue(run, a))[0]; if (!tgt) return false;
-  return Math.abs(c.x - tgt.x) < 3;
+// ───────── 봇: 원하는 그림이 가운데 올 때 멈춤. σ = 타이밍 오차(초) ─────────
+function botWant(run, n) {
+  const S = run.slot, r0 = S.reels[0].sym, r1 = S.reels[1].sym;
+  if (n === 1 && r0 !== "blank") return r0;
+  if (n === 2 && r0 === r1 && r0 !== "blank") return r0;
+  const val = k => { const u = run.units.find(x => x.type === k && x.star === 1); return (u ? 3 : 0) + (run.units.some(x => x.type === k) ? 0 : 3) + (k === "bear" && !run.units.some(x => x.type === "bear") ? 3 : 0); };
+  if (n === 2) { const pick = [r0, r1].filter(x => x !== "blank").sort((a, b) => val(b) - val(a))[0]; if (pick) return pick; }
+  return KEYS.slice().sort((a, b) => val(b) - val(a))[0];
+}
+function makeBot(seed, sigma) { const R = rng(seed * 7919 + 13); const gauss = () => { let u = 0, v = 0; while (!u) u = R(); while (!v) v = R(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283 * v); }; return { sigma, gauss, err: null, en: -1 }; }
+function botInput(run, bot) {
+  const S = run.slot;
+  if (run.reward) { const o = run.reward.opts, i = o.findIndex(x => x.id === "hero" && run.units.length < BOARD), j = o.findIndex(x => x.id === "power"); return { pick: i >= 0 ? i : j >= 0 ? j : 0 }; }
+  const pair = run.units.slice().sort((a, b) => a.star - b.star).find(u => mergePartner(run, u)); if (pair) return { merge: pair.id };
+  if (run.units.length >= BOARD && S.state === "idle") { const rc = run.units.find(u => recipeParts(run, u)); if (rc) return { recipe: rc.id }; const low = run.units.filter(u => SELL[u.star]).sort((a, b) => a.star - b.star || (a.type === "bear") - (b.type === "bear"))[0]; if (low && run.coins >= cost(run) - SELL[low.star]) return { sell: low.id }; }
+  if (S.state === "idle") return { pull: run.units.length < BOARD && (run.tickets > 0 || run.coins >= cost(run)) };
+  if (S.state !== "spin") return {};
+  const n = S.n, r = S.reels[n]; if (bot.en !== n || bot.spin !== run.draws) { bot.en = n; bot.spin = run.draws; bot.err = bot.gauss() * bot.sigma * r.v; }
+  if (S.t - S.last < .25) return {};
+  const want = botWant(run, n), seen = mod(Math.round(r.p + bot.err), NSYM);
+  return { stop: run.strips[n][seen] === want };
+}
+// 한 런을 끝까지 (자체 검사용)
+function simRun(seed, sigma, maxW = 15, setup) {
+  const run = newRun(seed), bot = makeBot(seed, sigma); if (setup) setup(run);
+  const waves = []; let err = null, ticks = 0, lastW = run.wave, lifeAt = run.lives;
+  try {
+    while (!run.over && run.wave <= maxW && ticks < 30 * 60 * 40) {
+      ticks++; step(run, botInput(run, bot));
+      for (const e of run.ev) { if (e.k === "waveClear") { waves.push({ w: e.w, win: true, t: e.t, sp: run.stats.sp }); } if (e.k === "over") waves.push({ w: run.wave, win: false, t: run.waveT, sp: run.stats.sp }); }
+      if (run.phase === "break" && run.wave >= maxW) break;
+    }
+  } catch (e) { err = String(e && e.stack || e); }
+  return { wave: run.wave, over: run.over, waves, err, units: run.units.map(u => TYPES[u.type].e + u.star).join(""), stats: run.stats, lives: run.lives, missions: Object.keys(run.done).length };
 }
 
-// ───────── 화면 상태 ─────────
-let run = null, scene = "menu", acc = 0, lastT = 0, tapQ = false, auto = false;
-let fx = { parts: [], shake: 0, flash: 0, floats: [] }, bt = null; // bt: 전투 연출 상태
-let W = 360, H = 430, SC = 1, OX = 0, OY = 0, DPR = 1;
+// ═════════ 화면 ═════════
+let run = null, scene = "menu", acc = 0, lastT = 0, inQ = {}, auto = false, autoBot = null, speed = 1, sel = null;
+let fx = { parts: [], shake: 0, flash: 0, floats: [], rings: [], flyers: [], slashes: [], ghosts: [] }, hs = 0, ts = 1, slowT = 0;
+let W = 360, H = 500, SC = 1, OX = 0, OY = 0, DPR = 1;
+const CAB_W = 360, CAB_H = 500;
 function resize() { const r = cv.getBoundingClientRect(); DPR = window.devicePixelRatio || 1; W = r.width; H = r.height; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); SC = Math.min(W / CAB_W, H / CAB_H); OX = (W - CAB_W * SC) / 2; OY = (H - CAB_H * SC) / 2; }
 addEventListener("resize", resize);
 function puff(x, y, n, o = {}) { if (!JUICE) return; for (let i = 0; i < n; i++) { const a = o.angle !== undefined ? o.angle + (Math.random() - .5) * (o.spread ?? 1.5) : Math.random() * 6.28, s = (o.speed || 120) * (.4 + Math.random()); fx.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, g: o.g ?? 300, life: (o.life || .7) * (.7 + Math.random() * .5), max: o.life || .7, r: (o.r || 4) * (.6 + Math.random() * .8), col: o.cols ? o.cols[i % o.cols.length] : "#fff", star: !!o.star, glow: !!o.glow }); } if (fx.parts.length > 600) fx.parts.splice(0, fx.parts.length - 600); }
-// 글자는 정보라 ?nojuice에서도 남긴다. 같은 자리 숫자는 글자 크기만큼 위로 쌓아 '1515'처럼 붙지 않게
-function floatText(x, y, txt, col, big, size) { const sz = size || (big ? 20 : 14), near = fx.floats.filter(f => Math.abs(f.x - x) < 32 && f.t < .8); let ny = Math.min(y, ...near.map(f => f.y - f.t * 40 - (f.size + sz) * .5 - 2));
-  if (ny < y - 56) { ny = y - Math.random() * 20; x += (near.length % 2 ? 1 : -1) * (24 + Math.random() * 8); }   // 너무 높이 쌓이면 옆으로
-  fx.floats.push({ x, y: ny, txt, col, t: 0, big, size: sz }); if (fx.floats.length > 40) fx.floats.shift(); }
+function floatText(x, y, txt, col, big, size) {
+  if (y < 40) y = 40 + (40 - y) * .3;   // 위쪽 길의 숫자가 목숨 줄을 가리지 않게
+  const sz = size || (big ? 20 : 14), near = fx.floats.filter(f => Math.abs(f.x - x) < 30 && f.t < .7);
+  let ny = Math.min(y, ...near.map(f => f.y - f.t * 40 - (f.size + sz) * .5 - 2)); if (ny < y - 50) { ny = y - Math.random() * 16; x += (near.length % 2 ? 1 : -1) * (20 + Math.random() * 8); }
+  fx.floats.push({ x, y: ny, txt, col, t: 0, big, size: sz }); if (fx.floats.length > 50) fx.floats.shift();
+}
 function popMsg(txt, col) { if (SELFTEST) return; const d = document.createElement("div"); d.className = "pop"; d.textContent = txt; d.style.color = col; document.body.appendChild(d); setTimeout(() => d.remove(), 1000); }
 function shake(v) { fx.shake = Math.max(fx.shake, v); }
+function hitStop(s) { if (JUICE) hs = Math.max(hs, s); }
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v)), easeOut = k => 1 - Math.pow(1 - k, 3), lerp = (a, b, k) => a + (b - a) * k;
-const hexRgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }, rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
-
-// ───────── 인형 카드 (뽑기 ↔ 전투 연결) ─────────
+const dmgSize = v => Math.min(30, 11 + 3 * Math.sqrt(v));
 let cardOpen = false;
-function bigCard(type) {
+function bigCard(type) {   // 처음 뽑은 종류: 이름 + 역할 아이콘 + 한 줄 필살기
   if (SELFTEST) return;
   const T = TYPES[type], S = SP[type];
-  $("card").innerHTML = `<div class="ribbon">NEW 인형 합류!</div><div class="cemo" style="background:radial-gradient(circle at 35% 30%,#fff,${T.col} 38%,${shade(T.col, -.35)})">${T.e}</div>
-    <h3>${T.name}<span class="role">${T.role}</span></h3><p>${T.desc}</p>
-    <div class="sp"><b>⚡ 필살기 · ${S.name}</b><br>${S.desc}</div><p class="hint">전투 중 노란 게이지가 차면 자동 발동</p><button id="cardok">좋아!</button>`;
+  $("card").innerHTML = `<div class="ribbon">NEW!</div><div class="cemo" style="background:radial-gradient(circle at 35% 30%,#fff,${T.col} 38%,${shade(T.col, -.35)})">${T.e}</div>
+    <h3>${T.name} ${T.ic}</h3><div class="sp"><b>⚡ ${S.name}</b> · ${S.short}</div><button id="cardok">좋아!</button>`;
   $("cardbg").classList.add("on"); cardOpen = true; SFX.card();
-  if (auto) setTimeout(closeCard, 1600);
+  if (auto) setTimeout(closeCard, 1200);
 }
 function closeCard() { if (!cardOpen) return; cardOpen = false; $("cardbg").classList.remove("on"); }
 $("cardbg").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); closeCard(); });
 function toast(html) { if (SELFTEST) return; document.querySelectorAll(".toast").forEach(d => d.remove()); const d = document.createElement("div"); d.className = "toast"; d.innerHTML = html; document.body.appendChild(d); setTimeout(() => d.remove(), 2300); }
-const infoLine = t => `${TYPES[t].e} <b>${TYPES[t].name}</b> · ${TYPES[t].role} · ⚡${SP[t].name}`;
+const infoLine = t => `${TYPES[t].e}${TYPES[t].ic} ⚡<b>${SP[t].name}</b>`;
 
 function hud() {
-  $("rd").textContent = run ? run.round : 1; $("cn").textContent = run ? run.coins : 4; $("bst").textContent = save.best || "-";
-  const busy = !run || scene !== "claw" || run.claw.phase !== "swing";
-  $("drop").disabled = busy || run.coins <= 0; $("fight").disabled = busy;
-  $("drop").textContent = run && run.coins <= 0 ? "코인 없음" : "🕹 뽑기 (탭)";
+  $("rd").textContent = run ? run.wave : 0; $("cn").textContent = run ? run.coins : E.start; $("bst").textContent = save.best || "-";
+  const S = run && run.slot, d = $("drop");
+  if (!run || scene !== "play") { d.disabled = true; return; }
+  if (S.state === "spin") { d.disabled = false; d.className = "spin"; d.textContent = `🛑 멈춰 ${S.n + 1}/3`; }
+  else { d.className = ""; const c = cost(run), full = run.units.length >= BOARD; d.disabled = S.state !== "idle" || full || (!run.tickets && run.coins < c); d.textContent = full ? "칸 가득" : run.tickets ? `🎟️ 공짜 ×${run.tickets}` : `🎰 ${c}🪙`; }
+  $("mis").textContent = `🎯${MISSIONS.filter(m => !m.hidden && run.done[m.id]).length}`;
 }
-function renderSquad(newType) {
-  const s = run ? run.squad : [];
-  $("squad").innerHTML = s.length ? s.slice().sort((a, b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type)).map(u => `<span data-t="${u.type}" class="${u.type === newType ? "new" : ""}" title="${TYPES[u.type].name}: ${TYPES[u.type].desc}">${TYPES[u.type].e}${u.star > 1 ? `<i>${"★".repeat(u.star)}</i>` : ""}</span>`).join("") : '<span class="empty">아직 부대가 없어요 — 맨손(🦾)으로 싸우게 돼요</span>';
+let synKey = "";
+function renderSyn() {
+  const k = run ? JSON.stringify(run.syn) : ""; if (k === synKey) return; synKey = k;
+  $("syn").innerHTML = SYN.map(s => `<span class="${run && run.syn[s.id] ? "on" : ""}">${s.e}</span>`).join("");
 }
-$("squad").addEventListener("pointerdown", e => { const s = e.target.closest("span[data-t]"); if (s) toast(infoLine(s.dataset.t) + `<br><span style="color:#c6a9d9">${SP[s.dataset.t].desc}</span>`); });
-function handleEvents(evs) {
-  const c = run.claw;
-  evs.forEach(e => {
-    if (e === "coin") { SFX.coin(); SFX.motor(); }
-    else if (e === "grab") { SFX.grab(); puff(c.x, c.y + 30, 10, { speed: 90, life: .4, r: 3, cols: ["#fff", "#ffd84d"], star: true }); shake(3); }
-    else if (e === "miss") { SFX.miss(); floatText(c.x, c.y + 20, "헛손질…", "#c6a9d9"); }
-    else if (e === "slip") { SFX.slip(); shake(6); floatText(c.x, c.y + 40, "미끄러졌다!", "#ff5fa2", true); }
-    else if (e === "wobble") SFX.wobble();
-    else if (e.startsWith("get:")) {
-      const t = e.split(":")[1]; SFX.get(); puff(CHUTE_X, FLOOR - 10, 24, { angle: -Math.PI / 2, spread: 1.6, speed: 260, life: 1, r: 5, cols: ["#ffd84d", "#ff5fa2", "#38e1ff", "#fff"], star: true }); renderSquad(t);
-      if (!save.seen[t]) bigCard(t); else { popMsg(`${TYPES[t].e} ${TYPES[t].name} 합류!`, "#ffd84d"); toast(infoLine(t)); }
-      save.seen[t] = 1; store.set(save);
+$("syn").addEventListener("pointerdown", e => { const i = [...$("syn").children].indexOf(e.target.closest("span")); if (i >= 0) toast(`${SYN[i].e} ${SYN[i].desc}`); });
+
+// 로직 사건 → 소리·연출
+const ux = id => run.units.find(u => u.id === id);
+function onEvents() {
+  for (const e of run.ev) {
+    const k = e.k;
+    if (k === "lever") { SFX.lever(); fx.lever = 1; }
+    else if (k === "reel") { SFX.stop(e.i); fx.reelBump = fx.reelBump || [0, 0, 0]; fx.reelBump[e.i] = 1; }
+    else if (k === "near") { fx.near = 1; 0; }
+    else if (k === "result") onResult(e);
+    else if (k === "summon" || k === "merge") onSummon(e);
+    else if (k === "full") { toast(`칸 가득 ${TYPES[e.type].e} → +6🪙`); SFX.pair(); }
+    else if (k === "merged" || k === "recipe") { const u = ux(e.id); if (u) { SFX.merge(); u.pop = 1; fx.rings.push({ x: u.x, y: u.y, r: 44, t: 0, col: GCOL[e.star] }); puff(u.x, u.y, 26, { speed: 220, life: 1, r: 5, cols: ["#fff", GCOL[e.star]], star: true }); floatText(u.x, u.y - 34, k === "recipe" ? `📜 ${GRADE[e.star]}!` : e.changed ? `🎲 ${TYPES[e.type].e} ${GRADE[e.star]}!` : `${GRADE[e.star]}!`, GCOL[e.star], true, 17); if (e.star >= 4) { fx.flash = .4; shake(8); } } sel = null; }
+    else if (k === "sell") { SFX.pair(); floatText(e.x, e.y - 20, `+${e.v}🪙`, "#ffd84d", true, 16); sel = null; }
+    else if (k === "swap") { const u = ux(e.id); if (u) { (e.ok ? SFX.merge : SFX.blank)(); floatText(u.x, u.y - 34, e.ok ? `💱 ${TYPES[e.type].e}!` : "💱 실패", e.ok ? "#5fffc8" : "#ff8a8a", true, 16); u.pop = 1; } }
+    else if (k === "mission") { SFX.clear(); toast(`🎯 ${e.hidden ? "히든! " : ""}${e.name} ${e.rw.coins ? `+${e.rw.coins}🪙` : `🎟️×${e.rw.tickets}`}`); }
+    else if (k === "reward") showReward();
+    else if (k === "waveStart") { SFX.wave(e.boss); fx.banner = { txt: e.boss ? "BOSS WAVE" : `WAVE ${e.w}`, sub: e.boss ? "👑" : `👾×${waveSpec(e.w).length}`, t: 0, boss: e.boss, dur: e.boss ? 2 : 1.1 }; emit("level_start", { level: e.w }); BGM.boss = e.boss; if (e.boss) shake(10); $("sign").textContent = e.boss ? `👑 보스 ${e.w}` : `⚔️ 웨이브 ${e.w}`; }
+    else if (k === "waveClear") { SFX.clear(); fx.banner = { txt: "클리어!", sub: `+${e.bonus}🪙${isBoss(e.w) ? " · ❤️+2" : ""}`, t: 0, dur: 1.1, win: true }; emit("level_clear", { level: e.w }); save.best = Math.max(save.best, e.w); store.set(save); puff(180, 60, 30, { angle: Math.PI / 2, spread: 2, speed: 160, g: 200, life: 1.4, r: 4, cols: ["#ffd84d", "#ff5fa2", "#38e1ff", "#fff"], star: true }); $("sign").textContent = "다음 웨이브"; }
+    else if (k === "hit") {
+      const big = e.crit || e.sp; floatText(e.x + (Math.random() - .5) * 12, e.y - 18, e.v + (e.crit ? "!" : ""), e.crit ? "#ffd84d" : e.sp ? (SP[e.src] || {}).col || "#fff" : "#fff", big, dmgSize(e.v));
+      const en = run.enemies.find(x => x.id === e.id); if (en) { en.fl = 1; en.kb = Math.min(10, 2 + e.v * .3); }
+      if (e.crit) { SFX.hit(true, e.v); hitStop(.05); shake(5); } else if (Math.random() < .5) SFX.hit(false, e.v);
     }
-    else if (e.startsWith("full:")) { const t = e.split(":")[1]; SFX.coin(); popMsg(`부대 가득! ${TYPES[t].e} → 코인 +1`, "#38e1ff"); }
-    else if (e.startsWith("merge:")) { const [, t, st] = e.split(":"); SFX.merge(); fx.flash = .5; puff(CHUTE_X, FLOOR - 10, 36, { angle: -Math.PI / 2, spread: 2.4, speed: 320, life: 1.2, r: 6, cols: ["#fff", "#ffd84d"], star: true }); popMsg(`${TYPES[t].e} 합체! ${"★".repeat(+st)}`, "#fff"); toast(`${TYPES[t].e} <b>${"★".repeat(+st)}</b> 체력·공격 ×${STAR[+st]} · 필살기도 강해짐`); renderSquad(t); }
-  });
-  hud();
+    else if (k === "kill") { SFX.kill(); puff(e.x, e.y, e.kind === "boss" ? 50 : 10, { speed: e.kind === "boss" ? 240 : 120, life: .7, r: e.kind === "boss" ? 6 : 3, cols: ["#fff", "#d9c2ff", "#ffd84d"] }); floatText(e.x, e.y - 34, `+${e.coin}🪙`, "#ffd84d", false, 13); if (e.kind === "boss") { if (JUICE) { ts = .25; slowT = 1.1; } hitStop(.2); fx.flash = .7; shake(16); SFX.final(); floatText(e.x, e.y - 60, "보스 격파!", "#ffd84d", true, 24); } }
+    else if (k === "leak") { SFX.leak(); shake(e.n > 1 ? 14 : 6); fx.redFlash = 1; floatText(GOAL[0] + 26, GOAL[1] - 10, `❤️-${e.n}`, "#ff5f6d", true, 18); }
+    else if (k === "over") { SFX.lose(); BGM.stop(); fx.banner = { txt: "패배…", sub: `웨이브 ${run.wave}`, t: 0, dur: 9 }; emit("fail", { level: run.wave }); setTimeout(endRun, 1600); }
+    else if (k === "atk") onAtk(e);
+    else if (k === "boom") { SFX.boom(); fx.rings.push({ x: e.x, y: e.y, r: e.r, t: 0, col: e.kind === "dino" ? "#ff8a20" : "#9a6cff" }); puff(e.x, e.y, 10, { speed: 110, life: .45, r: 4, cols: e.kind === "dino" ? ["#ffd84d", "#ff6a20", "#ff3b1f"] : ["#3a1660", "#6a2a9a", "#120818"], glow: e.kind === "dino" }); }
+    else if (k === "taunt") { const u = ux(e.id); if (u) { SFX.taunt(); floatText(u.x, u.y - 34, "도발!", "#e0a060", false, 13); } }
+    else if (k === "bearHit") { const u = ux(e.id); if (u) { u.fl = 1; if (Math.random() < .3) floatText(u.x + 12, u.y - 26, "-" + e.v, "#ff8a8a", false, 13); } }
+    else if (k === "ko") { const u = ux(e.id); SFX.ko(); if (u) { floatText(u.x, u.y - 36, "기절!", "#ff8a8a", true, 16); puff(u.x, u.y, 12, { speed: 100, life: .6, r: 3, cols: ["#fff", "#ffb3c8"] }); } }
+    else if (k === "up") { const u = ux(e.id); if (u) floatText(u.x, u.y - 36, "부활!", "#5fffc8", false, 14); }
+    else if (k === "arm") { fx.arm = { x: e.x, y: e.y, t: 0 }; SFX.swipe(); }
+    else if (k === "sp") onSpecial(e);
+    else if (k === "spHit") onSpHit(e);
+    else if (k === "lifeUp") { SFX.heal(); floatText(40, 16, "❤️+1", "#5fffc8", true, 16); }
+  }
+}
+function onResult(e) {
+  fx.result = { ...e, t: 0 };
+  if (e.kind === "jackpot") { SFX.jackpot(); fx.flash = .6; fx.jack = 1.6; shake(10); hitStop(.12); puff(180, 408, 60, { angle: -Math.PI / 2, spread: 2.2, speed: 360, g: 420, life: 1.6, r: 5, cols: ["#ffd84d", "#fff3a0", "#ffb300", "#fff"], star: true }); }
+  else if (e.kind === "pair") { SFX.pair(); puff(180, 408, 16, { angle: -Math.PI / 2, spread: 1.6, speed: 200, life: .8, r: 4, cols: ["#ffd84d", "#fff"], star: true }); }
+  else if (e.kind === "dust") { SFX.jackpot(); fx.jack = 1; puff(180, 408, 40, { speed: 200, life: 1, r: 6, cols: ["#c9c4d6", "#fff"] }); }
+  else if (e.kind === "blank") SFX.blank();
+  if (e.nearMiss) setTimeout(() => { floatText(248, 370, "아깝다!", "#ff5fa2", true, 18); }, 120);
+  if (e.type) fx.flyers.push({ type: e.type, star: e.star, i: e.kind === "single" ? Math.max(0, e.reels.findIndex(x => x === e.type)) : 1, t: 0, to: null });
+}
+function onSummon(e) {
+  const u = ux(e.id); if (!u) return;
+  const f = fx.flyers.find(f => f.type === e.type && !f.to); if (f) f.done = true;
+  {
+    SFX.summon(); u.pop = 1; fx.rings.push({ x: u.x, y: u.y, r: 30, t: 0, col: TYPES[e.type].col }); puff(u.x, u.y, 16, { speed: 140, life: .6, r: 4, cols: ["#fff", TYPES[e.type].col], star: true }); if (!sel || !sel.panel) sel = { id: u.id, t: 2 };
+    if (!save.seen[e.type]) bigCard(e.type); else if (e.star >= 2) floatText(u.x, u.y - 34, GRADE[e.star] + "!", GCOL[e.star], true, 16);
+    save.seen[e.type] = 1; store.set(save);
+  }
+}
+function onAtk(e) {
+  const u = ux(e.id); if (!u) return;
+  u.an = { t: 0, x: e.x, y: e.y, type: e.type };
+  if (e.type === "bear") { SFX.swipe(); fx.slashes.push({ x: e.x, y: e.y, a: Math.atan2(e.y - u.y, e.x - u.x), t: 0, col: "#e0a060", big: true }); }
+  else if (e.type === "cat") { SFX.swipe(); fx.slashes.push({ x: e.x, y: e.y, a: Math.random() * 3, t: 0, col: "#fff" }); }
+  else SFX.shoot(e.type);
+}
+function onSpecial(e) {
+  const S = SP[e.type], u = ux(e.id);
+  fx.cut = { e: TYPES[e.type].e, txt: S.name, col: S.col, t: 0 }; SFX.special(e.type); hitStop(.06); fx.light = { col: S.col, t: 1.2 };
+  if (!u) return; u.an = { t: 0, x: u.x, y: u.y - 40, type: e.type, sp: true };
+  if (e.type === "bear") { shake(16); fx.rings.push({ x: u.x, y: u.y, r: 150, t: 0, col: "#e0a060", thick: true }); fx.crack = 1; puff(u.x, u.y + 20, 30, { speed: 220, life: .8, r: 5, cols: ["#c9a27a", "#8a6a4a", "#e8d3b0"] }); }
+  else if (e.type === "dino") { fx.breath = { id: u.id, t: 0 }; shake(8); }
+  else if (e.type === "peng") { fx.aur = 1.6; puff(u.x, u.y, 24, { speed: 120, g: -80, life: 1, r: 4, cols: ["#5fffc8", "#9ff", "#fff"], star: true }); }
+  else if (e.type === "octo") { fx.dark = 1.3; shake(8); run.enemies.forEach(en => puff(en.x, en.y, 6, { speed: 80, life: .8, r: 5, cols: ["#2a1240", "#4a1e6a"] })); }
+  else if (e.type === "bun") { for (let k = 0; k < 3; k++) fx.ghosts.push({ id: u.id, orbit: k, t: 0, life: .9 }); }
+}
+function onSpHit(e) {
+  const u = ux(e.ux);
+  if (e.src === "cat") { fx.slashes.push({ x: e.x, y: e.y, a: (e.n % 2 ? -1 : 1) * .7, t: 0, col: e.n === 4 ? "#ffd84d" : "#fff", big: e.n === 4 }); SFX.swipe(); if (u) u.an = { t: 0, x: e.x, y: e.y, type: "cat" }; if (e.n === 4) { shake(10); hitStop(.08); } }
+  if (e.src === "bun" && u) { fx.ghosts.push({ x0: u.x, y0: u.y, x1: e.x, y1: e.y, t: 0, life: .22 }); SFX.swipe(); }
 }
 
-// ───────── 장면 전환 ─────────
+// ───────── 장면 ─────────
 function startRun(seed) {
-  run = newRun(seed ?? (Date.now() % 1e6)); fillPit(run); run.claw = newClaw(run); scene = "claw"; bt = null;
-  save.runs++; store.set(save); $("ov").classList.remove("on"); renderSquad(); hud(); emit("level_start", { level: run.round });
-  $("sign").textContent = "인형뽑기 군단"; $("tip").textContent = "집게가 인형 바로 위에 올 때 탭! 가운데일수록 잘 잡혀요";
-}
-const LIGHT = { base: hexRgb("#7a4cff"), boss: hexRgb("#ff3355"), win: hexRgb("#ffc83c"), lose: hexRgb("#46506e"), ink: hexRgb("#3c145a") };
-function startBattle(test) {
-  if (!run || scene !== "claw" || run.claw.phase !== "swing") return;
-  closeCard();
-  const res = battle(run), boss = res.B.some(u => u.boss);
-  const finIdx = finalIdx(res);
-  scene = "battle";
-  bt = {
-    res, boss, test: !!test, finIdx, round: run.round, ft: 0, spd: 1, i: 0, wait: 0, phase: "intro", pt: 0, intro: boss ? 2.4 : 1.5, fast: false, ts: 1, slow: 0, hs: 0, vsDone: false,
-    A: res.A.map(u => ({ ...u, dx: 0, dy: 0, fl: 0, g: 0 })), B: res.B.map(u => ({ ...u, dx: 0, dy: 0, fl: 0 })),
-    cam: { x: 180, y: 250, z: JUICE ? 1.3 : 1, tx: 180, ty: 250, tz: 1 }, lc: (boss ? LIGHT.boss : LIGHT.base).slice(), lt: boss ? LIGHT.boss : LIGHT.base,
-    sp: null, cut: null, banner: null, ink: false, dark: 0, darkT: 0, aur: 0, crack: 0, slashes: [], ghosts: [], lagA: 1, lagB: 1, lvl: boss ? 1 : 0,
-  };
-  if (!test) {
-    $("sign").textContent = boss ? `👑 보스전 · 라운드 ${run.round}` : `⚔️ 라운드 ${run.round}`; $("tip").textContent = "부대가 알아서 싸워요 · 화면을 누르면 빨리 감기";
-    BGM.start(boss); SFX.whoosh();
-  }
-  hud();
-}
-// 2열 배치: 0번이 맨 앞(가운데 쪽). 보스는 맨 앞 큰 자리, 졸개는 그 뒤
-function unitPos(side, i) {
-  const L = side === "A" ? bt.A : bt.B, n = L.length, boss = side === "B" && L[0] && L[0].boss;
-  if (boss && i === 0) return { x: 228, y: 290, row: 0 };
-  const j = boss ? i + 1 : i, g = n > 6 ? 36 : 44, col = Math.floor(j / 2), row = j % 2, d = col * g + row * g / 2 + (boss ? 14 : 0);
-  return { x: side === "A" ? 150 - d : 210 + d, y: 316 - row * 54, row };   // 앞줄 아래·뒷줄 위, 앞줄 체력바는 발밑
-}
-function camTo(x, y, z) { if (!JUICE) return; bt.cam.tx = x; bt.cam.ty = y; bt.cam.tz = z; }
-function camReset() { camTo(180, 250, 1); }
-function hitStop(s) { if (JUICE) bt.hs = Math.max(bt.hs, s / bt.spd); }   // 빨리 감을수록 정지도 짧게
-const dmgSize = v => Math.min(34, 12 + 3.4 * Math.sqrt(v));   // 데미지 숫자 크기 ∝ 피해량 (최대 34)
-
-function startSpecial(e) {
-  const b = bt, u = b.A[e.i], p = unitPos("A", e.i), S = SP[e.type];
-  u.g = 0; b.sp = { type: e.type, i: e.i, t: 0, dur: S.dur, first: true };
-  b.cut = { e: TYPES[e.type].e, txt: S.name, col: S.col, t: 0 }; b.lt = hexRgb(S.col); b.lvl = 3;
-  SFX.special(e.type); hitStop(.06);
-  const front = b.B.findIndex(x => x.hp > 0), fp = front >= 0 ? unitPos("B", front) : { x: 250, y: 300 };
-  if (e.type === "bear") camTo(p.x + 20, 270, 1.25);
-  else if (e.type === "dino") camTo((p.x + fp.x) / 2, 280, 1.3);
-  else if (e.type === "cat") camTo(fp.x - 10, fp.y - 10, 1.85);
-  else if (e.type === "bun") { camTo(180, 275, 1.15); for (let k = 0; k < 3; k++) b.ghosts.push({ orbit: k, t: 0, i: e.i }); }
-  else if (e.type === "peng") { camTo(110, 270, 1.3); puff(p.x, p.y, 20, { speed: 120, g: -80, life: 1, r: 4, cols: ["#5fffc8", "#9ff", "#fff"], star: true }); }
-  else if (e.type === "octo") { camTo(250, 280, 1.15); b.darkT = .6; b.lt = LIGHT.ink; }
-}
-function playEvent(e, idx) {
-  const b = bt, S1 = e.s === "A" ? b.A : b.B, S2 = e.s === "A" ? b.B : b.A;
-  if (e.k === "g") { const u = b.A[e.i]; const was = u.g; u.g = e.v; if (e.v >= GMAX && was < GMAX && !b.test) SFX.ready(); }
-  else if (e.k === "sp") startSpecial(e);
-  else if (e.k === "spEnd") { if (b.sp && b.sp.type === "cat") b.A[e.i].dash = 0; b.sp = null; b.darkT = 0; b.lt = b.ink ? LIGHT.ink : b.boss ? LIGHT.boss : LIGHT.base; b.ghosts = b.ghosts.filter(g => g.orbit === undefined); camReset(); }
-  else if (e.k === "ink") { b.ink = false; if (!b.sp) b.lt = b.boss ? LIGHT.boss : LIGHT.base; }
-  else if (e.k === "heal") {
-    const t = S1[e.to]; t.hp = Math.min(t.max, t.hp + e.v); t.heal = 1; if (!b.test) SFX.heal(); const p = unitPos("A", e.to);
-    floatText(p.x, p.y - 30, "+" + e.v, "#5fffc8", !!e.sp, dmgSize(e.v) * .8); if (e.sp) puff(p.x, p.y + 10, 8, { speed: 70, g: -120, life: .8, r: 3, cols: ["#5fffc8", "#fff"], star: true });
-  }
-  else if (e.k === "die") {
-    const u = S1[e.i]; u.dying = 0; if (!b.test) SFX.die(); const p = unitPos(e.s, e.i);
-    puff(p.x, p.y, u.boss ? 50 : 18, { speed: u.boss ? 260 : 160, life: .9, r: u.boss ? 6 : 4, cols: e.s === "B" ? ["#fff", "#f5e6ff", "#d9c2ff", "#ffd84d"] : ["#fff", "#f5e6ff", "#ffb3c8"] });
-    if (u.boss) { shake(16); fx.flash = .6; }
-  }
-  else if (e.k === "atk") {
-    const a = S1[e.i], t = S2[e.to], dir = e.s === "A" ? 1 : -1, p = unitPos(e.s === "A" ? "B" : "A", e.to), big = e.crit || (e.sp && e.v >= 8);
-    if (!e.sp) a.dx = dir * (e.weak ? 8 : 20);   // 앞으로 튀어나감
-    t.hp -= e.v; t.fl = 1; t.dx += dir * (e.weak ? 3 : Math.min(28, 5 + e.v * .7));   // 넉백 ∝ 피해
-    floatText(p.x + (Math.random() - .5) * 18, p.y - 30, e.v + (e.crit ? "!" : ""), e.s === "B" ? "#ff8a8a" : e.crit ? "#ffd84d" : e.sp ? SP[e.sp].col : "#fff", big, dmgSize(e.v) * (e.weak ? .8 : 1));
-    if (!b.test) { if (e.weak) SFX.weak(); else if (e.sp === "cat" || e.sp === "bun") { SFX.slash(); SFX.hit(e.crit, e.v); } else SFX.hit(e.crit, e.v); }
-    if (!e.weak) { hitStop(e.crit ? .12 : .08); puff(p.x - dir * 12, p.y, e.crit ? 14 : 6, { angle: dir > 0 ? Math.PI : 0, spread: 2, speed: e.crit ? 220 : 120, life: .35, r: 3, cols: ["#fff", "#ffe9a8"] }); }
-    if (e.crit) shake(9);
-    if (e.sp === "bear") { if (b.sp && b.sp.first) { b.sp.first = false; shake(18); b.crack = 1; hitStop(.14); for (let x = 30; x <= 340; x += 40) puff(x, 322, 5, { angle: -Math.PI / 2, spread: 1, speed: 160, life: .7, r: 5, cols: ["#c9a27a", "#8a6a4a", "#e8d3b0"] }); } t.dy = -26; }
-    if (e.sp === "dino") puff(p.x, p.y, 12, { speed: 140, g: -160, life: .5, r: 5, cols: ["#ffd84d", "#ff6a20", "#ff3b1f"], glow: true });
-    if (e.sp === "cat") { b.slashes.push({ x: p.x, y: p.y, a: (e.n % 2 ? -1 : 1) * (.5 + Math.random() * .4), t: 0, big: e.crit }); const ap = unitPos("A", e.i); a.dash = (p.x - 34) - ap.x; if (e.crit) { shake(14); camTo(p.x, p.y - 10, 2.1); } }
-    if (e.sp === "bun") { const ap = unitPos("A", e.i); b.ghosts.push({ x0: ap.x, y0: ap.y, x1: p.x - 20, y1: p.y, t: 0, i: e.i }); }
-    if (e.sp === "octo") { b.ink = true; puff(p.x, p.y, 10, { speed: 110, life: .7, r: 6, cols: ["#2a1240", "#4a1e6a", "#120818"], g: 200 }); }
-    if (idx === b.finIdx) {   // 마지막 일격: 슬로모션 + 클로즈업
-      if (JUICE) { b.ts = .22; b.slow = 1.2; } hitStop(.2); b.cut = null; camTo(p.x, p.y - 10, 1.9); fx.flash = .7; shake(16); b.lt = LIGHT.win;
-      if (!b.test) SFX.final();
-      floatText(p.x, p.y - 62, "마지막 일격!", "#ffd84d", true, 22);
-    }
-  }
-  return evDur(e);
-}
-function finishBattle() {
-  const b = bt, win = b.res.win; b.phase = "finish"; b.pt = 0; b.lt = win ? LIGHT.win : LIGHT.lose; b.sp = null; b.darkT = 0;
-  b.banner = { txt: win ? "승리!" : "패배…", sub: win ? (b.res.flawless ? "무피해 보너스 · 코인 +3" : "코인 +2") : "부대 전멸", win, t: 0 };
-  camTo(180, 250, 1.06);
-  if (!b.test) { BGM.stop(); win ? SFX.win() : SFX.lose(); }
-  if (win) for (let k = 0; k < 5; k++) puff(40 + k * 70, 40, 16, { angle: Math.PI / 2, spread: 1.2, speed: 160, g: 160, life: 2, r: 5, cols: ["#ffd84d", "#ff5fa2", "#38e1ff", "#fff", "#5fffc8"], star: true });
-}
-function battleTick(dt) {
-  const b = bt;
-  if (b.hs > 0) { b.hs -= dt; return; }   // 히트스톱: 연출 전체 정지
-  if (b.slow > 0) { b.slow -= dt; if (b.slow <= 0) b.ts = 1; }
-  const sdt = dt * b.ts, spd = b.spd = (b.fast ? 3 : 1) * (b.phase === "fight" ? pace(b.ft, b.round) : 1);   // 긴 전투는 점점 빨라짐, 탭하면 3배
-  // 애니메이션
-  [...b.A, ...b.B].forEach(u => { u.dx *= Math.pow(.0005, sdt); u.dy *= Math.pow(.002, sdt); u.fl = Math.max(0, u.fl - sdt * 5); if (u.heal) u.heal = Math.max(0, u.heal - sdt * 2); if (u.dying !== undefined) u.dying += sdt; if (u.dash) u.dash *= b.sp && b.sp.type === "cat" ? 1 : Math.pow(.001, sdt); });
-  const c = b.cam, ck = 1 - Math.pow(.002, dt); c.x = lerp(c.x, c.tx, ck); c.y = lerp(c.y, c.ty, ck); c.z = lerp(c.z, c.tz, ck);
-  b.lc = b.lc.map((v, k) => lerp(v, b.lt[k], 1 - Math.pow(.02, dt)));
-  b.dark = lerp(b.dark, b.darkT, 1 - Math.pow(.001, dt)); b.aur = lerp(b.aur, b.sp && b.sp.type === "peng" ? 1 : 0, 1 - Math.pow(.01, dt));
-  b.crack = Math.max(0, b.crack - sdt * 1.4); b.slashes = b.slashes.filter(s => (s.t += sdt) < .3); b.ghosts = b.ghosts.filter(g => (g.t += sdt) < (g.orbit !== undefined ? 99 : .22));
-  if (b.cut) { b.cut.t += sdt; if (b.cut.t > .72) b.cut = null; }
-  if (b.banner) b.banner.t += sdt;
-  if (b.sp) {
-    b.sp.t += sdt; const p = unitPos("A", b.sp.i), u = b.A[b.sp.i];
-    if (b.sp.type === "bear" && b.sp.first) u.dy = -Math.sin(Math.PI * clamp(b.sp.t / b.sp.dur)) * 60;
-    if (b.sp.type === "dino" && b.sp.t > .25 && JUICE) for (let k = 0; k < 3; k++) fx.parts.push({ x: p.x + 18, y: p.y - 4, vx: 340 + Math.random() * 200, vy: (Math.random() - .5) * 140, g: -60, life: .45 + Math.random() * .2, max: .6, r: 5 + Math.random() * 6, col: ["#fff3a0", "#ffd84d", "#ff8a20", "#ff3b1f"][k + (Math.random() < .5 ? 1 : 0)], glow: true });
-    if (b.sp.type === "peng" && Math.random() < .5) puff(40 + Math.random() * 140, 150, 1, { angle: Math.PI / 2, spread: .3, speed: 90, g: 20, life: 1.2, r: 3, cols: ["#5fffc8", "#b4fff0", "#c0a0ff"], star: true });
-  }
-  // BGM 고조: 적 체력이 줄수록, 필살기 중엔 최고조
-  const sumB = b.B.reduce((s, u) => s + Math.max(0, u.hp), 0), maxB = b.B.reduce((s, u) => s + u.max, 0);
-  BGM.lvl = b.sp ? 3 : Math.min(3, (b.boss ? 1 : 0) + Math.floor((1 - sumB / maxB) * 3) + (b.phase === "intro" ? 0 : 1) - (b.boss ? 0 : 1));
-  b.pt += sdt * (b.fast ? 2 : 1);
-  if (b.phase === "intro") {
-    if (!b.vsDone && b.pt >= b.intro * .38) { b.vsDone = true; shake(b.boss ? 14 : 10); if (!b.test) SFX.vs(b.boss); }
-    if (b.pt >= b.intro * .7) camReset();
-    if (b.pt >= b.intro) { b.phase = "fight"; b.pt = 0; }
-  } else if (b.phase === "fight") {
-    b.ft += sdt; b.wait -= sdt * spd;
-    while (b.wait <= 0 && b.phase === "fight" && b.hs <= 0) {
-      if (b.i >= b.res.ev.length) { finishBattle(); break; }
-      const idx = b.i++; b.wait += playEvent(b.res.ev[idx], idx);
-    }
-  } else if (b.phase === "finish") {
-    if (b.pt >= (b.res.win ? 1.9 : 1.8)) { b.phase = "done"; if (!b.test) endBattle(); }
-  }
-}
-function endBattle() {
-  const res = bt.res, won = afterBattle(run, res);
-  if (won) {
-    emit("level_clear", { level: run.round - 1, flawless: res.flawless }); save.best = Math.max(save.best, run.round - 1); store.set(save);
-    if (auto && run.round > 12) { endRun(); return; }
-    setTimeout(() => { fillPit(run); run.claw = newClaw(run); scene = "claw"; bt = null; $("sign").textContent = "인형뽑기 군단"; $("tip").textContent = `코인 +${2 + (res.flawless ? 1 : 0)}${res.flawless ? " (무피해 보너스)" : ""} · 인형 보충 완료`; hud(); emit("level_start", { level: run.round }); }, 500);
-  } else { emit("fail", { level: run.round }); setTimeout(endRun, 300); }
+  run = newRun(seed ?? (Date.now() % 1e6)); calcSyn(run); scene = "play"; sel = null; paused = false; speed = 1; $("spd").textContent = "▶1"; fx.parts = []; fx.floats = []; fx.flyers = []; fx.banner = { txt: "준비!", sub: "🎰 뽑아서 지키기", t: 0, dur: 2 };
+  save.runs++; store.set(save); $("ov").classList.remove("on"); synKey = ""; renderSyn(); hud(); BGM.start(false);
+  $("sign").textContent = "준비!"; $("tip").textContent = "릴을 탭해서 멈춰요";
 }
 function endRun() {
-  BGM.stop();
-  const r = run.round - 1, best = r >= save.best; save.best = Math.max(save.best, r); store.set(save); scene = "over";
-  $("box").innerHTML = `<h2>${r ? "런 종료" : "전멸…"}</h2><div class="big">${r}</div><p>라운드 돌파${best && r ? " · 🏆 최고 기록!" : ""}</p>
-    <div class="team">${run.squad.map(u => `<span>${TYPES[u.type].e}${u.star > 1 ? `<small>${"★".repeat(u.star)}</small>` : ""}</span>`).join("") || "<span>🦾</span>"}</div>
+  if (scene !== "play") return; scene = "over"; BGM.stop(); sel = null; renderPanel();
+  const r = run.wave - 1, best = r >= save.best && r > 0; save.best = Math.max(save.best, r); store.set(save);
+  $("box").innerHTML = `<h2>방어 실패</h2><div class="big">${r}</div><p>웨이브${best ? " · 🏆 최고!" : ""}</p>
+    <div class="team">${run.units.map(u => `<span>${TYPES[u.type].e}${u.star > 1 ? `<small>${"★".repeat(u.star)}</small>` : ""}</span>`).join("") || "<span>🦾</span>"}</div>
     <button id="again">한 판 더</button>`;
   $("ov").classList.add("on"); $("again").onclick = () => startRun(); hud();
 }
 function menu() {
-  $("box").innerHTML = `<h1>🧸 인형뽑기 군단</h1><p>뽑은 인형이 그대로 내 부대가 된다</p>
-    <ul><li>집게가 흔들릴 때 <b>탭</b> → 떨어져서 잡기 (가운데일수록 잘 잡힘)</li><li>코인 1개 = 뽑기 1번 · 남은 코인은 다음 라운드로</li><li>같은 인형 2개 → <b>★2 합체</b></li><li>⚔️ 전투는 자동 · 게이지가 차면 <b>필살기</b> 발동</li><li>이기면 코인 +2, 지면 끝</li></ul>
+  $("box").innerHTML = `<h1>🧸 인형뽑기 군단</h1><p>뽑아서, 합쳐서, 지켜라</p>
+    <ul><li>🎰 릴을 <b>탭</b>해서 멈추기</li><li>같은 인형 2개 → <b>합성</b></li><li>🚪에 닿으면 ❤️ 감소</li></ul>
     <p style="font-size:24px;letter-spacing:4px">${KEYS.map(k => TYPES[k].e).join("")}</p>
-    <p>최고 기록: ${save.best || 0} 라운드</p><button id="go">시작</button>`;
+    <p>🏆 ${save.best || 0}</p><button id="go">시작</button>`;
   $("ov").classList.add("on"); $("go").onclick = () => startRun();
 }
 
+// ───────── 인형 패널 (합성·레시피·바꾸기·판매) — 아이콘+숫자만 ─────────
+let swapOpen = false, panelKey = "";
+function renderPanel() {
+  const el = $("up"), u = sel && sel.panel && run && scene === "play" ? ux(sel.id) : null;
+  if (!u) { if (el.classList.contains("on")) el.classList.remove("on"); panelKey = ""; swapOpen = false; return; }
+  const mp = mergePartner(run, u), rc = recipeParts(run, u), key = [u.id, u.type, u.star, !!mp, !!rc, run.coins >= SWAP_COST, swapOpen].join();
+  if (key === panelKey) return; panelKey = key;
+  el.innerHTML = `<div class="hd">${TYPES[u.type].e}${TYPES[u.type].ic} <i style="background:${GCOL[u.star]}">${GRADE[u.star]}</i><button class="x" data-a="x">✕</button></div>
+    <div class="row"><button data-a="merge" ${mp ? "" : "disabled"}>⬆ 합성</button><button data-a="recipe" ${rc ? "" : "disabled"}>📜 ${rc ? rc.map(p => TYPES[p.type].e).join("") : "3종"}</button><button data-a="swap" ${run.coins >= SWAP_COST ? "" : "disabled"}>💱 ${SWAP_COST}</button><button data-a="sell" ${SELL[u.star] ? "" : "disabled"}>💰 +${SELL[u.star]}</button></div>
+    ${swapOpen ? `<div class="row sw">${KEYS.filter(k => k !== u.type).map(k => `<button data-t="${k}">${TYPES[k].e}</button>`).join("")}<button disabled style="font-size:13px">${SWAP_P * 100}%</button></div>` : ""}`;
+  el.classList.add("on");
+}
+$("up").addEventListener("pointerdown", e => {
+  e.preventDefault(); e.stopPropagation(); const b = e.target.closest("button"); if (!b || b.disabled || !sel) return;
+  const a = b.dataset.a, t = b.dataset.t;
+  if (a === "x") sel = null; else if (a === "swap") { swapOpen = !swapOpen; panelKey = ""; } else if (t) { inQ.swap = { id: sel.id, type: t }; swapOpen = false; panelKey = ""; } else if (a) inQ[a] = sel.id;
+});
+// 접어 둔 정보: 확률표·미션 (버튼을 눌렀을 때만 펼침)
+function box(html) { sel = null; renderPanel(); $("box").innerHTML = html + `<button id="bx">닫기</button>`; $("ov").classList.add("on"); paused = true; $("bx").onclick = () => { $("ov").classList.remove("on"); paused = false; }; }
+function showProb() {
+  const pct = n => (n / NSYM * 100).toFixed(1) + "%";
+  box(`<h2>📊 확률표</h2><table>
+    <tr><td>🐻 한 칸</td><td>${pct(3)}</td></tr><tr><td>🐰🦖🐱🐧🐙 각각</td><td>${pct(2)}</td></tr><tr><td>💨 꽝</td><td>${pct(3)}</td></tr>
+    <tr><td>아무 때나 멈출 때 잭팟</td><td>${(KEYS.reduce((s, k) => s + Math.pow(STRIP.filter(x => x === k).length / NSYM, 3), 0) * 100).toFixed(1)}%</td></tr>
+    <tr><td>잭팟 → 희귀</td><td>+5🪙</td></tr><tr><td>페어 → 일반</td><td>+4🪙</td></tr>
+    <tr><td>⬆ 합성: 같은 종류 유지</td><td>${MERGE_SAME * 100}%</td></tr><tr><td>📜 레시피(같은 등급 3종)</td><td>100%</td></tr>
+    <tr><td>💱 바꾸기 (${SWAP_COST}🪙)</td><td>${SWAP_P * 100}%</td></tr><tr><td>💰 판매 일반·희귀·영웅·전설</td><td>${SELL.slice(1, 5).join("·")}</td></tr></table>`);
+}
+function showMissions() {
+  box(`<h2>🎯 미션</h2><table>${MISSIONS.map(m => { const d = run && run.done[m.id]; return `<tr><td>${d ? "✅" : "⬜"} ${m.hidden && !d ? "❓ 히든" : m.name}</td><td>${m.rw.coins ? m.rw.coins + "🪙" : "🎟️×" + m.rw.tickets}</td></tr>`; }).join("")}</table>`);
+}
+function showReward() {
+  if (auto) return; sel = null; renderPanel();   // 봇은 로직에서 바로 고름
+  const o = run.reward.opts, ic = { hero: "🌟", coins: "🪙", tickets: "🎟️", lives: "❤️", power: "💪" };
+  $("box").innerHTML = `<h2>👑 보상 고르기</h2>${o.map((x, i) => `<button class="opt" data-i="${i}"><b>${x.id === "hero" ? TYPES[x.type].e : ic[x.id]}</b>${x.id === "hero" ? "영웅 " + TYPES[x.type].name : x.id === "coins" ? "+" + x.v : x.id === "tickets" ? "뽑기권 ×3" : x.id === "lives" ? "목숨 +3" : "공격 +15%"}</button>`).join("")}`;
+  $("ov").classList.add("on"); SFX.card();
+  $("box").querySelectorAll(".opt").forEach(b => b.onclick = () => { inQ.pick = +b.dataset.i; $("ov").classList.remove("on"); });
+}
+let paused = false;
 // ───────── 입력 ─────────
-$("drop").addEventListener("pointerdown", e => { e.preventDefault(); if (!auto && !cardOpen) tapQ = true; });
-$("fight").addEventListener("pointerdown", e => { e.preventDefault(); if (!auto) startBattle(); });
+function pressDraw() { if (!run || scene !== "play" || auto || cardOpen) return; const S = run.slot; if (S.state === "spin") inQ.stop = true; else if (S.state === "idle") inQ.pull = true; }
+$("drop").addEventListener("pointerdown", e => { e.preventDefault(); pressDraw(); });
+$("spd").addEventListener("pointerdown", e => { e.preventDefault(); speed = speed % 3 + 1; $("spd").textContent = "▶" + speed; });
+$("prob").addEventListener("pointerdown", e => { e.preventDefault(); if (scene === "play" || scene === "menu") showProb(); });
+$("mis").addEventListener("pointerdown", e => { e.preventDefault(); if (scene === "play") showMissions(); });
 $("mute").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); setMute(!save.mute); });
-cv.addEventListener("pointerdown", e => { e.preventDefault(); if (scene === "claw" && !auto && !cardOpen) tapQ = true; else if (scene === "battle" && bt) bt.fast = true; });
-addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); if (cardOpen) closeCard(); else if (scene === "claw") tapQ = true; else if (bt) bt.fast = true; } if (e.code === "Enter") { if (cardOpen) closeCard(); else startBattle(); } if (e.code === "KeyM") setMute(!save.mute); });
+cv.addEventListener("pointerdown", e => {
+  e.preventDefault(); if (!run || scene !== "play") return;
+  const r = cv.getBoundingClientRect(), wx = (e.clientX - r.left - OX) / SC, wy = (e.clientY - r.top - OY) / SC;
+  if (wy > MACH_Y) { pressDraw(); return; }
+  const u = run.units.find(u => Math.hypot(u.x - wx, u.y - wy) < 32);
+  sel = u ? { id: u.id, t: 999, panel: true } : null; swapOpen = false; panelKey = "";
+});
+addEventListener("keydown", e => { if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); if (cardOpen) closeCard(); else pressDraw(); } if (e.code === "KeyM") setMute(!save.mute); });
 
 // ───────── 그리기 ─────────
 const sx = x => OX + x * SC, sy = y => OY + y * SC;
@@ -570,31 +690,7 @@ function plush(x, y, r, type, rot = 0, scale = 1) {
   ctx.restore();
 }
 function shade(hex, k) { const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255, f = c => Math.max(0, Math.min(255, Math.round(c + (k < 0 ? c : 255 - c) * k))); return `rgb(${f(r)},${f(g)},${f(b)})`; }
-function drawCabinet(t) {
-  const g = ctx.createLinearGradient(0, sy(0), 0, sy(CAB_H)); g.addColorStop(0, "#ff5fa2"); g.addColorStop(1, "#b8287a");
-  ctx.fillStyle = g; roundRect(sx(0), sy(0), CAB_W * SC, CAB_H * SC, 18 * SC); ctx.fill();
-  const gl = ctx.createLinearGradient(0, sy(20), 0, sy(FLOOR)); gl.addColorStop(0, "#1d0f33"); gl.addColorStop(1, "#3a1d5c");
-  ctx.fillStyle = gl; roundRect(sx(12), sy(20), (CAB_W - 24) * SC, (FLOOR + 18 - 20) * SC, 10 * SC); ctx.fill();
-  for (let i = 0; i < 14; i++) { const on = Math.floor(t * 4 + i) % 3 === 0; ctx.fillStyle = on ? "#ffd84d" : "#7a3b62"; ctx.beginPath(); ctx.arc(sx(18 + i * 25.5), sy(11), 3.2 * SC, 0, 7); ctx.fill(); if (on) { ctx.shadowColor = "#ffd84d"; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0; } }
-  ctx.fillStyle = "#12081f"; roundRect(sx(CHUTE_X - 30), sy(FLOOR - 64), 60 * SC, 82 * SC, 6 * SC); ctx.fill();
-  ctx.strokeStyle = "#ffd84d"; ctx.lineWidth = 2 * SC; ctx.setLineDash([4 * SC, 4 * SC]); ctx.strokeRect(sx(CHUTE_X - 30), sy(FLOOR - 64), 60 * SC, 82 * SC); ctx.setLineDash([]);
-  ctx.fillStyle = "#ffd84d"; ctx.font = `800 ${12.5 * SC}px -apple-system,sans-serif`; ctx.textAlign = "center"; ctx.fillText("배출구", sx(CHUTE_X), sy(FLOOR - 70));
-  ctx.fillStyle = "#c9c4d6"; ctx.fillRect(sx(20), sy(TOPY - 26), (CAB_W - 40) * SC, 6 * SC);
-}
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function drawClaw(c, t) {
-  const X = c.x, Y = c.y, wob = c.held && (1 - c.quality) > .35 ? Math.sin(t * 40) * 3 * (1 - c.quality) : 0;
-  ctx.strokeStyle = "#d8d3e6"; ctx.lineWidth = 2 * SC; ctx.beginPath(); ctx.moveTo(sx(X), sy(TOPY - 22)); ctx.lineTo(sx(X + wob), sy(Y - 10)); ctx.stroke();
-  ctx.fillStyle = "#9a93b0"; ctx.fillRect(sx(X - 13), sy(TOPY - 28), 26 * SC, 10 * SC);
-  ctx.save(); ctx.translate(sx(X + wob), sy(Y)); ctx.scale(SC, SC);
-  ctx.fillStyle = "#e9e5f5"; ctx.beginPath(); ctx.arc(0, -8, 9, 0, 7); ctx.fill(); ctx.strokeStyle = "#7e7696"; ctx.lineWidth = 2; ctx.stroke();
-  const o = c.open, ang = .25 + o * .6; ctx.strokeStyle = "#cfc9df"; ctx.lineWidth = 4; ctx.lineCap = "round";
-  [-1, 1].forEach(sd => { ctx.beginPath(); ctx.moveTo(sd * 5, -2); const ex = sd * Math.sin(ang) * 26, ey = Math.cos(ang) * 26; ctx.lineTo(ex, ey); ctx.lineTo(ex - sd * 8, ey + 8); ctx.stroke(); });
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 22 - o * 4); ctx.stroke();
-  ctx.restore();
-  if (c.held) plush(X + wob, Y + 26 + c.held.r * .4, c.held.r, c.held.type, Math.sin(t * 6) * .1);
-  if (c.phase === "swing") { ctx.strokeStyle = "rgba(56,225,255,.35)"; ctx.setLineDash([3 * SC, 5 * SC]); ctx.beginPath(); ctx.moveTo(sx(X), sy(Y + 26)); ctx.lineTo(sx(X), sy(FLOOR)); ctx.stroke(); ctx.setLineDash([]); }
-}
 function txt(s, x, y, size, col, o = {}) {
   ctx.font = `${o.w || 900} ${size * SC}px -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif`; ctx.textAlign = o.align || "center"; ctx.textBaseline = "middle";
   if (o.stroke !== false) { ctx.lineJoin = "round"; ctx.strokeStyle = o.stroke || "rgba(0,0,0,.7)"; ctx.lineWidth = (o.lw || Math.max(3, size * .18)) * SC; ctx.strokeText(s, sx(x), sy(y)); }
@@ -609,54 +705,6 @@ function bar(x, y, w, h, f, lag, c1, c2, rev) {
   part(clamp(f) && 1, "rgba(0,0,0,0)");
   if (f > 0) { ctx.fillStyle = "rgba(255,255,255,.28)"; const ww = w * clamp(f); ctx.fillRect(sx(rev ? x + w - ww + 3 : x + 3), sy(y + 1.5), Math.max(0, ww - 6) * SC, h * .3 * SC); }
 }
-function drawStage(t) {
-  const b = bt, L = b.lc, pulse = b.boss && b.phase !== "finish" ? .7 + .3 * Math.sin(t * 6) : 1;
-  const g = ctx.createLinearGradient(0, sy(30), 0, sy(CAB_H)); g.addColorStop(0, rgba(L.map(v => v * .12 + 6), 1)); g.addColorStop(.7, rgba(L.map(v => v * .3 + 8), 1)); g.addColorStop(1, rgba(L.map(v => v * .18 + 6), 1));
-  ctx.fillStyle = g; ctx.fillRect(sx(0), sy(30), CAB_W * SC, (CAB_H - 30) * SC);
-  // 관중석 조명 점
-  for (let i = 0; i < 18; i++) { const on = (Math.sin(t * 3 + i * 1.7) + 1) / 2; ctx.fillStyle = rgba(L.map(v => v * .6 + 100), .15 + on * .35 * pulse); ctx.beginPath(); ctx.arc(sx(10 + i * 20), sy(112 + (i % 3) * 7), (2 + on * 1.5) * SC, 0, 7); ctx.fill(); }
-  // 스포트라이트 두 줄기
-  [-1, 1].forEach(s => {
-    const ax = 180 + s * 150, sw = Math.sin(t * .9 + s) * 50, fx2 = 180 - s * 40 + sw;
-    const lg = ctx.createLinearGradient(0, sy(30), 0, sy(330)); lg.addColorStop(0, rgba(L.map(v => v * .5 + 128), .42 * pulse)); lg.addColorStop(1, rgba(L, 0));
-    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(sx(ax - 8), sy(30)); ctx.lineTo(sx(ax + 8), sy(30)); ctx.lineTo(sx(fx2 + 70), sy(330)); ctx.lineTo(sx(fx2 - 70), sy(330)); ctx.closePath(); ctx.fill();
-  });
-  // 바닥
-  ctx.save(); ctx.translate(sx(180), sy(322)); ctx.scale(1, .2);
-  const fg = ctx.createRadialGradient(0, 0, 0, 0, 0, 200 * SC); fg.addColorStop(0, rgba(L.map(v => v * .6 + 90), .55 * pulse)); fg.addColorStop(1, rgba(L, 0));
-  ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, 0, 200 * SC, 0, 7); ctx.fill(); ctx.restore();
-  ctx.strokeStyle = rgba(L.map(v => v * .5 + 120), .25); ctx.lineWidth = 1;
-  for (let k = -6; k <= 6; k++) { ctx.beginPath(); ctx.moveTo(sx(180 + k * 14), sy(318)); ctx.lineTo(sx(180 + k * 60), sy(430)); ctx.stroke(); }
-  ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(sx(0), sy(318), CAB_W * SC, 2 * SC);
-}
-function drawUnit(side, i, u, t) {
-  const b = bt, p = unitPos(side, i);
-  let x = p.x + u.dx + (u.dash || 0), y = p.y + u.dy + Math.sin(t * 5 + i) * 2, alpha = 1, rot = 0;
-  if (b.phase === "intro") x += (side === "A" ? -1 : 1) * 240 * (1 - easeOut(clamp((b.pt / b.intro - .55) / .4)));
-  if (u.hp <= 0) { if (u.dying === undefined || u.dying > .55) return; const k = u.dying / .55; alpha = 1 - k; y -= k * 50; x += (side === "A" ? -1 : 1) * k * 40; rot = k * 5 * (side === "A" ? -1 : 1); }
-  ctx.save(); ctx.globalAlpha = alpha;
-  const sp = TYPES[u.type] && SP[u.type], ready = side === "A" && sp && u.g >= GMAX && u.hp > 0;
-  if (ready) { const k = .5 + .5 * Math.sin(t * 12); ctx.fillStyle = `rgba(255,216,77,${.25 + k * .3})`; ctx.beginPath(); ctx.arc(sx(x), sy(y), (26 + k * 4) * SC, 0, 7); ctx.fill(); }
-  if (u.heal) { ctx.fillStyle = `rgba(95,255,200,${u.heal * .45})`; ctx.beginPath(); ctx.arc(sx(x), sy(y), 27 * SC, 0, 7); ctx.fill(); }
-  if (side === "A" && TYPES[u.type]) plush(x, y, 20, u.type, rot);
-  else {
-    const sz = u.boss ? 62 : 34; ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(sx(x), sy(p.y + sz * .45), sz * .45 * SC, sz * .12 * SC, 0, 0, 7); ctx.fill();
-    ctx.save(); ctx.translate(sx(x), sy(y)); ctx.rotate(rot); if (u.boss) { const rg = ctx.createRadialGradient(0, 0, 0, 0, 0, 48 * SC); rg.addColorStop(0, `rgba(255,60,90,${.45 + .2 * Math.sin(t * 6)})`); rg.addColorStop(1, "rgba(255,60,90,0)"); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(0, 0, 48 * SC, 0, 7); ctx.fill(); }
-    if (u.boss) duck(sz * .5 * SC, t); else if (u.e === "🌫️") dust(sz * .46 * SC, t + i); else { ctx.font = `${sz * SC}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(u.e, 0, 0); } ctx.restore();
-    if (u.boss && u.hp > 0) txt("👑", x - 12, y - 42, 18, "#fff", { stroke: false });
-  }
-  if (b.ink && side === "B" && u.hp > 0) { ctx.fillStyle = "rgba(25,8,40,.62)"; for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.arc(sx(x + Math.cos(k * 2.1 + i) * 9), sy(y + Math.sin(k * 1.7 + i) * 8), (6 + k % 2 * 3) * SC, 0, 7); ctx.fill(); } }
-  if (u.fl > .4 && JUICE) { ctx.globalAlpha = alpha * (u.fl - .4) * (u.boss ? .8 : 1.2); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(sx(x), sy(y), (u.boss ? 30 : 21) * SC, 0, 7); ctx.fill(); ctx.globalAlpha = alpha; }
-  if (u.hp > 0 && !u.boss) {
-    const w = 34, f = Math.max(0, u.hp / u.max), by = p.row ? p.y - 36 : p.y + 25;
-    ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(sx(x - w / 2), sy(by), w * SC, 5 * SC);
-    ctx.fillStyle = side === "A" ? "#5fd39a" : "#ff5f6d"; ctx.fillRect(sx(x - w / 2), sy(by), w * f * SC, 5 * SC);
-    if (side === "A" && sp) { ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(sx(x - w / 2), sy(by + 6), w * SC, 3 * SC); ctx.fillStyle = ready ? (Math.sin(t * 20) > 0 ? "#fff" : "#ffd84d") : "#ffd84d"; ctx.fillRect(sx(x - w / 2), sy(by + 6), w * Math.min(1, u.g / GMAX) * SC, 3 * SC); }
-    if (u.star > 1) txt("★" + u.star, x, p.row ? by - 8 : by + 17, 12.5, "#ffd84d", { lw: 2.5 });   // '★3' 짧게: 옆 인형 별과 붙지 않게
-  }
-  ctx.restore();
-}
-// 고무 오리 보스: 노란 몸통·주황 부리·볼터치 (이모지 대신 직접 그림)
 function duck(R, t) {
   const bob = Math.sin(t * 3) * .04;
   ctx.save(); ctx.rotate(bob);
@@ -674,79 +722,12 @@ function duck(R, t) {
   ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.beginPath(); ctx.ellipse(-R * .52, -R * .62, R * .14, R * .07, -.6, 0, 7); ctx.fill();   // 하이라이트
   ctx.restore();
 }
-// 먼지뭉치: 털 뭉치 + 화난 눈 (이모지 대신 직접 그림)
 function dust(R, t) {
   ctx.fillStyle = "#4a4458"; ctx.beginPath(); for (let k = 0; k <= 28; k++) { const a = k / 28 * 6.283, rr = R * (k % 2 ? .82 : 1.08 + .05 * Math.sin(t * 7 + k)); ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.fill();
   const g = ctx.createRadialGradient(-R * .3, -R * .35, R * .1, 0, 0, R * .9); g.addColorStop(0, "#b9b2c8"); g.addColorStop(1, "#6a6380");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R * .82, 0, 7); ctx.fill();
   [-1, 1].forEach(s => { ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.ellipse(s * R * .3 - R * .12, -R * .05, R * .2, R * .24, 0, 0, 7); ctx.fill(); ctx.fillStyle = "#1a1024"; ctx.beginPath(); ctx.arc(s * R * .3 - R * .18, -R * .0, R * .1, 0, 7); ctx.fill();
     ctx.strokeStyle = "#1a1024"; ctx.lineWidth = R * .1; ctx.beginPath(); ctx.moveTo(s * R * .5 - R * .12, -R * .38); ctx.lineTo(s * R * .1 - R * .12, -R * .26); ctx.stroke(); });
-}
-function drawFx() {
-  fx.parts.forEach(p => {
-    ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.col;
-    if (p.star) { ctx.save(); ctx.translate(sx(p.x), sy(p.y)); ctx.rotate(p.life * 6); ctx.fillRect(-p.r * SC, -p.r * SC / 3, p.r * 2 * SC, p.r * SC / 1.5); ctx.restore(); }
-    else { if (p.glow) ctx.globalCompositeOperation = "lighter"; ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), p.r * SC * (p.glow ? .6 + .4 * p.life / p.max : 1), 0, 7); ctx.fill(); ctx.globalCompositeOperation = "source-over"; }
-  });
-  ctx.globalAlpha = 1;
-  fx.floats.forEach(f => {
-    const pop = f.t < .12 ? 1.7 - f.t / .12 * .7 : 1, size = (f.size || (f.big ? 20 : 14)) * pop;
-    ctx.globalAlpha = Math.max(0, 1 - Math.max(0, f.t - .5) / .5); txt(f.txt, f.x, f.y - f.t * 40, size, f.col, { lw: 3 });
-  });
-  ctx.globalAlpha = 1;
-}
-function drawBattle(t) {
-  const b = bt;
-  ctx.save(); roundRect(sx(0), sy(30), CAB_W * SC, (CAB_H - 30) * SC, 18 * SC); ctx.clip();
-  drawStage(t);
-  // ── 카메라 ──
-  ctx.save(); const c = b.cam; ctx.translate(sx(180), sy(250)); ctx.scale(c.z, c.z); ctx.translate(-sx(c.x), -sy(c.y));
-  if (b.crack > 0) { ctx.strokeStyle = `rgba(255,220,160,${b.crack})`; ctx.lineWidth = 3 * SC; ctx.beginPath(); let x = 90, y = 322; ctx.moveTo(sx(x), sy(y)); for (let k = 0; k < 14; k++) { x += 18; y = 322 + ((k * 7) % 5 - 2) * 3; ctx.lineTo(sx(x), sy(y)); } ctx.stroke(); }
-  b.ghosts.forEach(g => {
-    if (g.orbit !== undefined) { const p = unitPos("A", g.i), a = t * 6 + g.orbit * 2.1; ctx.globalAlpha = .45; plush(p.x + Math.cos(a) * 30, p.y - 6 + Math.sin(a) * 12, 17, "bun"); }
-    else { const k = easeOut(clamp(g.t / .16)); ctx.globalAlpha = .6 * (1 - g.t / .22); for (let s = 0; s < 3; s++) plush(lerp(g.x0, g.x1, k) - s * 10, lerp(g.y0, g.y1, k) - 10 + s * 3, 18 - s * 2, "bun"); }
-    ctx.globalAlpha = 1;
-  });
-  const order = []; ["A", "B"].forEach(side => (side === "A" ? b.A : b.B).forEach((u, i) => order.push([side, i, u, unitPos(side, i).y]))); order.sort((p, q2) => p[3] - q2[3]).forEach(o => drawUnit(o[0], o[1], o[2], t));   // 뒷줄 먼저
-  b.slashes.forEach(s => { const k = s.t / .3; ctx.save(); ctx.translate(sx(s.x), sy(s.y)); ctx.rotate(s.a); ctx.strokeStyle = s.big ? "#ffd84d" : "#fff"; ctx.globalAlpha = 1 - k; ctx.lineCap = "round"; ctx.lineWidth = (s.big ? 6 : 4) * SC * (1 - k * .5); for (let j = -1; j <= 1; j++) { ctx.beginPath(); ctx.moveTo(-30 * SC, (j * 9 - 4) * SC); ctx.quadraticCurveTo(0, (j * 9 + 8) * SC, 30 * SC, (j * 9 - 4) * SC); ctx.stroke(); } ctx.restore(); });
-  drawFx();
-  ctx.restore();
-  // ── 화면 고정 레이어 ──
-  if (b.dark > .01) { ctx.fillStyle = `rgba(8,2,16,${b.dark})`; ctx.fillRect(sx(0), sy(30), CAB_W * SC, (CAB_H - 30) * SC); if (b.sp && b.sp.type === "octo") { const p = unitPos("A", b.sp.i); const rg = ctx.createRadialGradient(sx(p.x), sy(p.y), 0, sx(p.x), sy(p.y), 50 * SC); rg.addColorStop(0, "rgba(255,122,168,.5)"); rg.addColorStop(1, "rgba(255,122,168,0)"); ctx.fillStyle = rg; ctx.fillRect(sx(0), sy(30), CAB_W * SC, (CAB_H - 30) * SC); } }
-  if (b.aur > .01) {
-    ctx.globalCompositeOperation = "lighter";
-    ["#3cffb0", "#38e1ff", "#b070ff"].forEach((col, k) => { ctx.globalAlpha = b.aur * .35; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(sx(0), sy(40)); for (let x = 0; x <= 360; x += 12) ctx.lineTo(sx(x), sy(110 + k * 22 + Math.sin(x * .025 + t * 2 + k) * 18)); ctx.lineTo(sx(360), sy(40)); ctx.closePath(); ctx.fill(); });
-    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1;
-  }
-  drawBars(t);
-  if (b.phase === "fight") {   // 빨리 감기 안내 (전투 화면 안)
-    const lab = b.fast ? "▶▶ 3배속" : "▶▶ 탭하면 빨리 감기", w = b.fast ? 84 : 150, a = b.fast ? 1 : .75 + .25 * Math.sin(t * 4);
-    ctx.globalAlpha = a; ctx.fillStyle = "rgba(0,0,0,.5)"; roundRect(sx(180 - w / 2), sy(398), w * SC, 24 * SC, 12 * SC); ctx.fill(); txt(lab, 180, 410.5, 13, b.fast ? "#ffd84d" : "#fff", { stroke: false }); ctx.globalAlpha = 1;
-  }
-  if (b.cut) drawCut(b.cut);
-  if (b.phase === "intro") drawIntro(t);
-  if (b.banner) drawBanner(b.banner, t);
-  ctx.restore();
-}
-function drawBars(t) {
-  const b = bt, sA = b.A.reduce((s, u) => s + Math.max(0, u.hp), 0), mA = b.A.reduce((s, u) => s + u.max, 0), sB = b.B.reduce((s, u) => s + Math.max(0, u.hp), 0), mB = b.B.reduce((s, u) => s + u.max, 0);
-  const fA = sA / mA, fB = sB / mB; b.lagA = b.lagA > fA ? lerp(b.lagA, fA, .04) : fA; b.lagB = b.lagB > fB ? lerp(b.lagB, fB, .04) : fB;
-  const show = b.phase === "intro" ? clamp((b.pt / b.intro - .6) / .3) : 1; if (show <= 0) return;
-  ctx.globalAlpha = show;
-  txt("우리 부대", 16, 40, 12.5, "#c8ffe4", { align: "left", lw: 2.5 }); txt(String(Math.max(0, Math.round(sA))), 166, 40, 12.5, "#fff", { align: "right", lw: 2.5 });
-  bar(16, 49, 150, 13, fA, b.lagA, "#8dffc0", "#20a868");
-  txt(b.boss ? "보스" : `적 ${b.B.filter(u => u.hp > 0).length}`, 344, 40, 12.5, "#ffc8cf", { align: "right", lw: 2.5 }); txt(String(Math.max(0, Math.round(sB))), 194, 40, 12.5, "#fff", { align: "left", lw: 2.5 });
-  bar(194, 49, 150, 13, fB, b.lagB, "#ff8a8a", "#c8203a", true);
-  txt("VS", 180, 55, 13, "#ffd84d", { lw: 3 });
-  const boss = b.B.find(u => u.boss);
-  if (boss) {
-    const f = Math.max(0, boss.hp) / boss.max; b.lagBoss = (b.lagBoss ?? 1) > f ? lerp(b.lagBoss, f, .04) : f;
-    const pl = .6 + .4 * Math.sin(t * 6);
-    ctx.strokeStyle = `rgba(255,80,100,${pl})`; ctx.lineWidth = 2 * SC; roundRect(sx(26), sy(79), 308 * SC, 24 * SC, 12 * SC); ctx.stroke();
-    bar(30, 83, 300, 16, f, b.lagBoss, "#ffb040", "#e01848");
-    txt(`👑 BOSS · ${boss.name}`, 38, 91, 12.5, "#fff", { align: "left", lw: 3 }); txt(`${Math.max(0, boss.hp)} / ${boss.max}`, 322, 91, 12.5, "#fff", { align: "right", lw: 3 });
-  }
-  ctx.globalAlpha = 1;
 }
 function drawCut(c) {
   const k = c.t, inK = easeOut(clamp(k / .12)), outK = clamp((k - .52) / .18), x = (1 - inK) * -380 + outK * 420, y = 150;
@@ -759,158 +740,260 @@ function drawCut(c) {
   txt("필살기!", 210, y - 21, 13, "#fff", { lw: 3 }); txt(c.txt, 210, y + 6, 30, "#fff", { stroke: "rgba(40,10,40,.85)", lw: 6 });
   ctx.restore();
 }
-function drawIntro(t) {
-  const b = bt, k = b.pt / b.intro, out = clamp((k - .78) / .2), e1 = easeOut(clamp(k / .2)), e2 = easeOut(clamp((k - .12) / .2));
-  ctx.fillStyle = `rgba(6,2,14,${.65 * (1 - out)})`; ctx.fillRect(sx(0), sy(30), CAB_W * SC, (CAB_H - 30) * SC);
-  ctx.globalAlpha = 1 - out;
-  // 우리 부대 띠
-  ctx.save(); ctx.translate(sx((e1 - 1) * 400 - out * 400) - sx(0), 0);
-  let g = ctx.createLinearGradient(sx(0), 0, sx(360), 0); g.addColorStop(0, "#ff5fa2"); g.addColorStop(1, "#7a2a9a");
-  ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(sx(-10), sy(122)); ctx.lineTo(sx(370), sy(108)); ctx.lineTo(sx(370), sy(168)); ctx.lineTo(sx(-10), sy(182)); ctx.fill();
-  txt("우리 부대", 22, 130, 13, "#ffe0ef", { align: "left", lw: 3 });
-  ctx.font = `${26 * SC}px sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(b.A.map(u => u.e).join(" "), sx(22), sy(160));
+const hexRgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; }, rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+let LC = hexRgb("#7a4cff");
+function drawField(t) {
+  const boss = run && run.enemies.some(e => e.kind === "boss"), target = fx.light && fx.light.t > 0 ? hexRgb(fx.light.col) : boss ? hexRgb("#ff3355") : hexRgb("#7a4cff");
+  LC = LC.map((v, i) => lerp(v, target[i], .06)); const L = LC, pulse = boss ? .75 + .25 * Math.sin(t * 6) : 1;
+  ctx.save(); roundRect(sx(0), sy(0), CAB_W * SC, FIELD_H * SC, 16 * SC); ctx.clip();
+  const g = ctx.createLinearGradient(0, sy(0), 0, sy(FIELD_H)); g.addColorStop(0, rgba(L.map(v => v * .14 + 8), 1)); g.addColorStop(1, rgba(L.map(v => v * .3 + 10), 1)); ctx.fillStyle = g; ctx.fillRect(sx(0), sy(0), CAB_W * SC, FIELD_H * SC);
+  [-1, 1].forEach(s => { const ax = 180 + s * 150, sw = Math.sin(t * .9 + s) * 50, fx2 = 180 - s * 40 + sw; const lg = ctx.createLinearGradient(0, sy(0), 0, sy(FIELD_H)); lg.addColorStop(0, rgba(L.map(v => v * .5 + 128), .3 * pulse)); lg.addColorStop(1, rgba(L, 0)); ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(sx(ax - 8), sy(0)); ctx.lineTo(sx(ax + 8), sy(0)); ctx.lineTo(sx(fx2 + 80), sy(FIELD_H)); ctx.lineTo(sx(fx2 - 80), sy(FIELD_H)); ctx.closePath(); ctx.fill(); });
+  // 길(카펫) + 흐르는 화살표
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  const pathLine = () => { ctx.beginPath(); PATH.forEach(([x, y], i) => i ? ctx.lineTo(sx(x), sy(y)) : ctx.moveTo(sx(x), sy(y))); };
+  pathLine(); ctx.strokeStyle = "rgba(0,0,0,.45)"; ctx.lineWidth = 34 * SC; ctx.stroke();
+  pathLine(); ctx.strokeStyle = rgba(L.map(v => v * .25 + 60), 1); ctx.lineWidth = 28 * SC; ctx.stroke();
+  pathLine(); ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 2 * SC; ctx.setLineDash([6 * SC, 10 * SC]); ctx.lineDashOffset = -t * 30 * SC; ctx.stroke(); ctx.setLineDash([]);
+  txt("▶", 30, 64, 14, "#ffd0d8", { lw: 3 });
+  // 배출구(집)
+  const danger = run ? clamp(fx.redFlash || 0) : 0;
+  ctx.fillStyle = `rgba(255,${90 - danger * 60},${110 - danger * 60},${.85})`; roundRect(sx(GOAL[0] - 20), sy(GOAL[1] - 34), 40 * SC, 30 * SC, 6 * SC); ctx.fill();
+  ctx.strokeStyle = "#ffd84d"; ctx.lineWidth = 2 * SC; ctx.stroke(); txt("🚪", GOAL[0], GOAL[1] - 19, 16, "#fff", { stroke: false });
+  // 칸(진열대)
+  CELLS.forEach(([x, y], i) => { const g2 = ctx.createLinearGradient(0, sy(y - 30), 0, sy(y + 30)); g2.addColorStop(0, "rgba(255,255,255,.10)"); g2.addColorStop(1, "rgba(255,255,255,.03)"); ctx.fillStyle = g2; roundRect(sx(x - 30), sy(y - 30), 60 * SC, 60 * SC, 12 * SC); ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 1; ctx.stroke(); });
+  if (run) drawBattle(t);
+  if (fx.dark > 0) { ctx.fillStyle = `rgba(8,2,16,${Math.min(.55, fx.dark * .5)})`; ctx.fillRect(sx(0), sy(0), CAB_W * SC, FIELD_H * SC); }
+  if (fx.aur > 0) { ctx.globalCompositeOperation = "lighter"; ["#3cffb0", "#38e1ff", "#b070ff"].forEach((col, k) => { ctx.globalAlpha = Math.min(1, fx.aur) * .3; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(sx(0), sy(0)); for (let x = 0; x <= 360; x += 12) ctx.lineTo(sx(x), sy(60 + k * 20 + Math.sin(x * .025 + t * 2 + k) * 16)); ctx.lineTo(sx(360), sy(0)); ctx.closePath(); ctx.fill(); }); ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1; }
+  if (fx.redFlash > 0) { ctx.fillStyle = `rgba(255,40,60,${fx.redFlash * .25})`; ctx.fillRect(sx(0), sy(0), CAB_W * SC, FIELD_H * SC); }
+  if (run) drawTop(t);
+  if (fx.cut) drawCut(fx.cut);
+  if (fx.banner) drawBanner2(fx.banner, t);
   ctx.restore();
-  // 적 띠 / 보스
-  ctx.save(); ctx.translate(sx((1 - e2) * 400 + out * 400) - sx(0), 0);
-  if (b.boss) {
-    const boss = b.B.find(u => u.boss);
-    g = ctx.createLinearGradient(sx(0), 0, sx(360), 0); g.addColorStop(0, "#3a0010"); g.addColorStop(1, "#ff2244");
-    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(sx(-10), sy(214)); ctx.lineTo(sx(370), sy(198)); ctx.lineTo(sx(370), sy(300)); ctx.lineTo(sx(-10), sy(316)); ctx.fill();
-    const s = 1 + .08 * Math.sin(t * 8); ctx.save(); ctx.translate(sx(265), sy(256)); ctx.scale(s, s); { const rg = ctx.createRadialGradient(0, 0, 0, 0, 0, 62 * SC); rg.addColorStop(0, "rgba(255,204,0,.6)"); rg.addColorStop(1, "rgba(255,204,0,0)"); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(0, 0, 62 * SC, 0, 7); ctx.fill(); } duck(42 * SC, t); ctx.restore();
-    txt("BOSS", 22, 228, 34, "#ffd84d", { align: "left", stroke: "#5a0010", lw: 7 });
-    txt(`👑 ${boss.name}`, 22, 262, 20, "#fff", { align: "left", lw: 4 });
-    txt(`체력 ${boss.max} · 공격 ${boss.atk}×2${b.B.length > 1 ? ` · 졸개 ${b.B.length - 1}` : ""}`, 22, 288, 12.5, "#ffd0d8", { align: "left", lw: 3 });
-  } else {
-    g = ctx.createLinearGradient(sx(0), 0, sx(360), 0); g.addColorStop(0, "#5a1a2a"); g.addColorStop(1, "#e83a5a");
-    ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(sx(-10), sy(222)); ctx.lineTo(sx(370), sy(208)); ctx.lineTo(sx(370), sy(268)); ctx.lineTo(sx(-10), sy(282)); ctx.fill();
-    txt(`적 ×${b.B.length}`, 338, 226, 13, "#ffe0e6", { align: "right", lw: 3 });
-    ctx.font = `${26 * SC}px sans-serif`; ctx.textAlign = "right"; ctx.textBaseline = "middle"; b.B.slice(0, 8).forEach((u, j) => { const ex = 324 - j * 34; if (u.e === "🌫️") { ctx.save(); ctx.translate(sx(ex), sy(256)); dust(13 * SC, t + j); ctx.restore(); } else { ctx.textAlign = "center"; ctx.fillText(u.e, sx(ex), sy(256)); } });
-  }
-  ctx.restore();
-  if (b.boss) { const off = (t * 80) % 40; ctx.fillStyle = "rgba(255,216,77,.9)"; for (const yy of [76, 330]) { ctx.save(); ctx.beginPath(); ctx.rect(sx(0), sy(yy), CAB_W * SC, 16 * SC); ctx.clip(); ctx.fillRect(sx(0), sy(yy), CAB_W * SC, 16 * SC); ctx.fillStyle = "#1a0008"; for (let x = -40 + off; x < 400; x += 40) { ctx.beginPath(); ctx.moveTo(sx(x), sy(yy + 16)); ctx.lineTo(sx(x + 14), sy(yy)); ctx.lineTo(sx(x + 26), sy(yy)); ctx.lineTo(sx(x + 12), sy(yy + 16)); ctx.fill(); } ctx.restore(); ctx.fillStyle = "rgba(255,216,77,.9)"; } txt("WARNING · 보스 등장", 180, 84, 12.5, "#ffd84d", { stroke: "#1a0008", lw: 4 }); }
-  // VS
-  if (k >= .3) { const kk = clamp((k - .3) / .08), s = 1 + 2.4 * (1 - easeOut(kk)); txt("VS", 180, b.boss ? 196 : 195, 44 * s, "#ffd84d", { stroke: "#2a0a1a", lw: 8 }); }
+}
+function drawBattle(t) {
+  // 시너지 연결선
+  const S = run.syn, link = (a, b, col) => { const A = run.units.find(u => u.type === a), B = run.units.find(u => u.type === b); if (!A || !B) return; ctx.strokeStyle = col; ctx.globalAlpha = .35 + .2 * Math.sin(t * 4); ctx.lineWidth = 3 * SC; ctx.setLineDash([4 * SC, 6 * SC]); ctx.lineDashOffset = -t * 20 * SC; ctx.beginPath(); ctx.moveTo(sx(A.x), sy(A.y)); ctx.lineTo(sx(B.x), sy(B.y)); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; };
+  if (S.guard) link("bear", "peng", "#5fffc8"); if (S.fireink) link("dino", "octo", "#ff6a20"); if (S.quick) link("cat", "bun", "#ffd84d");
+  // 선택한 인형 사거리
+  if (sel) { const u = ux(sel.id); if (u) { ctx.strokeStyle = TYPES[u.type].col; ctx.globalAlpha = Math.min(1, sel.t) * .8; ctx.lineWidth = 2 * SC; ctx.setLineDash([5 * SC, 5 * SC]); ctx.beginPath(); ctx.arc(sx(u.x), sy(u.y), TYPES[u.type].rng * SC, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = TYPES[u.type].col; ctx.globalAlpha *= .12; ctx.fill(); ctx.globalAlpha = 1; } }
+  run.puddles.forEach(p => { ctx.fillStyle = `rgba(60,20,100,${Math.min(.55, p.t * .4)})`; ctx.beginPath(); ctx.ellipse(sx(p.x), sy(p.y), p.r * SC, p.r * .55 * SC, 0, 0, 7); ctx.fill(); });
+  if (fx.crack > 0) { ctx.strokeStyle = `rgba(255,220,160,${fx.crack})`; ctx.lineWidth = 3 * SC; const b = run.units.find(u => u.type === "bear"); if (b) for (let k = 0; k < 6; k++) { ctx.beginPath(); let x = b.x, y = b.y; ctx.moveTo(sx(x), sy(y)); for (let j = 0; j < 5; j++) { x += Math.cos(k * 1.05) * 18 + (j % 2 ? 6 : -6); y += Math.sin(k * 1.05) * 18; ctx.lineTo(sx(x), sy(y)); } ctx.stroke(); } }
+  // 곰 도발 줄
+  run.enemies.forEach(e => { if (!e.block) return; const b = ux(e.block); if (!b) return; ctx.strokeStyle = "rgba(224,160,96,.55)"; ctx.lineWidth = 2 * SC; ctx.beginPath(); ctx.moveTo(sx(b.x), sy(b.y)); ctx.lineTo(sx(e.x), sy(e.y)); ctx.stroke(); });
+  // 적 (뒤에서 앞으로)
+  run.enemies.slice().sort((a, b) => a.y - b.y).forEach(e => drawEnemy(e, t));
+  // 인형
+  run.units.forEach(u => drawUnit(u, t));
+  // 투사체
+  run.projs.forEach(p => {
+    if (p.kind === "dino") { ctx.globalCompositeOperation = "lighter"; const rg = ctx.createRadialGradient(sx(p.x), sy(p.y), 0, sx(p.x), sy(p.y), 10 * SC); rg.addColorStop(0, "#fff3a0"); rg.addColorStop(.5, "#ff8a20"); rg.addColorStop(1, "rgba(255,60,20,0)"); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), 10 * SC, 0, 7); ctx.fill(); ctx.globalCompositeOperation = "source-over"; if (JUICE && Math.random() < .6) fx.parts.push({ x: p.x, y: p.y, vx: 0, vy: -20, g: -40, life: .3, max: .3, r: 4, col: "#ff8a20", glow: true }); }
+    else if (p.kind === "octo") { ctx.fillStyle = "#3a1660"; ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), 6 * SC, 0, 7); ctx.fill(); ctx.fillStyle = "#9a6cff"; ctx.beginPath(); ctx.arc(sx(p.x - 2), sy(p.y - 2), 2 * SC, 0, 7); ctx.fill(); }
+    else if (p.kind === "bun") { ctx.save(); ctx.translate(sx(p.x), sy(p.y)); ctx.rotate(Math.atan2(p.ty - p.y, p.tx - p.x)); ctx.fillStyle = "#ff8a20"; ctx.beginPath(); ctx.moveTo(8 * SC, 0); ctx.lineTo(-5 * SC, -3 * SC); ctx.lineTo(-5 * SC, 3 * SC); ctx.fill(); ctx.fillStyle = "#5fcf7a"; ctx.fillRect(-8 * SC, -2 * SC, 3 * SC, 4 * SC); ctx.restore(); }
+    else { ctx.fillStyle = "#eaf6ff"; ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), 4.5 * SC, 0, 7); ctx.fill(); }
+  });
+  fx.rings.forEach(r => { const k = r.t / .45; ctx.strokeStyle = r.col; ctx.globalAlpha = 1 - k; ctx.lineWidth = (r.thick ? 6 : 3) * SC; ctx.beginPath(); ctx.arc(sx(r.x), sy(r.y), r.r * easeOut(k) * SC, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; });
+  fx.slashes.forEach(s => { const k = s.t / .25; ctx.save(); ctx.translate(sx(s.x), sy(s.y)); ctx.rotate(s.a); ctx.strokeStyle = s.col; ctx.globalAlpha = 1 - k; ctx.lineCap = "round"; ctx.lineWidth = (s.big ? 5 : 3) * SC; for (let j = -1; j <= 1; j++) { ctx.beginPath(); ctx.moveTo(-18 * SC, (j * 6 - 3) * SC); ctx.quadraticCurveTo(0, (j * 6 + 6) * SC, 18 * SC, (j * 6 - 3) * SC); ctx.stroke(); } ctx.restore(); });
+  fx.ghosts.forEach(g => { if (g.orbit !== undefined) { const u = ux(g.id); if (!u) return; const a = t * 7 + g.orbit * 2.1; ctx.globalAlpha = .5 * (1 - g.t / g.life); plush(u.x + Math.cos(a) * 28, u.y + Math.sin(a) * 14, 15, "bun"); } else { const k = easeOut(clamp(g.t / .16)); ctx.globalAlpha = .6 * (1 - g.t / g.life); for (let s = 0; s < 3; s++) plush(lerp(g.x0, g.x1, k) - s * 8, lerp(g.y0, g.y1, k) + s * 2, 15 - s * 2, "bun"); } ctx.globalAlpha = 1; });
+  if (fx.breath) { const u = ux(fx.breath.id); if (u && JUICE) for (let k = 0; k < 4; k++) { const a = Math.random() * 6.28, sp = 220 + Math.random() * 160; fx.parts.push({ x: u.x, y: u.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: -40, life: .5, max: .6, r: 6 + Math.random() * 6, col: ["#fff3a0", "#ffd84d", "#ff8a20", "#ff3b1f"][k], glow: true }); } }
+  if (fx.arm) { const k = fx.arm.t / .25; ctx.strokeStyle = "#cfc9df"; ctx.globalAlpha = 1 - k; ctx.lineWidth = 4 * SC; ctx.beginPath(); ctx.moveTo(sx(GOAL[0]), sy(GOAL[1] - 20)); ctx.lineTo(sx(lerp(GOAL[0], fx.arm.x, Math.min(1, k * 3))), sy(lerp(GOAL[1] - 20, fx.arm.y, Math.min(1, k * 3)))); ctx.stroke(); ctx.globalAlpha = 1; }
+  drawFx();
+}
+function drawEnemy(e, t) {
+  const back = e.kb || 0, ang = e.s < SEG[1].s0 ? 0 : 0; let x = e.x, y = e.y;
+  const [bx, by] = pathAt(Math.max(0, e.s - back)); x = bx; y = by;
+  if (e.block) { x += Math.sin(t * 20 + e.id) * 1.5; }
+  if (e.kind === "boss") { ctx.save(); ctx.translate(sx(x), sy(y - 6)); const rg = ctx.createRadialGradient(0, 0, 0, 0, 0, 40 * SC); rg.addColorStop(0, "rgba(255,60,90,.45)"); rg.addColorStop(1, "rgba(255,60,90,0)"); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(0, 0, 40 * SC, 0, 7); ctx.fill(); duck(26 * SC, t); ctx.restore(); txt("👑", x - 6, y - 36, 16, "#fff", { stroke: false }); }
+  else if (e.kind === "sock") { ctx.save(); ctx.translate(sx(x), sy(y)); ctx.rotate(Math.sin(t * 12 + e.id) * .25); ctx.font = `${24 * SC}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🧦", 0, 0); ctx.restore(); }
+  else { ctx.save(); ctx.translate(sx(x), sy(y + Math.sin(t * 9 + e.id) * 1.5)); dust(12 * SC, t + e.id); ctx.restore(); }
+  if (e.slowT > 0) { ctx.fillStyle = "rgba(120,60,200,.35)"; ctx.beginPath(); ctx.arc(sx(x), sy(y), (e.kind === "boss" ? 26 : 14) * SC, 0, 7); ctx.fill(); }
+  if (e.stun > 0) for (let k = 0; k < 3; k++) txt("✦", x + Math.cos(t * 8 + k * 2.1) * 12, y - 18 + Math.sin(t * 8 + k * 2.1) * 4, 12, "#ffd84d", { lw: 2 });
+  if (e.fl > 0 && JUICE) { ctx.globalAlpha = e.fl * .7; ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(sx(x), sy(y), (e.kind === "boss" ? 24 : 13) * SC, 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+  if (e.kind !== "boss") { const w = 24, f = Math.max(0, e.hp / e.max); ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(sx(x - w / 2), sy(y - 20), w * SC, 4 * SC); ctx.fillStyle = "#ff5f6d"; ctx.fillRect(sx(x - w / 2), sy(y - 20), w * f * SC, 4 * SC); }
+}
+function drawUnit(u, t) {
+  const T = TYPES[u.type]; let x = u.x, y = u.y + Math.sin(t * 4 + u.id) * 1.5, sc = 1 + (u.pop || 0) * .35, rot = 0;
+  const a = u.an, k = a ? a.t : 9;
+  if (u.type === "bear") { const mine = run.enemies.filter(e => e.block === u.id); if (mine.length) { const mx = mine.reduce((s, e) => s + e.x, 0) / mine.length, my = mine.reduce((s, e) => s + e.y, 0) / mine.length, d = Math.hypot(mx - x, my - y) || 1; x += (mx - x) / d * 14; y += (my - y) / d * 14; } if (k < .2) { x += (a.x - u.x) * .12 * Math.sin(k / .2 * Math.PI); sc *= 1.12; } }
+  else if (u.type === "cat" && k < .26) { const p = k < .1 ? k / .1 : 1 - (k - .1) / .16; x = lerp(u.x, a.x - 10, clamp(p) * .9); y = lerp(u.y, a.y, clamp(p) * .9); rot = .3; }
+  else if (u.type === "bun" && k < .3) y -= Math.sin(k / .3 * Math.PI) * 14;
+  else if (k < .15 && !a.sp) { const d = Math.hypot(a.x - u.x, a.y - u.y) || 1; x -= (a.x - u.x) / d * 4 * Math.sin(k / .15 * Math.PI); sc *= 1 - .08 * Math.sin(k / .15 * Math.PI); }
+  if (a && a.sp && k < .6) { y -= Math.sin(k / .6 * Math.PI) * (u.type === "bear" ? 30 : 12); sc *= 1.15; }
+  // 펭귄 오라 고리
+  if (u.type === "peng" && u.ko === 0) { ctx.strokeStyle = "rgba(95,255,200,.25)"; ctx.lineWidth = 2 * SC; ctx.beginPath(); ctx.arc(sx(u.x), sy(u.y), (96 + Math.sin(t * 3) * 3) * SC, 0, 7); ctx.stroke(); }
+  const ready = u.g >= T.chg && u.ko === 0;
+  if (ready) { const kk = .5 + .5 * Math.sin(t * 12); ctx.fillStyle = `rgba(255,216,77,${.2 + kk * .3})`; ctx.beginPath(); ctx.arc(sx(x), sy(y), (25 + kk * 4) * SC, 0, 7); ctx.fill(); }
+  if (run.buffT > 0) { ctx.strokeStyle = "rgba(95,255,200,.6)"; ctx.lineWidth = 2 * SC; ctx.beginPath(); ctx.arc(sx(x), sy(y), 24 * SC, 0, 7); ctx.stroke(); }
+  ctx.globalAlpha = u.ko > 0 ? .45 : 1;
+  plush(x, y, 20, u.type, rot + (u.ko > 0 ? Math.PI / 2 : 0), sc);
+  if (u.fl > 0 && JUICE) { ctx.globalAlpha = u.fl * .5; ctx.fillStyle = "#ff8a8a"; ctx.beginPath(); ctx.arc(sx(x), sy(y), 21 * SC, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  if (u.ko > 0) txt("💫 " + Math.ceil(u.ko), x, y - 30, 12.5, "#fff", { lw: 3 });
+  if (u.type === "bear" && run.enemies.some(e => e.block === u.id)) txt("🛡️", x + 16, y - 18, 14, "#fff", { stroke: false });
+  // 별·게이지·곰 체력
+  const by = u.y + 24;
+  if (u.type === "bear") { ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(sx(u.x - 18), sy(by), 36 * SC, 4 * SC); ctx.fillStyle = "#5fd39a"; ctx.fillRect(sx(u.x - 18), sy(by), 36 * Math.max(0, u.hp / u.max) * SC, 4 * SC); }
+  ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.fillRect(sx(u.x - 18), sy(by + 5), 36 * SC, 3 * SC); ctx.fillStyle = ready ? (Math.sin(t * 20) > 0 ? "#fff" : "#ffd84d") : "#ffd84d"; ctx.fillRect(sx(u.x - 18), sy(by + 5), 36 * Math.min(1, u.g / T.chg) * SC, 3 * SC);
+  if (u.star > 1) { ctx.strokeStyle = GCOL[u.star]; ctx.lineWidth = 3 * SC; ctx.beginPath(); ctx.arc(sx(u.x), sy(u.y), 23 * SC, 0, 7); ctx.stroke(); txt(GRADE[u.star][0], u.x + 21, u.y - 21, 12.5, GCOL[u.star], { lw: 3 }); }
+  if (sel && sel.id === u.id) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 2 * SC; ctx.setLineDash([4 * SC, 4 * SC]); roundRect(sx(u.x - 30), sy(u.y - 30), 60 * SC, 60 * SC, 12 * SC); ctx.stroke(); ctx.setLineDash([]); }
+}
+function drawFx() {
+  fx.parts.forEach(p => { ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.col; if (p.star) { ctx.save(); ctx.translate(sx(p.x), sy(p.y)); ctx.rotate(p.life * 6); ctx.fillRect(-p.r * SC, -p.r * SC / 3, p.r * 2 * SC, p.r * SC / 1.5); ctx.restore(); } else { if (p.glow) ctx.globalCompositeOperation = "lighter"; ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), p.r * SC * (p.glow ? .6 + .4 * p.life / p.max : 1), 0, 7); ctx.fill(); ctx.globalCompositeOperation = "source-over"; } });
+  ctx.globalAlpha = 1;
+  fx.floats.forEach(f => { const pop = f.t < .12 ? 1.6 - f.t / .12 * .6 : 1; ctx.globalAlpha = Math.max(0, 1 - Math.max(0, f.t - .5) / .5); txt(f.txt, f.x, f.y - f.t * 36, f.size * pop, f.col, { lw: 3 }); });
   ctx.globalAlpha = 1;
 }
-function drawBanner(bn, t) {
-  const k = bn.t, s = k < .28 ? 2.8 - 1.8 * easeOut(k / .28) : 1 + .03 * Math.sin(k * 8), y = 200;
-  if (bn.win) {
-    ctx.save(); ctx.translate(sx(180), sy(y)); ctx.rotate(t * .6); ctx.globalAlpha = .35 * clamp(k / .3);
-    for (let j = 0; j < 12; j++) { ctx.rotate(Math.PI / 6); ctx.fillStyle = j % 2 ? "#ffd84d" : "#fff3c0"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(260 * SC, -18 * SC); ctx.lineTo(260 * SC, 18 * SC); ctx.fill(); }
-    ctx.restore(); ctx.globalAlpha = 1;
-  } else { ctx.fillStyle = `rgba(10,10,20,${.5 * clamp(k / .4)})`; ctx.fillRect(sx(0), sy(30), CAB_W * SC, (CAB_H - 30) * SC); }
-  ctx.save(); ctx.globalAlpha = clamp(k / .1);
-  txt(bn.txt, 180, y, 62 * s, bn.win ? "#ffd84d" : "#c9d2ff", { stroke: bn.win ? "#7a2a00" : "#101030", lw: 10 });
-  if (k > .35) txt(bn.sub, 180, y + 44, 15, "#fff", { lw: 4 });
+function drawTop(t) {
+  // 목숨·남은 적·보스 체력
+  for (let i = 0; i < LIVES; i++) { ctx.globalAlpha = i < run.lives ? 1 : .2; txt("❤", 12 + i * 13, 14, 13, i < run.lives ? "#ff5f6d" : "#888", { lw: 2 }); }
+  ctx.globalAlpha = 1;
+  const left = run.enemies.length + run.spawnQ.length;
+  txt(run.phase === "wave" ? `👾 ${left}` : `⏱ ${Math.ceil(run.phaseT)}`, 348, 14, 13, "#fff", { align: "right", lw: 3 }); if (run.leaked) txt(`🚪-${run.leaked}`, 160, 14, 13, "#ff8a8a", { lw: 3 });
+  const boss = run.enemies.find(e => e.kind === "boss");
+  if (boss) { const f = Math.max(0, boss.hp / boss.max); fx.lagB = (fx.lagB ?? 1) > f ? lerp(fx.lagB, f, .05) : f; bar(64, 248, 232, 13, f, fx.lagB, "#ffb040", "#e01848"); txt(`👑 ${Math.max(0, Math.round(boss.hp))}`, 180, 254.5, 12.5, "#fff", { lw: 3 }); }
+}
+function drawBanner2(bn, t) {
+  const k = bn.t, s = k < .25 ? 2.4 - 1.4 * easeOut(k / .25) : 1, out = clamp((k - bn.dur + .25) / .25); if (out >= 1) return;
+  ctx.save(); ctx.globalAlpha = 1 - out;
+  if (bn.boss) { const off = (t * 80) % 40; [92, 214].forEach(yy => { ctx.save(); ctx.beginPath(); ctx.rect(sx(0), sy(yy), CAB_W * SC, 14 * SC); ctx.clip(); ctx.fillStyle = "rgba(255,216,77,.9)"; ctx.fillRect(sx(0), sy(yy), CAB_W * SC, 14 * SC); ctx.fillStyle = "#1a0008"; for (let x = -40 + off; x < 400; x += 40) { ctx.beginPath(); ctx.moveTo(sx(x), sy(yy + 14)); ctx.lineTo(sx(x + 14), sy(yy)); ctx.lineTo(sx(x + 26), sy(yy)); ctx.lineTo(sx(x + 12), sy(yy + 14)); ctx.fill(); } ctx.restore(); });
+    ctx.save(); ctx.translate(sx(272), sy(160)); duck(34 * SC, t); ctx.restore(); }
+  ctx.fillStyle = "rgba(10,4,20,.55)"; ctx.fillRect(sx(0), sy(128), CAB_W * SC, 66 * SC);
+  txt(bn.txt, bn.boss ? 140 : 180, 152, 36 * s, bn.win ? "#ffd84d" : bn.boss ? "#ff5f6d" : "#fff", { stroke: "#1a0a2a", lw: 7 });
+  if (k > .2) txt(bn.sub, bn.boss ? 140 : 180, 180, 14, "#ffe0ef", { lw: 4 });
   ctx.restore();
 }
-function draw(t, dt) {
+function drawMachine(t) {
+  const S = run ? run.slot : null, Y = MACH_Y, spin = S && S.state === "spin", jack = fx.jack > 0;
+  const g = ctx.createLinearGradient(0, sy(Y), 0, sy(500)); g.addColorStop(0, "#ff5fa2"); g.addColorStop(1, "#a82070"); ctx.fillStyle = g; roundRect(sx(4), sy(Y), 352 * SC, (500 - Y - 2) * SC, 18 * SC); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.18)"; roundRect(sx(10), sy(Y + 4), 340 * SC, 10 * SC, 5 * SC); ctx.fill();
+  for (let i = 0; i < 16; i++) { const on = jack ? Math.floor(t * 12 + i) % 2 === 0 : Math.floor(t * (spin ? 10 : 3) + i) % 3 === 0; ctx.fillStyle = on ? (jack ? "#fff3a0" : "#ffd84d") : "#7a3b62"; ctx.beginPath(); ctx.arc(sx(22 + i * 21), sy(Y + 22), 3.4 * SC, 0, 7); ctx.fill(); }
+  txt(jack ? "★ JACKPOT ★" : "🎰", 180, Y + 40, 14, jack ? "#fff3a0" : "#fff", { stroke: "#6a0a3a", lw: 4 });
+  // 릴 3개
+  const RX = [110, 180, 250], top = Y + 54, h = 108, cy = top + h / 2;
+  ctx.fillStyle = "#1d0f33"; roundRect(sx(72), sy(top - 4), 216 * SC, (h + 8) * SC, 12 * SC); ctx.fill();
+  RX.forEach((x, i) => {
+    const r = S ? S.reels[i] : { p: i * 5, stopped: true }, strip = run ? run.strips[i] : STRIP;
+    ctx.save(); const wg = ctx.createLinearGradient(0, sy(top), 0, sy(top + h)); wg.addColorStop(0, "#2a1640"); wg.addColorStop(.5, "#fff6fb"); wg.addColorStop(1, "#2a1640"); ctx.fillStyle = wg; roundRect(sx(x - 31), sy(top), 62 * SC, h * SC, 8 * SC); ctx.fill(); ctx.clip();
+    const bump = fx.reelBump ? fx.reelBump[i] || 0 : 0, base = Math.floor(r.p), fr = r.p - base;
+    for (let k = -2; k <= 2; k++) { const idx = mod(base + k, NSYM), yy = cy + (k - fr) * 40 + Math.sin(bump * Math.PI) * 4 * (r.stopped ? 1 : 0), sym = strip[idx]; if (!r.stopped && !SELFTEST) { ctx.globalAlpha = .85; }
+      if (sym === "blank") { ctx.font = `${26 * SC}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("💨", sx(x), sy(yy)); } else plush(x, yy, 16, sym, 0, 1); ctx.globalAlpha = 1; }
+    if (!r.stopped) { ctx.fillStyle = "rgba(255,255,255,.18)"; for (let k = 0; k < 4; k++) ctx.fillRect(sx(x - 28), sy(top + ((t * 600 + k * 27) % h)), 56 * SC, 2 * SC); }
+    ctx.restore();
+    if (S && S.state === "spin" && S.n === i) { const kk = .5 + .5 * Math.sin(t * 14); ctx.strokeStyle = `rgba(255,216,77,${.5 + kk * .5})`; ctx.lineWidth = 3 * SC; roundRect(sx(x - 33), sy(top - 2), 66 * SC, (h + 4) * SC, 9 * SC); ctx.stroke(); txt("탭!", x, top - 8, 13, "#ffd84d", { stroke: "#6a0a3a", lw: 4 }); }
+    if (i === 2 && S && S.near && S.state === "spin") { ctx.fillStyle = `rgba(255,80,120,${.25 + .2 * Math.sin(t * 20)})`; roundRect(sx(x - 31), sy(top), 62 * SC, h * SC, 8 * SC); ctx.fill(); }
+    if (fx.result && fx.result.t < 1.4 && S && S.state !== "spin") { const res = fx.result, win = res.type && res.reels[i] === res.type && res.kind !== "single" || (res.kind === "single" && res.reels[i] === res.type && i === res.reels.indexOf(res.type)); if (win) { ctx.strokeStyle = res.kind === "jackpot" ? "#fff3a0" : "#ffd84d"; ctx.lineWidth = 4 * SC; ctx.beginPath(); ctx.arc(sx(x), sy(cy), 22 * SC, 0, 7); ctx.stroke(); } }
+  });
+  ctx.strokeStyle = "#ff3b5c"; ctx.lineWidth = 2 * SC; ctx.beginPath(); ctx.moveTo(sx(74), sy(cy)); ctx.lineTo(sx(286), sy(cy)); ctx.stroke();
+  [[70, 1], [290, -1]].forEach(([x, d]) => { ctx.fillStyle = "#ff3b5c"; ctx.beginPath(); ctx.moveTo(sx(x), sy(cy - 6)); ctx.lineTo(sx(x + d * 8), sy(cy)); ctx.lineTo(sx(x), sy(cy + 6)); ctx.fill(); });
+  // 왼쪽: 코인 투입구 / 오른쪽: 레버
+  ctx.fillStyle = "#12081f"; roundRect(sx(16), sy(top + 10), 46 * SC, 70 * SC, 8 * SC); ctx.fill(); ctx.fillStyle = "#ffd84d"; ctx.fillRect(sx(30), sy(top + 22), 18 * SC, 4 * SC); txt(`${run ? cost(run) : E.c0}`, 39, top + 48, 16, "#ffd84d", { lw: 3 }); txt("🪙", 39, top + 68, 14, "#fff", { stroke: false });
+  const lv = fx.lever || 0, ly = top + 6 + Math.sin(lv * Math.PI) * 40; ctx.strokeStyle = "#cfc9df"; ctx.lineWidth = 6 * SC; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(sx(318), sy(top + 70)); ctx.lineTo(sx(318), sy(ly)); ctx.stroke(); ctx.fillStyle = "#ff3b5c"; ctx.beginPath(); ctx.arc(sx(318), sy(ly), 10 * SC, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.beginPath(); ctx.arc(sx(315), sy(ly - 3), 3 * SC, 0, 7); ctx.fill();
+  ctx.fillStyle = "#12081f"; roundRect(sx(304), sy(top + 66), 28 * SC, 16 * SC, 5 * SC); ctx.fill();
+  // 결과 문구
+  let msg = "", col = "#fff";
+  if (!run) msg = "";
+  else if (S.state === "spin") { msg = S.near ? "두근두근…" : "가운데 올 때 탭!"; col = S.near ? "#ffd84d" : "#fff"; }
+  else if (fx.result && fx.result.t < 1.6) { const r = fx.result; msg = r.kind === "jackpot" ? `잭팟! ${TYPES[r.type].e} 희귀` : r.kind === "pair" ? `페어! +4🪙` : r.kind === "single" ? `${TYPES[r.type].e} 소환` : r.kind === "dust" ? "💨 잭팟 +20🪙" : r.nearMiss ? "아깝다! +4🪙" : "꽝 +4🪙"; col = r.kind === "jackpot" || r.kind === "dust" ? "#fff3a0" : r.kind === "pair" ? "#ffd84d" : "#fff"; }
+  else msg = run.units.length >= BOARD ? "인형을 눌러 합성" : "";
+  txt(msg, 180, 488, 13.5, col, { stroke: "#6a0a3a", lw: 4 });
+  // 소환되어 날아가는 인형 (집게가 집어서 칸으로)
+  fx.flyers.forEach(f => {
+    const fromX = RX[f.i], fromY = cy, u = run.units.find(x => x.type === f.type), used = new Set(run.units.map(x => x.cell)), cell = u ? [u.x, u.y] : CELLS[FILL.find(c => !used.has(c)) ?? 0];
+    const k = clamp(f.t / .8), kx = easeOut(k), x = lerp(fromX, cell[0], kx), y = lerp(fromY, cell[1], kx) - Math.sin(k * Math.PI) * 60;
+    ctx.strokeStyle = "#d8d3e6"; ctx.lineWidth = 2 * SC; ctx.beginPath(); ctx.moveTo(sx(x), sy(y - 40)); ctx.lineTo(sx(x), sy(y - 18)); ctx.stroke();
+    ctx.fillStyle = "#e9e5f5"; ctx.beginPath(); ctx.arc(sx(x), sy(y - 20), 6 * SC, 0, 7); ctx.fill();
+    plush(x, y, 18, f.type, Math.sin(t * 10) * .2, 1 + .2 * Math.sin(k * Math.PI));
+  });
+}
+function draw(t) {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.clearRect(0, 0, W, H);
   ctx.save(); if (fx.shake > .3 && JUICE) ctx.translate((Math.random() - .5) * fx.shake, (Math.random() - .5) * fx.shake);
-  if (scene === "battle" && bt) drawBattle(t);
-  else {
-    drawCabinet(t);
-    if (run) {
-      run.pit.forEach(p => plush(p.x, p.y + Math.sin(t * 2 + p.id) * .6, p.r, p.type, p.rot));
-      const c = run.claw; if (c.dropped) { c.dropped.vy += 900 * dt; c.dropped.fy += c.dropped.vy * dt; if (c.dropped.fy > FLOOR - c.dropped.r) c.dropped = null; else plush(c.x, c.dropped.fy, c.dropped.r, c.dropped.type, c.dropped.fy * .02); }
-      drawClaw(c, t);
-      ctx.fillStyle = "rgba(255,255,255,.05)"; ctx.beginPath(); ctx.moveTo(sx(30), sy(24)); ctx.lineTo(sx(90), sy(24)); ctx.lineTo(sx(40), sy(FLOOR)); ctx.lineTo(sx(18), sy(FLOOR)); ctx.fill();
-    }
-    drawFx();
-  }
+  drawField(t); drawMachine(t);
   ctx.restore();
-  if (fx.flash > 0 && JUICE) { ctx.globalAlpha = fx.flash * .6; ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+  if (fx.flash > 0 && JUICE) { ctx.globalAlpha = fx.flash * .5; ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
 }
 function fxTick(dt) {
-  const gdt = scene === "battle" && bt ? (bt.hs > 0 ? 0 : dt * bt.ts) : dt;   // 히트스톱·슬로모션이 파티클에도 적용
-  fx.parts = fx.parts.filter(p => (p.life -= gdt) > 0); fx.parts.forEach(p => { p.x += p.vx * gdt; p.y += p.vy * gdt; p.vy += p.g * gdt; p.vx *= Math.pow(.97, gdt * 60); });
-  fx.floats = fx.floats.filter(f => (f.t += gdt) < 1); fx.shake *= Math.pow(.01, dt); fx.flash = Math.max(0, fx.flash - dt * 2);
-  return gdt;
+  const g = dt * ts;
+  fx.parts = fx.parts.filter(p => (p.life -= g) > 0); fx.parts.forEach(p => { p.x += p.vx * g; p.y += p.vy * g; p.vy += p.g * g; p.vx *= Math.pow(.97, g * 60); });
+  if (fx.parts.length > 500) fx.parts.splice(0, fx.parts.length - 500);
+  fx.floats = fx.floats.filter(f => (f.t += g) < 1); fx.rings = fx.rings.filter(r => (r.t += g) < .45); fx.slashes = fx.slashes.filter(s => (s.t += g) < .25); fx.ghosts = fx.ghosts.filter(o => (o.t += g) < o.life);
+  fx.flyers = fx.flyers.filter(f => (f.t += g) < .9 && !f.done);
+  fx.shake *= Math.pow(.01, dt); fx.flash = Math.max(0, fx.flash - dt * 2); fx.redFlash = Math.max(0, (fx.redFlash || 0) - dt * 2);
+  ["lever", "jack", "near", "crack", "dark", "aur"].forEach(k => { if (fx[k] > 0) fx[k] = Math.max(0, fx[k] - g * (k === "lever" ? 2.5 : 1)); });
+  if (fx.reelBump) fx.reelBump = fx.reelBump.map(v => Math.max(0, v - g * 4));
+  if (fx.cut) { fx.cut.t += g; if (fx.cut.t > .72) fx.cut = null; }
+  if (fx.banner) { fx.banner.t += g; if (fx.banner.t > fx.banner.dur) fx.banner = null; }
+  if (fx.result) fx.result.t += g; if (fx.light) fx.light.t -= g; if (fx.breath) { fx.breath.t += g; if (fx.breath.t > .7) fx.breath = null; } if (fx.arm) { fx.arm.t += g; if (fx.arm.t > .25) fx.arm = null; }
+  if (sel) { sel.t -= dt; if (sel.t <= 0) sel = null; }
+  if (run) { run.units.forEach(u => { if (u.an) { u.an.t += g; if (u.an.t > .7) u.an = null; } u.pop = Math.max(0, (u.pop || 0) - g * 3); u.fl = Math.max(0, (u.fl || 0) - g * 5); }); run.enemies.forEach(e => { e.fl = Math.max(0, (e.fl || 0) - g * 6); e.kb = (e.kb || 0) * Math.pow(.001, g); }); }
 }
-function loop(t) {
+let loopErr = 0;
+function loop(t) { try { frame(t); } catch (e) { if (loopErr++ < 3) console.error(e); } requestAnimationFrame(loop); }   // 한 프레임 오류로 게임이 멈추지 않게
+function frame(t) {
   const dt = Math.min(.05, (t - lastT) / 1000 || 0); lastT = t;
-  if (scene === "claw" && run) {
-    acc += dt;
-    while (acc >= DT) { acc -= DT; let tap = tapQ; tapQ = false; if (auto) { tap = botTap(run); if (run.claw.phase === "swing" && run.coins <= 0) { startBattle(); break; } } const evs = clawStep(run, tap); if (evs.length) handleEvents(evs); }
-    if (run && run.claw && run.claw.phase === "swing") hud();
-  } else if (scene === "battle" && bt) battleTick(dt);
-  const gdt = fxTick(dt);
-  draw(t / 1000, gdt); requestAnimationFrame(loop);
+  if (slowT > 0) { slowT -= dt; if (slowT <= 0) ts = 1; }
+  if (scene === "play" && run && !cardOpen && !paused) {
+    if (hs > 0) hs -= dt;
+    else {
+      acc += dt * speed * ts;
+      let n = 0; while (acc >= DT && n < 8) { acc -= DT; n++; const inp = auto ? botInput(run, autoBot) : inQ; inQ = {}; step(run, inp); onEvents(); if (run.over) break; }
+      if (fx.reelTick === undefined) fx.reelTick = 0; if (run.slot.state === "spin" && (fx.reelTick += dt) > .07) { fx.reelTick = 0; SFX.tick(); }
+      const left = run.enemies.reduce((s, e) => s + e.s / PLEN, 0); BGM.lvl = Math.min(3, (run.phase === "wave" ? 1 : 0) + Math.floor(left / 2) + (run.enemies.some(e => e.s > PLEN * .8) ? 1 : 0));
+    }
+    hud(); renderSyn(); renderPanel();
+  }
+  fxTick(dt); draw(t / 1000);
 }
 
-// ───────── 시작 ─────────
+// ───────── 시작·자체 검사 ─────────
 resize(); setMute(!!save.mute);
-function simRun(seed) {
-  const r = newRun(seed); fillPit(r); r.claw = newClaw(r); let ticks = 0, maxTurns = 0, err = null, sps = 0, fights = 0, secs = 0;
-  try {
-    while (r.round <= 12 && ticks < 2e6) {
-      ticks++; const tap = botTap(r); clawStep(r, tap);
-      if (r.claw.phase === "swing" && r.coins <= 0) {
-        const res = battle(r); fights++; sps += res.ev.filter(e => e.k === "sp").length; secs += battleSecs(res, r.round);
-        maxTurns = Math.max(maxTurns, res.turns); if (res.turns >= 300) { err = "전투가 안 끝남"; break; } if (!afterBattle(r, res)) break; fillPit(r); r.claw = newClaw(r);
-      }
-    }
-  } catch (e) { err = String(e); }
-  return { round: r.round, squad: r.squad.map(u => TYPES[u.type].e + u.star).join(""), maxTurns, err, sps, fights, secs };
-}
-// 사람 흉내 봇: 노릴 인형을 무작위로 고르고 집게 타이밍이 σpx 정도 어긋난다 (QA 하네스와 같은 방식)
-function simSigma(seed, sigma, maxR = 12) {
-  const r = newRun(seed); fillPit(r); r.claw = newClaw(r); const R2 = rng(seed * 9973), fights = []; let ticks = 0, tgt = null, off = 0;
-  const gauss = () => { let u = 0, v = 0; while (!u) u = R2(); while (!v) v = R2(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.283 * v); };
-  while (r.round <= maxR && ticks < 3e6) {
-    ticks++; const c = r.claw; let tap = false;
-    if (c.phase === "swing" && r.coins > 0) { if (!tgt || !r.pit.includes(tgt)) { const top = r.pit.filter(p => !r.pit.some(q => q !== p && Math.abs(q.x - p.x) < q.r && q.y < p.y - 4)); tgt = top[Math.floor(R2() * top.length)]; off = gauss() * sigma; } if (tgt && Math.abs(c.x - (tgt.x + off)) < 3) tap = true; }
-    if (clawStep(r, tap).includes("coin")) tgt = null;
-    if (r.claw.phase === "swing" && r.coins <= 0) { const res = battle(r); fights.push({ r: r.round, win: res.win, secs: battleSecs(res, r.round), sp: res.ev.filter(e => e.k === "sp").length, special: r.squad.length > 0 }); if (!afterBattle(r, res)) break; fillPit(r); r.claw = newClaw(r); tgt = null; }
-  }
-  return { round: r.round, fights };
-}
-function curve(sigma, runs = 200) {
-  const by = {}; for (let s = 1; s <= runs; s++) simSigma(s, sigma).fights.forEach(f => (by[f.r] = by[f.r] || []).push(f));
-  return Object.keys(by).map(Number).sort((a, b) => a - b).map(r => { const f = by[r], m = a => a.reduce((x, y) => x + y, 0) / a.length; return { r, n: f.length, win: m(f.map(x => +x.win)), secs: m(f.map(x => x.secs)), max: Math.max(...f.map(x => x.secs)), sp: m(f.map(x => x.sp)), sp1: m(f.filter(x => x.special).map(x => +(x.sp > 0))) }; });
-}
-// 6종 ★3 부대가 R10 보스를 이기는지 (시드 10개)
-function r10Full() { let w = 0; for (let s = 1; s <= 10; s++) { const r = newRun(s); r.round = 10; r.squad = KEYS.map(k => ({ type: k, star: 3 })); if (battle(r).win) w++; } return w; }
-// 연출 스모크 검사: 실제 연출 코드를 가짜 시간으로 끝까지 돌려 본다 (필살기 6종·보스·마지막 일격·패배)
+// 연출 스모크: 실제 그리기·사건 처리를 가짜 시간으로 돌려 오류가 없는지 (보스 웨이브·필살기 6종·잭팟)
 function smokeTest() {
-  const out = []; let ok = true;
-  const cases = [{ seed: 77, round: 5, squad: KEYS.map(k => ({ type: k, star: 3 })) }, { seed: 78, round: 3, squad: KEYS.map(k => ({ type: k, star: 1 })) }, { seed: 80, round: 8, squad: KEYS.map(k => ({ type: k, star: 3 })) }, { seed: 81, round: 10, squad: KEYS.map(k => ({ type: k, star: 3 })) }, { seed: 79, round: 12, squad: [] }];
-  const spSeen = {};
-  cases.forEach(cs => {
-    try {
-      run = newRun(cs.seed); run.round = cs.round; run.squad = cs.squad; fillPit(run); run.claw = newClaw(run); scene = "claw"; startBattle(true);
-      let steps = 0; while (bt.phase !== "done" && steps < 60 * 300) { steps++; battleTick(1 / 60); fxTick(1 / 60); draw(steps / 60, 1 / 60); }
-      bt.res.ev.forEach(e => { if (e.k === "sp") spSeen[e.type] = 1; });
-      const pass = bt.phase === "done"; if (!pass) ok = false;
-      out.push(`연출 R${cs.round}${bt.boss ? "(보스)" : ""}: ${pass ? "OK" : "FAIL"} ${bt.res.win ? "승리" : "패배"} · ${(steps / 60).toFixed(1)}초 · 필살기 ${bt.res.ev.filter(e => e.k === "sp").length}회`);
-    } catch (e) { ok = false; out.push("연출 오류: " + e); }
-  });
-  const all = KEYS.every(k => spSeen[k]); if (!all) ok = false;
-  out.push(`필살기 6종 연출: ${all ? "OK" : "FAIL"} (${KEYS.filter(k => spSeen[k]).map(k => TYPES[k].e).join("")})`);
-  scene = "over"; bt = null; fx.parts = []; fx.floats = [];
+  const out = []; let ok = true; const spSeen = {}, kinds = {};
+  try {
+    run = newRun(42); calcSyn(run); scene = "play"; autoBot = makeBot(42, .03); auto = true;
+    run.wave = 2; ["bear", "dino", "cat", "bun", "peng", "octo"].forEach(k => addUnit(run, k, 2)); run.coins = 200;
+    const acts = {}; const u0 = run.units[1]; step(run, { recipe: u0.id }); run.ev.forEach(e => acts[e.k] = 1); onEvents();
+    step(run, { swap: { id: run.units[0].id, type: "octo" } }); run.ev.forEach(e => acts[e.k] = 1); onEvents(); step(run, { sell: run.units[run.units.length - 1].id }); run.ev.forEach(e => acts[e.k] = 1); onEvents();
+    ["bear", "dino"].forEach(k => addUnit(run, k, 1)); step(run, { merge: run.units.find(u => u.star === 1 && mergePartner(run, u))?.id || -1 }); run.ev.forEach(e => acts[e.k] = 1); onEvents();
+    if (!(acts.recipe && acts.swap && acts.sell)) { ok = false; out.push("행동(레시피·바꾸기·판매) 실패: " + Object.keys(acts).join(",")); }
+    let steps = 0; while (!run.over && steps < 30 * 240 && !(run.wave >= 5 && run.phase === "break" && !run.reward && kinds["보스보상:" + "x"] === undefined && Object.keys(kinds).some(k => k.startsWith("보스보상")) && KEYS.every(k => spSeen[k]))) { steps++; step(run, botInput(run, autoBot)); run.ev.forEach(e => { if (e.k === "sp") spSeen[e.type] = 1; if (e.k === "result") kinds[e.kind] = 1; if (e.k === "picked") kinds["보스보상:" + e.id] = 1; if (e.k === "merged") kinds["합성"] = 1; }); onEvents(); if (steps % 3 === 0) { fxTick(.1); draw(steps / 30); } }
+    const pass = run.wave >= 5 && !run.over && !!run.done && kinds.reward !== undefined || (run.wave >= 5 && !run.over); if (!pass) ok = false;
+    out.push(`연출 스모크(웨이브 5 보스, ${(steps / 30).toFixed(0)}초): ${pass ? "OK" : "FAIL"} · 뽑기 결과 ${Object.keys(kinds).join(",")}`);
+  } catch (e) { ok = false; out.push("연출 오류: " + (e.stack || e)); }
+  const all = KEYS.every(k => spSeen[k]); if (!all) ok = false; out.push(`필살기 6종 연출: ${all ? "OK" : "FAIL"} (${KEYS.filter(k => spSeen[k]).map(k => TYPES[k].e).join("")})`);
+  scene = "over"; auto = false; run = null; fx.parts = []; fx.floats = []; fx.flyers = []; fx.banner = null; fx.cut = null;
   return { ok, out };
 }
+function curve(sigma, runs) {
+  const by = {}, firsts = []; let spEarly = 0, earlyN = 0;
+  for (let s = 1; s <= runs; s++) { const r = simRun(s, sigma, 13); let prevSp = 0; r.waves.forEach(w => { (by[w.w] = by[w.w] || []).push(w); if (w.w <= 2) { earlyN++; if (w.sp - prevSp > 0) spEarly++; } prevSp = w.sp; }); }
+  return { rows: Object.keys(by).map(Number).sort((a, b) => a - b).map(w => { const f = by[w], m = a => a.reduce((x, y) => x + y, 0) / a.length; return { w, n: f.length, win: m(f.map(x => +x.win)), secs: m(f.map(x => x.t)), max: Math.max(...f.map(x => x.t)) }; }), early: spEarly / Math.max(1, earlyN) };
+}
+function fullCombo() { let w = 0; for (let s = 1; s <= 10; s++) { const r = simRun(s, .03, 10, run => { run.wave = 9; run.coins = 0; ["bear", "dino", "cat", "bun", "peng", "octo", "bear", "dino"].forEach(k => addUnit(run, k, 4)); run.ev.length = 0; }); if (r.waves.some(x => x.w === 10 && x.win)) w++; } return w; }
 if (SELFTEST) {
-  const rows = [], dist = {}; let ok = 0, sps = 0, fights = 0, secs = 0, inRange = 0;
+  const rows = [], dist = {}; let ok = 0;
   for (let s = 1; s <= 20; s++) {
-    const r = simRun(s), pass = !r.err && r.round >= 3 && r.round <= 12; /* 3라운드는 가야 하고, 상한(13)까지 가면 너무 쉬움 */
-    if (pass) ok++; if (r.round >= 5 && r.round <= 10) inRange++; dist[r.round] = (dist[r.round] || 0) + 1; sps += r.sps; fights += r.fights; secs += r.secs;
-    rows.push(`${s}\t${pass ? "OK" : "FAIL"}\t도달 라운드 ${r.round}\t${r.squad}\t최장 전투 ${r.maxTurns}턴\t필살기 ${r.sps}회${r.err ? "\t" + r.err : ""}`);
+    const r = simRun(s, .03, 15), pass = !r.err && r.wave >= 3;
+    if (pass) ok++; dist[r.wave] = (dist[r.wave] || 0) + 1;
+    rows.push(`${s}\t${pass ? "OK" : "FAIL"}\t도달 웨이브 ${r.wave}\t${r.units}\t잭팟 ${r.stats.jackpot || 0} 페어 ${r.stats.pair || 0} 꽝 ${r.stats.blank || 0}\t필살기 ${r.stats.sp}${r.err ? "\t" + r.err : ""}`);
   }
   const sm = smokeTest(); if (sm.ok) ok++;
-  // 벽 검사 (QA 2026-11-26): R10을 넘는 시드, 6종 ★3 부대의 R10 승리, 사람 흉내 봇(σ=8) 라운드별 승률 역전
-  const full = r10Full(), cv8 = curve(8, 200), W = {}; cv8.forEach(c => W[c.r] = c); const over10 = W[11] ? W[11].n : 0;   // 20시드 봇은 같은 인형만 모으는 욕심 봇이라 R9 근처에서 멈춤 → 사람 흉내 봇 200런으로 센다
-  const rev = []; for (let r = 7; r <= 11; r++) if (W[r] && W[r - 1] && W[r].n >= 15 && W[r - 1].n >= 15 && W[r].win > W[r - 1].win + .05) rev.push(`R${r - 1}→R${r}`);
-  const r5ok = W[5] && W[5].win >= .55 && W[5].win <= .85, early = cv8.filter(c => c.r <= 2).every(c => c.sp1 >= .9), long = cv8.filter(c => c.r <= 11 && c.r % 5).every(c => c.secs <= 20.5);
-  const checks = [[over10 >= 1, `R10 보스를 넘은 런 ${over10}/200 (σ=8 봇, 1개 이상)`], [full >= 8, `6종 ★3 부대 R10 승리 ${full}/10 (8 이상)`], [!rev.length && r5ok && early && long, `σ=8 승률 곡선: 역전 ${rev.length ? rev.join(", ") : "없음"} · R5 ${(W[5].win * 100).toFixed(0)}% (55~85) · R1~2 필살기 보임 ${early ? "OK" : "FAIL"} · 일반전 평균 20초 이하 ${long ? "OK" : "FAIL"}`]];
+  const full = fullCombo(), C = curve(.1, 200), Wr = {}; C.rows.forEach(c => Wr[c.w] = c);
+  // 역전 검사: 일반 웨이브는 직전 일반 웨이브와(보스 바로 뒤 숨 돌리기는 보스 앞 웨이브와), 보스 웨이브는 직전 보스와 비교. 표본 15런 이상만
+  const over10 = Wr[11] ? Wr[11].n : 0, rev = [], prevOf = w => isBoss(w) ? w - 5 : isBoss(w - 1) ? w - 2 : w - 1;
+  for (let w = 4; w <= 13; w++) { const p = prevOf(w); if (Wr[w] && Wr[p] && Wr[w].n >= 15 && Wr[p].n >= 15 && Wr[w].win > Wr[p].win + .05) rev.push(`W${p}→W${w}`); }
+  const w5 = Wr[5] ? Wr[5].win : 0, long = C.rows.filter(c => c.w <= 11 && c.w % 5 && c.n >= 15).every(c => c.secs <= 50), early = C.early >= .8;
+  const checks = [[over10 >= 1, `웨이브 10 보스를 넘은 런 ${over10}/200 (σ=0.1초 봇, 1개 이상)`], [full >= 8, `최강 조합(전설 8칸: 6종 + 곰·공룡) 웨이브 10 보스 클리어 ${full}/10 (8 이상)`],
+    [!rev.length && w5 >= .55 && w5 <= .85 && long && early, `σ=0.1초 곡선: 역전 ${rev.length ? rev.join(", ") : "없음"} · W5 ${(w5 * 100).toFixed(0)}% (55~85) · 일반 웨이브 평균 50초 이하 ${long ? "OK" : "FAIL"} · W1~2 필살기 ${(C.early * 100).toFixed(0)}% (80 이상)`]];
   checks.forEach(c => { if (c[0]) ok++; });
-  rows.push("", `라운드 분포: ${Object.keys(dist).sort((a, b) => a - b).map(k => `${k}:${dist[k]}`).join("  ")} · 목표(5~10) ${inRange}/20`, `필살기 평균 ${(sps / fights).toFixed(1)}회/전투 · 연출 예상 평균 ${(secs / fights).toFixed(1)}초/전투`, ...sm.out,
-    ...checks.map(c => `${c[0] ? "OK" : "FAIL"}\t${c[1]}`), "", "σ=8 봇 200런: 라운드\t시도\t승률\t전투 평균/최장(초)\t필살기/전투\t필살기 1회 이상", ...cv8.map(c => `R${c.r}${c.r % 5 ? "" : "(보스)"}\t${c.n}\t${(c.win * 100).toFixed(0)}%\t${c.secs.toFixed(1)} / ${c.max.toFixed(1)}\t${c.sp.toFixed(1)}\t${(c.sp1 * 100).toFixed(0)}%`));
-  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px;overflow:auto;font-size:11px">${rows.join("\n")}</pre>`);
+  { let ms = 0, mg = 0, sw = 0, rc = 0, n = 0, jp = 0, pr = 0, sg = 0, bl = 0; for (let s2 = 1; s2 <= 60; s2++) { const r = simRun(s2, .1, 13); n++; ms += r.missions; mg += r.stats.merges; rc += r.stats.recipes; jp += r.stats.jackpot || 0; pr += r.stats.pair || 0; sg += r.stats.single || 0; bl += r.stats.blank || 0; } const d = jp + pr + sg + bl; rows.push(`σ=0.1초 봇 60런 평균: 미션 ${(ms / n).toFixed(1)}개 · 합성 ${(mg / n).toFixed(1)} · 레시피 ${(rc / n).toFixed(1)} · 뽑기 잭팟 ${(jp / d * 100).toFixed(0)}% 페어 ${(pr / d * 100).toFixed(0)}% 단일 ${(sg / d * 100).toFixed(0)}% 꽝 ${(bl / d * 100).toFixed(0)}%`); }
+  rows.push("", `도달 웨이브 분포(σ=0.03초 봇): ${Object.keys(dist).sort((a, b) => a - b).map(k => `${k}:${dist[k]}`).join("  ")}`, ...sm.out, ...checks.map(c => `${c[0] ? "OK" : "FAIL"}\t${c[1]}`),
+    "", "σ=0.1초 봇 200런: 웨이브\t시도\t생존율\t웨이브 길이 평균/최장(초)", ...C.rows.map(c => `W${c.w}${c.w % 5 ? "" : "(보스)"}\t${c.n}\t${(c.win * 100).toFixed(0)}%\t${c.secs.toFixed(1)} / ${c.max.toFixed(1)}`));
+  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:10;margin:0;padding:10px;overflow:auto;font-size:11px">${rows.join("\n")}</pre>`);
   document.title = `SELFTEST ${ok}/24`;
-} else if (q.has("autoplay")) { auto = true; startRun(Number(q.get("autoplay")) || 1); }
+} else if (q.has("autoplay")) { auto = true; autoBot = makeBot(Number(q.get("autoplay")) || 1, .05); startRun(Number(q.get("autoplay")) || 1); }
 else menu();
-window.__g002 = { newRun, fillPit, newClaw, clawStep, battle, simRun, evDur, battleSecs, pace, E, makeEnemies, simSigma, curve, r10Full, KEYS };
+window.__g002 = { cost, newRun, step, simRun, botInput, makeBot, waveSpec, E, TYPES, curve, fullCombo, addUnit, KEYS };
 requestAnimationFrame(t => { lastT = t; loop(t); });
 </script>
 </body>
