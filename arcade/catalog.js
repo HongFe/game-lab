@@ -123,8 +123,8 @@ window.CATALOG = [
   "path": "../G013_subway-push/game/index.html",
   "color": "#8bc34a",
   "icon": "🚃",
-  "version": "2026-11-26 20:22",
-  "note": "꾹 눌러 힘 조절·떼서 밀기, 정직한 초록 칸, 역 10개·승객 7종…",
+  "version": "2026-11-26 21:04",
+  "note": "실수당 최대 2명, 앞사람 바뀌면 힘 초기화, ±12% 힘 오차 곡선…",
   "rating": null,
   "hot": false
  }
