@@ -1,4 +1,4 @@
-// 생성물: python3 tools/build_arcade.py (games.json에서 만든다. 직접 고치지 않는다)
+// 생성물: python3 tools/build_arcade.py (games.json·ratings.json·git에서 만든다. 직접 고치지 않는다)
 window.CATALOG = [
  {
   "id": "G001",
@@ -7,10 +7,14 @@ window.CATALOG = [
   "type": "하이 콘셉트",
   "stage": "프로토",
   "deadline": "2026-12-02",
+  "created": "2026-11-25",
   "path": "../G001_double-parking/game/index.html",
   "color": "#ff5d5d",
   "icon": "🚗",
-  "version": "2026-11-26 13:27"
+  "version": "2026-11-26 13:27",
+  "note": "NHC POCKET 오락실 + G001 이중주차 탈출",
+  "rating": null,
+  "hot": false
  },
  {
   "id": "G002",
@@ -19,10 +23,14 @@ window.CATALOG = [
   "type": "엄청난 중독성",
   "stage": "프로토",
   "deadline": "2026-12-03",
+  "created": "2026-11-26",
   "path": "../G002_claw-army/game/index.html",
   "color": "#ff7ab6",
   "icon": "🧸",
-  "version": "2026-11-26 17:09"
+  "version": "2026-11-26 19:07",
+  "note": "3릴 슬롯 뽑기 + 실시간 웨이브 디펜스, 인형 역할 행동·시너지, 5…",
+  "rating": null,
+  "hot": false
  },
  {
   "id": "G003",
@@ -31,10 +39,14 @@ window.CATALOG = [
   "type": "하이 콘셉트",
   "stage": "프로토",
   "deadline": "2026-12-03",
+  "created": "2026-11-26",
   "path": "../G003_crash-runner/game/index.html",
   "color": "#3cc98a",
   "icon": "📉",
-  "version": "2026-11-26 17:19"
+  "version": "2026-11-26 19:10",
+  "note": "첫 판 카드 3장 이하, 휴대폰 시야 줌아웃, 단계별 ★ 재조정, 연속…",
+  "rating": null,
+  "hot": true
  },
  {
   "id": "G004",
@@ -43,10 +55,14 @@ window.CATALOG = [
   "type": "하이 콘셉트",
   "stage": "프로토",
   "deadline": "2026-12-03",
+  "created": "2026-11-26",
   "path": "../G004_cat-keyboard/game/index.html",
   "color": "#b07bff",
   "icon": "🐈",
-  "version": "2026-11-26 14:02"
+  "version": "2026-11-26 14:02",
+  "note": "G003 폭락 러너·G004 고양이 타자수 추가, 오락실 사용자/관리자…",
+  "rating": null,
+  "hot": false
  },
  {
   "id": "G006",
@@ -55,10 +71,14 @@ window.CATALOG = [
   "type": "하이 콘셉트",
   "stage": "프로토",
   "deadline": "2026-12-03",
+  "created": "2026-11-26",
   "path": "../G006_queue-cutter/game/index.html",
   "color": "#ffb020",
   "icon": "🍜",
-  "version": "2026-11-26 16:50"
+  "version": "2026-11-26 18:53",
+  "note": "아이템 5종, 가게별 규칙(사장님·커플·소나기·앱 알림·새 손님), 점…",
+  "rating": null,
+  "hot": false
  },
  {
   "id": "G011",
@@ -67,10 +87,14 @@ window.CATALOG = [
   "type": "엄청난 중독성",
   "stage": "프로토",
   "deadline": "2026-12-03",
+  "created": "2026-11-26",
   "path": "../G011_commute-dodge/game/index.html",
   "color": "#2fc4c4",
   "icon": "🚇",
-  "version": "2026-11-26 17:18"
+  "version": "2026-11-26 19:09",
+  "note": "대형 겹침 0(생성 시 기하 검사), 노선별 난도 계단, selftes…",
+  "rating": null,
+  "hot": false
  },
  {
   "id": "G012",
@@ -79,9 +103,13 @@ window.CATALOG = [
   "type": "엄청난 중독성",
   "stage": "프로토",
   "deadline": "2026-12-03",
+  "created": "2026-11-26",
   "path": "../G012_house-upgrade/game/index.html",
   "color": "#4d9dff",
   "icon": "🏠",
-  "version": "2026-11-26 16:01"
+  "version": "2026-11-26 19:10",
+  "note": "지방→서울 실제 시세 사다리, 역세권·학군지·호재 매물, 부동산 뉴스",
+  "rating": null,
+  "hot": false
  }
 ];

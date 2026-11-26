@@ -2,7 +2,7 @@
 
 - 시작: 2026-11-25 · business 실험 ID: `E01` (`~/Desktop/NHC/agents/business/experiments/experiments.json`) · business 아이디어 `I01`
 - 목적: 작은 게임을 계속 만들어 보고, 숫자로 남길 것과 버릴 것을 가른다. 한 판 더 하고 싶은 게임 하나를 찾을 때까지 반복한다
-- 관리 보드: `board.html` (생성물, `python3 tools/build_board.py`) · 오락실: `arcade/index.html` (게임 목록 `arcade/catalog.js`는 `python3 tools/build_arcade.py`로 생성). 직접 고치지 않는다
+- 관리 보드: `board.html` (생성물, `python3 tools/build_board.py`) · 오락실: `arcade/index.html` (게임 목록 `arcade/catalog.js`는 `python3 tools/build_arcade.py`로 생성, 직접 고치지 않는다). 오락실 🔥HOT·★평점은 `arcade/ratings.json`(실제 집계만), UP 표시의 한 줄 소식은 게임 폴더 마지막 커밋 제목의 `—` 뒤 문장
 - 단일 출처: `games.json`
 
 ## 1. 단계 (한 방향으로만 이동, 폐기는 어디서나)
