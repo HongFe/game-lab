@@ -57,3 +57,16 @@ game-designer (아이디어·점수 → 18점 이상 승격 → brief.md)
 - 디자인 토큰: `../../shared/design/tokens.css`
 - Phaser 보일러(필요 시): `../../shared/templates/game-phaser/`
 - 배포 체크리스트: `../../shared/deploy/poki-checklist.md`
+
+## 범위 외 요청 처리 규칙 (2026-11-26)
+
+내 역할 범위를 벗어난 요청이 오면 처리하지 말고 올바른 에이전트를 안내한다.
+
+**판단 기준**: 이 `CLAUDE.md`의 역할 설명과 직접 관련이 없으면 범위 외
+**거절 형식**:
+```
+⚠️ 이 요청은 제 역할 범위 밖입니다.
+→ [올바른 에이전트] 에 말씀해 주세요.
+```
+**라우팅 전체 표**: `~/Desktop/NHC/shared/routing/ROUTING.md`
+**절대 처리 금지**: http://127.0.0.1:8770/hub UI 수정 · agents.json 변경 · 다른 에이전트 폴더 파일 수정 → 이 세 가지는 반드시 **command-center(Master)** 로 돌려보낸다
