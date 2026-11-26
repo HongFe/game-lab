@@ -107,8 +107,8 @@ window.CATALOG = [
   "path": "../G012_house-upgrade/game/index.html",
   "color": "#4d9dff",
   "icon": "🏠",
-  "version": "2026-11-26 19:40",
-  "note": "오락실 플레이 시간은 사람 입력·레벨 신호로만 측정, G012 이름 '…",
+  "version": "2026-11-26 19:43",
+  "note": "시간 문구·현금 음수 버그, 실제 총 확률 표시, 청약 쏠림 해소, 알…",
   "rating": null,
   "hot": false
  }
