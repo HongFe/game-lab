@@ -11,23 +11,49 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
 #app{position:fixed;inset:0;max-width:480px;margin:0 auto}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-.hud{position:absolute;left:10px;right:10px;top:calc(8px + env(safe-area-inset-top));display:flex;gap:6px;pointer-events:none}
-.hud div{flex:1;background:rgba(15,20,30,.72);border:1px solid var(--line);border-radius:12px;padding:5px 8px;text-align:center;font-size:10.5px;color:var(--sub)}
-.hud b{display:block;font:900 18px ui-monospace,Menlo,monospace;color:var(--tx)}
-.hud .bowl b{color:var(--acc)} .hud .warn b{color:var(--red);letter-spacing:1px}
-#hold{position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));height:74px;border:0;border-radius:20px;background:linear-gradient(#ffcc5c,#ff9f1a);color:#3a2300;font:900 18px -apple-system,sans-serif;box-shadow:0 6px 0 #b86a00,0 10px 24px rgba(0,0,0,.35);touch-action:none;overflow:hidden}
+/* 상단 목표 (항상 표시) */
+.hud{position:absolute;left:10px;right:10px;top:calc(8px + env(safe-area-inset-top));display:flex;gap:6px;pointer-events:none;z-index:2}
+.goal{flex:1;background:rgba(15,20,30,.8);border:1px solid var(--line);border-radius:14px;padding:6px 10px;min-width:0}
+.goal .g1{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.goal .g1 b{font:900 15px ui-monospace,Menlo,monospace;color:var(--tx)}
+.goal .g1 .bw{color:var(--acc)}
+.goal .g2{font-size:15px;font-weight:900;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.goal .g2 b{font:900 20px ui-monospace,Menlo,monospace;color:var(--red)}
+.goal .g2.ok{color:var(--ok)}
+.goal.bump{animation:bump .35s cubic-bezier(.3,1.8,.6,1)}
+@keyframes bump{40%{transform:scale(1.05)}}
+.warnb{width:70px;flex:none;background:rgba(15,20,30,.8);border:1px solid var(--line);border-radius:14px;padding:6px 4px;text-align:center;font-size:10.5px;color:var(--sub)}
+.warnb b{display:block;font:900 17px ui-monospace,Menlo,monospace;color:var(--red);letter-spacing:1px;margin-top:3px}
+#hold{position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));height:74px;border:0;border-radius:20px;background:linear-gradient(#ffcc5c,#ff9f1a);color:#3a2300;font:900 18px -apple-system,sans-serif;box-shadow:0 6px 0 #b86a00,0 10px 24px rgba(0,0,0,.35);touch-action:none;overflow:hidden;z-index:2}
 #hold small{display:block;font-size:11.5px;font-weight:700;opacity:.8}
 #hold .bar{position:absolute;left:0;bottom:0;height:7px;background:#3a2300;opacity:.55;width:0}
 #hold.on{transform:translateY(4px);box-shadow:0 2px 0 #b86a00;background:linear-gradient(#ffb020,#f08800)}
+#hold.danger{background:linear-gradient(#ff7a6b,#e0362b);color:#fff;box-shadow:0 6px 0 #8f1d15,0 10px 24px rgba(0,0,0,.35);animation:dz .18s infinite alternate}
+#hold.danger.on{box-shadow:0 2px 0 #8f1d15}
+@keyframes dz{to{filter:brightness(1.18)}}
 #hold:disabled{filter:grayscale(.8) brightness(.7)}
+/* 튜토리얼 코치 */
+#coach{position:absolute;left:12px;right:12px;top:calc(76px + env(safe-area-inset-top));z-index:3;display:none;background:#fff8ee;color:#2a1c06;border-radius:16px;padding:10px 12px 10px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#coach.on{display:block;animation:rise .25s ease-out}
+#coach .top{display:flex;align-items:center;gap:8px}
+#coach .dots{flex:1;font-size:11px;font-weight:800;color:#9a7a3a;letter-spacing:2px}
+#coach #skip{border:0;background:#e9dcc4;color:#5a4320;border-radius:10px;font:800 12px -apple-system,sans-serif;min-height:40px;min-width:76px;padding:0 10px;cursor:pointer}
+#coach .msg{font-size:18px;font-weight:900;line-height:1.35;margin-top:2px}
+#coach .msg em{font-style:normal;color:#e0362b}
+#coach .msg.good{color:#1d8a52}
+#coach.pulse{animation:cp .4s cubic-bezier(.3,1.8,.6,1)}
+@keyframes cp{40%{transform:scale(1.04)}}
+#arrow{position:absolute;left:50%;bottom:calc(98px + env(safe-area-inset-bottom));transform:translateX(-50%);font-size:40px;z-index:3;display:none;pointer-events:none;animation:ar .5s ease-in-out infinite alternate;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+#arrow.on{display:block}
+@keyframes ar{to{transform:translate(-50%,10px)}}
 .ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,14,22,.68);padding:18px;z-index:5}
 .ov.on{display:flex}
-.box{background:#28344a;border:1px solid var(--line);border-radius:18px;padding:18px;width:min(360px,100%);text-align:center;animation:rise .25s ease-out}
+.box{background:#28344a;border:1px solid var(--line);border-radius:18px;padding:18px;width:min(360px,100%);text-align:center;animation:rise .25s ease-out;max-height:100%;overflow:auto}
 @keyframes rise{from{transform:translateY(20px);opacity:.5}}
 .box h1{margin:0;font-size:26px} .box h2{margin:0 0 4px;font-size:22px}
 .box p{color:var(--sub);font-size:13.5px;line-height:1.6;margin:6px 0}
 .box ul{text-align:left;font-size:13px;line-height:1.75;padding-left:18px;color:#eef2f8}
-.box button{width:100%;border:0;border-radius:12px;padding:12px;font:900 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:var(--acc);color:#3a2300}
+.box button{width:100%;border:0;border-radius:12px;padding:12px;min-height:44px;font:900 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:var(--acc);color:#3a2300}
 .box button.sec{background:#3b4862;color:var(--tx)}
 .box .food{font-size:64px;animation:food .6s cubic-bezier(.3,1.6,.6,1)}
 @keyframes food{from{transform:scale(0) rotate(-30deg)}}
@@ -41,20 +67,26 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 <body>
 <div id="app">
   <canvas id="cv"></canvas>
-  <div class="hud"><div class="bowl">남은 그릇<b id="bowl">-</b></div><div>내 앞<b id="ahead">-</b></div><div class="warn">경고<b id="warn">○○○</b></div></div>
-  <button id="hold">🤫 살금살금<small>누르고 있기 · ❗ 뜨면 손 떼기</small><span class="bar" id="bar"></span></button>
+  <div class="hud">
+    <div class="goal" id="goal"><div class="g1">그릇 <b class="bw" id="bowl">-</b>개 남음 / 내 앞 <b id="ahead">-</b>명</div><div class="g2" id="need">-</div></div>
+    <div class="warnb">경고<b id="warn">○○○</b></div>
+  </div>
+  <div id="coach"><div class="top"><div class="dots" id="dots">연습 1/4</div><button id="skip">건너뛰기</button></div><div class="msg" id="cmsg"></div></div>
+  <div id="arrow">👇</div>
+  <button id="hold"><span id="holdT">🤫 살금살금</span><small id="holdS">누르고 있기 · ❗ 뜨면 손 떼기</small><span class="bar" id="bar"></span></button>
   <div class="ov" id="ov"><div class="box" id="box"></div></div>
 </div>
 <script>
 "use strict";
 // ───────── 데이터 ─────────
 const TYPES = {
-  office: { e: "📱", hair: "#3a2c24", body: "#5a6b8c", fwd: [3.5, 6.5], tele: [.6, .8], look: [.8, 1.2], name: "직장인" },
-  kid: { e: "🧒", hair: "#6b3f1d", body: "#ff8a5b", fwd: [1.3, 2.6], tele: [.35, .45], look: [.9, 1.3], name: "아이" },
-  granny: { e: "👵", hair: "#d9d6d0", body: "#8e6aa8", fwd: [2.2, 4.0], tele: [.9, 1.2], look: [2.0, 2.8], name: "할머니" },
-  uncle: { e: "🕶", hair: "#1c1c1c", body: "#3b3b3b", fwd: [1.6, 2.8], tele: [.45, .6], look: [1.6, 2.4], name: "아저씨" },
+  office: { e: "📱", hair: "#3a2c24", skin: "#f2c9a0", body: "#5a6b8c", fwd: [3.5, 6.5], tele: [.6, .8], look: [.8, 1.2], name: "직장인" },
+  kid: { e: "🧒", hair: "#6b3f1d", skin: "#ffd6b0", body: "#ff8a5b", fwd: [1.3, 2.6], tele: [.35, .45], look: [.9, 1.3], name: "아이" },
+  granny: { e: "👵", hair: "#d9d6d0", skin: "#efc6a4", body: "#8e6aa8", fwd: [2.2, 4.0], tele: [.9, 1.2], look: [2.0, 2.8], name: "할머니" },
+  uncle: { e: "🕶", hair: "#1c1c1c", skin: "#d9a77c", body: "#3b3b3b", fwd: [1.6, 2.8], tele: [.45, .6], look: [1.6, 2.4], name: "아저씨" },
 };
 const FACES = { office: "😑", kid: "🤨", granny: "🧐", uncle: "😠" };
+const ANGRY = ["😠", "😤", "🤨", "😡", "🙄", "😒"];
 const SHOPS = [
   { name: "분식집", food: "🍢", n: 8, cut: 2, every: 3.4, mix: { office: 5, kid: 2 } },
   { name: "떡볶이", food: "🌶️", n: 9, cut: 3, every: 3.3, mix: { office: 4, kid: 3, granny: 1 } },
@@ -67,27 +99,34 @@ const SHOPS = [
   { name: "소금빵", food: "🥐", n: 14, cut: 6, every: 4.3, mix: { office: 1, kid: 4, granny: 2, uncle: 4 } },
   { name: "오마카세", food: "🍣", n: 15, cut: 7, every: 4.3, mix: { office: 1, kid: 3, granny: 3, uncle: 5 } },
 ];
+const TUT_SHOP = { name: "연습 김밥", food: "🍙" };
 // 가게별 속도(every)는 반응형 봇 최소 통과값 + 사람 반응 여유 (2026-11-26 조정)
 const DT = 1 / 60, PASS_TIME = .7, WATCH = 2, CAUGHT_PUSH = 2;
 const $ = id => document.getElementById(id);
 const cv = $("cv"), ctx = cv.getContext("2d");
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const store = { get() { try { return JSON.parse(localStorage.getItem("g006") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g006", JSON.stringify(v)); } catch (e) {} } };
-let save = Object.assign({ stars: {}, unlocked: 1 }, store.get());
+let save = Object.assign({ stars: {}, unlocked: 1, tut: 0 }, store.get());
 
 // ───────── 소리 ─────────
 let ac = null;
-function beep(f, d = .06, type = "square", v = .04, w = 0, f2) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + w, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {} }
+const actx = () => { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume(); } catch (e) {} return ac; };
+function beep(f, d = .06, type = "square", v = .04, w = 0, f2) { try { const a = actx(); if (!a) return; const t = a.currentTime + w, o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d); } catch (e) {} }
+// 휙 (필터 걸린 잡음)
+function whoosh(d = .22, v = .12, f1 = 600, f2 = 2400) { try { const a = actx(); if (!a) return; const t = a.currentTime, n = Math.floor(a.sampleRate * d), b = a.createBuffer(1, n, a.sampleRate), ch = b.getChannelData(0); for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n); const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = b; f.type = "bandpass"; f.Q.value = 1.2; f.frequency.setValueAtTime(f1, t); f.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); s.connect(f); f.connect(g); g.connect(a.destination); s.start(t); } catch (e) {} }
 const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
 const JUICE = !new URLSearchParams(location.search).has("nojuice");
+const vary = f => f * (1 + (Math.random() - .5) * .14);
 const SFX = {
-  step() { beep(180 + Math.random() * 40, .03, "triangle", .03); },
-  pass() { beep(700, .06, "sine", .04, 0, 1000); },
-  tele() { beep(1240, .05, "square", .03); beep(1240, .05, "square", .03, .09); },
-  caught() { beep(220, .3, "sawtooth", .07, 0, 120); buzz([40, 40, 80]); },
+  step() { beep(vary(190), .03, "triangle", .03); },
+  pass(c) { const f = 620 * Math.pow(1.06, Math.min(c, 10)); beep(f, .06, "sine", .045, 0, f * 1.5); },
+  tele() { beep(1320, .06, "square", .035); beep(1320, .06, "square", .035, .1); beep(1760, .08, "square", .03, .2); },
+  look() { whoosh(.2, .14, 500, 2600); beep(95, .45, "sawtooth", .035, .05, 140); beep(1900, .12, "sine", .02, .05, 2300); },
+  caught() { beep(220, .3, "sawtooth", .07, 0, 120); whoosh(.35, .1, 300, 900); [0, .12, .24].forEach(w => beep(vary(520), .09, "square", .03, .15 + w, vary(380))); buzz([40, 40, 80]); },
   phew() { beep(500, .25, "sine", .04, 0, 300); },
   heart() { beep(70, .08, "sine", .12); beep(60, .08, "sine", .1, .14); },
-  enter() { beep(392, .08, "triangle", .04); },
+  enter() { beep(vary(392), .08, "triangle", .04); },
+  good() { [660, 880, 1175].forEach((f, i) => beep(f, .1, "sine", .05, i * .07)); },
   win() { [523, 659, 784, 1046, 1319].forEach((f, i) => beep(f, .12, "square", .045, i * .08)); },
   lose() { [392, 330, 262, 196].forEach((f, i) => beep(f, .2, "triangle", .06, i * .15)); },
 };
@@ -103,71 +142,165 @@ function newLevel(li, seed) {
   const line = [];
   for (let i = 0; i < S.n; i++) { const type = pool[Math.floor(R() * pool.length)]; line.push({ id: i, type, st: "fwd", t: 0, dur: between(R, TYPES[type].fwd) * (.3 + R() * .9), me: false }); }
   line.push({ id: 99, me: true });
-  return { li, R, line, bowls: S.n + 1 - S.cut, adv: S.every, advT: S.every, strikes: 0, prog: 0, cool: 0, time: 0, over: null, passed: 0, glare: 0 };
+  return { li, shop: S, R, line, bowls: S.n + 1 - S.cut, adv: S.every, advT: S.every, strikes: 0, prog: 0, cool: 0, time: 0, over: null, passed: 0, glare: 0, caughtN: 0 };
 }
 const meIdx = L => L.line.findIndex(p => p.me);
 function watchers(L) { const p = meIdx(L); return L.line.slice(Math.max(0, p - WATCH), p).filter(x => !x.me); }
+// 이대로 기다리면 못 먹는 사람 수: 내 앞 p명이 다 들어가도 그릇이 1개 이상 남아야 한다
+const needPass = L => Math.max(0, meIdx(L) - L.bowls + 1);
 function stepLevel(L, hold, ev) {
   if (L.over) return;
   L.time += DT; L.cool = Math.max(0, L.cool - DT); L.glare = Math.max(0, L.glare - DT);
-  // 손님 고개 돌리기
+  // 손님 고개 돌리기 (noTurn: 연습 단계 — 앞보기에서 스스로 돌아보지 않음)
   for (const n of L.line) {
     if (n.me) continue; n.t += DT;
+    if (n.st === "fwd" && L.noTurn) { n.t = 0; continue; }
     if (n.t >= n.dur) {
       const T = TYPES[n.type]; n.t = 0;
       if (n.st === "fwd") { n.st = "tele"; n.dur = between(L.R, T.tele); if (watchers(L).includes(n)) ev && ev("tele", n); }
-      else if (n.st === "tele") { n.st = "look"; n.dur = between(L.R, T.look); }
+      else if (n.st === "tele") { n.st = "look"; n.dur = between(L.R, T.look); ev && ev("look", n); }
       else { n.st = "fwd"; n.dur = between(L.R, T.fwd); }
     }
   }
   // 줄이 줄어듦
-  L.advT -= DT;
-  if (L.advT <= 0) {
-    L.advT = L.adv;
-    const f = L.line[0];
-    if (f.me) { L.over = "win"; ev && ev("win"); return; }
-    L.line.shift(); L.bowls--; ev && ev("enter", f);
-    if (L.bowls <= 0) { L.over = "soldout"; ev && ev("soldout"); return; }
+  if (!L.noAdv) {
+    L.advT -= DT;
+    if (L.advT <= 0) {
+      L.advT = L.adv;
+      const f = L.line[0];
+      if (f.me) { L.over = "win"; ev && ev("win"); return; }
+      L.line.shift(); L.bowls--; ev && ev("enter", f);
+      if (L.bowls <= 0) { L.over = "soldout"; ev && ev("soldout"); return; }
+    }
   }
   // 살금살금
   const p = meIdx(L);
   const moving = hold && p > 0 && L.cool <= 0;
   if (moving) {
     if (watchers(L).some(n => n.st === "look")) {   // 들킴
-      L.strikes++; L.prog = 0; L.cool = 1.1; L.glare = 1.1;
+      if (!L.noStrike) L.strikes++; L.caughtN++; L.prog = 0; L.cool = 1.1; L.glare = 1.1;
       const me = L.line.splice(p, 1)[0], np = Math.min(L.line.length, p + CAUGHT_PUSH); L.line.splice(np, 0, me);
       ev && ev("caught"); if (L.strikes >= 3) { L.over = "kicked"; ev && ev("kicked"); } return;
     }
     L.prog += DT / PASS_TIME; ev && ev("sneak");
+    if (L.noPass && L.prog >= 1) L.prog = .99;   // 연습: ❗~돌아보기 동안은 지나가지 않음
     if (L.prog >= 1) { L.prog = 0; const me = L.line.splice(p, 1)[0]; L.line.splice(p - 1, 0, me); L.passed++; ev && ev("pass"); }
   }
 }
 // 반응형 봇: 지켜보는 사람 중 누구라도 ❗(예고)거나 돌아보고 있으면 멈춘다 — 사람이 화면을 보고 할 수 있는 최선과 같다
 function botHold(L) { return meIdx(L) > 0 && L.cool <= 0 && !watchers(L).some(n => n.st !== "fwd"); }
 
+// ───────── 튜토리얼 (직접 겪기: 누르기 → ❗ 손 떼기 → 들키면 뒤로 → 짧은 실전) ─────────
+const TUT_STEPS = 4;
+function tutLine(types) { const line = types.map((type, i) => ({ id: 200 + i, type, st: "fwd", t: 0, dur: 99, me: false })); line.push({ id: 99, me: true }); return line; }
+function newTut() {
+  return { li: -1, shop: TUT_SHOP, R: rng(4242), line: tutLine(["office", "granny", "office", "kid", "office", "office"]), bowls: 9, adv: 99, advT: 99, strikes: 0, prog: 0, cool: 0, time: 0, over: null, passed: 0, glare: 0, caughtN: 0,
+    noTurn: true, noAdv: true, noStrike: true, tut: { s: 0, ph: "wait", t: 0, okT: 0, seen: false, c0: 0, n: null, msg: "", good: false, done: false } };
+}
+function tutRun(L) {   // 4단계: 짧은 실전 (그릇 4 · 내 앞 5 → 2명 앞지르기)
+  const R = rng(777 + L.caughtN), types = ["office", "kid", "office", "office", "kid"];
+  L.line = types.map((type, i) => ({ id: 300 + i, type, st: "fwd", t: 0, dur: between(R, TYPES[type].fwd) * (.5 + R() * .6), me: false })); L.line.push({ id: 99, me: true });
+  Object.assign(L, { R, bowls: 4, adv: 3.0, advT: 3.0, prog: 0, cool: 0, over: null, noTurn: false, noAdv: false, noStrike: true });
+}
+function tutSay(U, msg, good) { if (U.msg !== msg) { U.msg = msg; U.good = !!good; U.changed = true; } }
+function tutGo(L, s) { const U = L.tut; U.s = s; U.ph = "wait"; U.t = 0; U.n = null; U.c0 = L.caughtN; L.noPass = false; U.ran = false; }
+function tutForce(L, ev, teleDur) {   // 가장 가까운 앞사람에게 ❗ → 돌아보기
+  const w = watchers(L); const n = w[w.length - 1]; if (!n) return null;
+  n.st = "tele"; n.t = 0; n.dur = teleDur; ev && ev("tele", n); return n;
+}
+function tutTick(L, hold, ev) {
+  const U = L.tut; if (!U || U.done) return;
+  U.t += DT; if (U.okT > 0) { U.okT -= DT; return; }   // 칭찬 보여 주는 동안 잠깐 멈춤
+  if (U.n && U.n.st === "look" && U.ph === "tele") { U.ph = "look"; U.n.dur = 1.8; }
+  if (U.ph === "tele" && U.n && !watchers(L).includes(U.n)) { U.n.st = "fwd"; U.n.t = 0; U.ph = "wait"; U.t = 0; U.n = null; }
+  L.noPass = (U.s === 1 || U.s === 2) && U.ph !== "wait";
+  if (U.s === 0) {
+    tutSay(U, hold ? "좋아요, 계속 꾹~ 앞사람을 <em>살금살금</em> 지나가는 중" : "👇 아래 버튼을 <em>꾹 누르고 있어</em> 보세요");
+    if (L.passed >= 1) { tutSay(U, "한 명 앞질렀다! 👍 누르면 앞으로 가요", true); ev && ev("tgood"); U.okT = 1.3; tutGo(L, 1); }
+  } else if (U.s === 1) {
+    if (U.ph === "wait") {
+      tutSay(U, "다시 꾹 눌러서 앞으로… <em>앞사람 머리 위</em>를 잘 보세요");
+      if (L.cool <= 0 && U.t > .3 && ((hold && L.prog >= .2 && L.prog < .6) || U.t > 3)) { U.n = tutForce(L, ev, 1.7); U.ph = "tele"; U.c0 = L.caughtN; }
+    } else if (U.ph === "tele") tutSay(U, "<em>❗ 떴다! 지금 손 떼요!</em> 곧 뒤돌아봐요");
+    else if (U.ph === "look") {
+      if (L.caughtN > U.c0) { U.seen = true; tutSay(U, "앗, 들켰다! <em>두 칸 뒤로</em> 밀렸어요. 다시 해 봐요"); }
+      else tutSay(U, "째려보는 중… <em>가만히!</em> 레이저에 걸리면 들켜요");
+      if (U.n.st === "fwd") {
+        if (L.caughtN > U.c0) { U.ph = "wait"; U.t = 0; }
+        else { tutSay(U, "완벽! 안 들켰어요 😎 ❗ 보이면 손 떼기", true); ev && ev("tgood"); U.okT = 1.4; tutGo(L, U.seen ? 3 : 2); }
+      }
+    }
+  } else if (U.s === 2) {
+    if (U.ph === "wait") {
+      tutSay(U, "들키면 어떻게 될까? 이번엔 <em>❗ 떠도 계속 누르고</em> 있어 보세요");
+      if (L.cool <= 0 && U.t > .8 && ((hold && L.prog >= .2) || U.t > 3.5)) { U.n = tutForce(L, ev, 1.0); U.ph = "tele"; U.c0 = L.caughtN; }
+    } else if (U.ph === "tele") tutSay(U, "<em>❗</em> 그래도 계속 꾹~");
+    else if (U.ph === "look") {
+      if (L.caughtN > U.c0) { tutSay(U, "들키면 <em>두 칸 뒤로 + 경고 1개</em>. 경고 3번이면 쫓겨나요!", true); U.okT = 2.4; tutGo(L, 3); }
+      else { tutSay(U, "돌아봤을 때 누르고 있어야 해요 — <em>꾹!</em>"); if (U.n.st === "fwd") { U.ph = "wait"; U.t = 0; } }
+    }
+  } else if (U.s === 3) {
+    if (!U.ran) { U.ran = true; tutRun(L); }
+    if (L.over === "win") { U.done = true; tutSay(U, "입장 성공! 이제 진짜 맛집으로 🍜", true); ev && ev("tdone"); return; }
+    if (L.over) { tutSay(U, "아깝다, 재료 소진! 한 번 더 🙏"); U.okT = 1.2; L.caughtN++; tutRun(L); return; }
+    const k = needPass(L);
+    tutSay(U, k > 0 ? `마지막! 그릇이 떨어지기 전에 들어가기 — <em>${k}명 더</em> 앞질러요 ☝` : "이제 기다리면 먹어요! 위의 목표가 <em>초록</em>이 됐죠?", k === 0);
+  }
+}
+// 튜토리얼 봇: 2단계(일부러 들키기)만 계속 누르고, 나머지는 반응형 봇
+function tutBot(L) { const U = L.tut; if (U.okT > 0) return false; if (U.s === 2) return meIdx(L) > 0 && L.cool <= 0; return botHold(L); }
+
 // ───────── 화면 ─────────
-let L = null, li = 0, mode = "menu", acc = 0, lastT = 0, holding = false, auto = false, camY = 0, fx = { parts: [], shake: 0, bubbles: [], phew: 0, heart: 0 }, lastLookAt = {};
+let L = null, li = 0, mode = "menu", acc = 0, lastT = 0, holding = false, auto = false, camY = 0,
+  fx = { parts: [], shake: 0, bubbles: [], phew: 0, heart: 0, allLook: 0, flash: 0, stop: 0, combo: 0, pops: [] };
 let W = 400, H = 700, DPR = 1;
 function resize() { const r = $("app").getBoundingClientRect(); DPR = window.devicePixelRatio || 1; W = r.width; H = r.height; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); }
 addEventListener("resize", resize);
 const SP = 62;                          // 사람 간격(px)
 const posY = i => i * SP;               // 줄 안의 위치 → 세계 y (아래로 증가)
+const CAUGHT_TXT = ["새치기 하지 마세요!", "저기요?!", "줄 서세요!", "어딜 끼어들어요", "다 봤어요!", "3시간 기다렸거든요?", "뒤로 가세요~", "헐…", "아니 이 사람이?"];
 function onEv(k, n) {
-  if (k === "tele") { SFX.tele(); }
+  if (k === "tele") { SFX.tele(); if (n) n.popT = 0; }
+  else if (k === "look") { if (n && L && watchers(L).includes(n)) { SFX.look(); n.popT = 0; if (JUICE) fx.pops.push({ id: n.id, t: 0, txt: "휙!" }); } }
   else if (k === "enter") { SFX.enter(); }
   else if (k === "sneak") { if (Math.random() < .12) SFX.step(); }
-  else if (k === "pass") { SFX.pass(); buzz(8); puff(W / 2, H * .62, 6, "#fff8"); }
-  else if (k === "caught") { SFX.caught(); fx.shake = 14; const w = watchers(L)[0]; fx.bubbles.push({ txt: ["새치기 하지 마세요!", "저기요?!", "줄 서세요!", "어딜 끼어들어요"][L.strikes % 4], t: 0 }); }
-  else if (k === "win") finish(true);
-  else if (k === "soldout" || k === "kicked") finish(false, k);
+  else if (k === "pass") { fx.combo++; SFX.pass(fx.combo); buzz(8); puff(W / 2, H * .62, 8, "#fff8"); bumpGoal(); }
+  else if (k === "caught") {
+    SFX.caught(); fx.combo = 0; fx.shake = 16; fx.allLook = 1.7; fx.flash = .35; if (JUICE) fx.stop = .09;
+    // 줄 전체가 돌아보고 여기저기서 한마디
+    const others = L.line.filter(x => !x.me), p = meIdx(L), near = others.filter(x => Math.abs(L.line.indexOf(x) - p) <= 4);
+    const pick = (near.length ? near : others).slice().sort(() => Math.random() - .5).slice(0, 4);
+    const txt = CAUGHT_TXT.slice().sort(() => Math.random() - .5);
+    pick.forEach((x, i) => fx.bubbles.push({ id: x.id, txt: txt[i], t: -i * .18, side: i % 2 ? 1 : -1, face: ANGRY[Math.floor(Math.random() * ANGRY.length)] }));
+    L.line.forEach(x => { if (!x.me) x.angry = ANGRY[Math.floor(Math.random() * ANGRY.length)]; });
+  }
+  else if (k === "tgood") { SFX.good(); puff(W / 2, H * .5, 14, "#4fd18b"); }
+  else if (k === "tdone") { SFX.win(); }
+  else if (k === "win") { if (!L.tut) finish(true); }
+  else if (k === "soldout" || k === "kicked") { if (!L.tut) finish(false, k); }
 }
 function puff(x, y, n, col) { if (!JUICE) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = 40 + Math.random() * 80; fx.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .5, max: .5, r: 2 + Math.random() * 3, col }); } }
+function bumpGoal() { if (!JUICE) return; const g = $("goal"); g.classList.remove("bump"); void g.offsetWidth; g.classList.add("bump"); }
+function resetFx() { fx.bubbles = []; fx.parts = []; fx.pops = []; fx.allLook = 0; fx.combo = 0; fx.flash = 0; }
 function start(n, seed) {
-  li = n; L = newLevel(n, seed ?? (Date.now() % 1e6)); mode = "play"; holding = false; camY = posY(meIdx(L)); fx.bubbles = []; fx.parts = [];
-  $("ov").classList.remove("on"); emit("level_start", { level: n + 1 });
+  li = n; L = newLevel(n, seed ?? (Date.now() % 1e6)); mode = "play"; holding = false; camY = posY(meIdx(L)); resetFx();
+  coach(false); $("ov").classList.remove("on"); emit("level_start", { level: n + 1 });
 }
+function startTut() {
+  li = -1; L = newTut(); mode = "play"; holding = false; camY = posY(meIdx(L)); resetFx();
+  $("ov").classList.remove("on"); coach(true);
+}
+function endTut(skipped) {
+  save.tut = 1; store.set(save); coach(false); mode = "done"; holding = false; $("hold").classList.remove("on");
+  if (skipped) return menu();
+  setTimeout(() => {
+    $("box").innerHTML = `<h2>연습 끝! 🎉</h2><div class="food">🍢</div><p><b>꾹 누르기</b> = 살금살금 앞으로<br><b>❗ 보이면 손 떼기</b> = 안 들킴<br>들키면 두 칸 뒤로 + 경고</p><p>위의 <b>“최소 N명 앞질러야 먹음”</b>을 0으로 만들면 먹을 수 있어요.</p><button id="go">첫 가게 줄 서기</button><button class="sec" id="mn">가게 목록</button>`;
+    $("ov").classList.add("on"); $("go").onclick = () => start(0); $("mn").onclick = menu;
+  }, 600);
+}
+function coach(on) { $("coach").classList.toggle("on", on); if (!on) $("arrow").classList.remove("on"); }
 function finish(win, why) {
-  mode = "done"; holding = false;
+  mode = "done"; holding = false; $("hold").classList.remove("on");
   const S = SHOPS[li];
   if (win) {
     const st = 3 - L.strikes; save.stars[li] = Math.max(save.stars[li] || 0, st); save.unlocked = Math.max(save.unlocked, li + 2); store.set(save);
@@ -177,52 +310,97 @@ function finish(win, why) {
       $("ov").classList.add("on"); $("nx").onclick = () => li + 1 < SHOPS.length ? start(li + 1) : menu(); $("rt").onclick = () => start(li); }, 700);
   } else {
     SFX.lose(); emit("fail", { level: li + 1, why });
-    setTimeout(() => { $("box").innerHTML = `<h2>${why === "kicked" ? "쫓겨났다… 🚪" : "재료 소진 😭"}</h2><p>${why === "kicked" ? "경고 3번. 줄 서는 분들이 가만있지 않았어요." : `“오늘 ${S.name} 재료 다 떨어졌습니다~” 앞에 ${meIdx(L)}명이 남아 있었어요.`}</p>
+    setTimeout(() => { $("box").innerHTML = `<h2>${why === "kicked" ? "쫓겨났다… 🚪" : "재료 소진 😭"}</h2><p>${why === "kicked" ? "경고 3번. 줄 서는 분들이 가만있지 않았어요." : `“오늘 ${S.name} 재료 다 떨어졌습니다~” 앞에 ${meIdx(L)}명이 남아 있었어요.<br>❗ 없을 때 더 과감하게 눌러 보세요.`}</p>
       <button id="rt">다시 줄 서기</button><button class="sec" id="mn">가게 목록</button>`; $("ov").classList.add("on"); $("rt").onclick = () => start(li); $("mn").onclick = menu; }, 500);
   }
 }
 function menu() {
-  mode = "menu";
-  $("box").innerHTML = `<h1>🍜 맛집 새치기</h1><ul><li><b>누르고 있으면</b> 앞사람을 살금살금 지나가요</li><li>앞사람 머리 위에 <b>❗</b>가 뜨면 곧 뒤돌아봐요 → <b>손 떼기</b></li><li>들키면 두 칸 뒤로 + 경고. 경고 3번이면 쫓겨나요</li><li>그릇이 다 떨어지기 전에 가게에 들어가기!</li></ul>
-    <div class="list">${SHOPS.map((s, i) => `<button ${i + 1 > save.unlocked ? "disabled" : ""} class="${save.stars[i] ? "done" : ""}" data-i="${i}">${s.food} ${s.name}<small>${save.stars[i] ? "★".repeat(save.stars[i]) : i + 1 > save.unlocked ? "🔒" : "도전"}</small></button>`).join("")}</div>`;
-  $("ov").classList.add("on"); $("box").querySelectorAll("[data-i]").forEach(b => b.onclick = () => start(+b.dataset.i));
+  mode = "menu"; coach(false);
+  $("box").innerHTML = `<h1>🍜 맛집 새치기</h1><p>그릇은 얼마 안 남았다. 앞사람이 <b>안 볼 때만</b> 살금살금 앞으로!</p><ul><li><b>꾹 누르면</b> 앞사람을 살금살금 지나가요</li><li>머리 위에 <b>❗</b> → 곧 돌아봐요 → <b>손 떼기</b></li><li>들키면 두 칸 뒤로 + 경고. 3번이면 쫓겨나요</li></ul>
+    <div class="list">${SHOPS.map((s, i) => `<button ${i + 1 > save.unlocked ? "disabled" : ""} class="${save.stars[i] ? "done" : ""}" data-i="${i}">${s.food} ${s.name}<small>${save.stars[i] ? "★".repeat(save.stars[i]) : i + 1 > save.unlocked ? "🔒" : "도전"}</small></button>`).join("")}</div>
+    <button class="sec" id="tutb">📖 연습(튜토리얼) 다시 보기</button>`;
+  $("ov").classList.add("on"); $("box").querySelectorAll("[data-i]").forEach(b => b.onclick = () => start(+b.dataset.i)); $("tutb").onclick = startTut;
 }
+$("skip").onclick = e => { e.stopPropagation(); endTut(true); };
+$("skip").addEventListener("pointerdown", e => e.stopPropagation());
 
 // 입력: 버튼 또는 화면 어디든 누르고 있기
-const down = e => { if (mode !== "play" || auto) return; if (e.target.closest && e.target.closest(".box")) return; e.preventDefault(); holding = true; $("hold").classList.add("on"); };
-const up = () => { if (holding) { const ws = L ? watchers(L) : []; const soon = ws.some(n => n.st === "tele" && n.dur - n.t < .3); if (soon && L.prog > 0) { fx.phew = 1; SFX.phew(); SFX.heart(); } } holding = false; $("hold").classList.remove("on"); };
+const down = e => { actx(); if (mode !== "play" || auto) return; if (e.target.closest && (e.target.closest(".box") || e.target.closest("#coach"))) return; e.preventDefault(); holding = true; $("hold").classList.add("on"); };
+const up = () => { if (holding && L) { const ws = watchers(L); const soon = ws.some(n => n.st === "tele" && n.dur - n.t < .3); if (soon && L.prog > 0) { fx.phew = 1; SFX.phew(); SFX.heart(); } } holding = false; $("hold").classList.remove("on"); };
 $("hold").addEventListener("pointerdown", down); cv.addEventListener("pointerdown", down);
 addEventListener("pointerup", up); addEventListener("pointercancel", up);
 addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); if (!holding) down(e); } }); addEventListener("keyup", e => { if (e.code === "Space") up(); });
 
 // ───────── 그리기 ─────────
 function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function drawPerson(x, y, n, t, sneak) {
+function drawLaser(x, y, tx, ty, t, strong) {
+  // 두 눈에서 나오는 시야선 + 부채꼴 시야
+  const ex = [x - 5, x + 5], ey = y - 18, spread = 46;
+  ctx.save();
+  const cone = ctx.createLinearGradient(0, ey, 0, ty + 40); cone.addColorStop(0, `rgba(255,60,50,${strong ? .32 : .12})`); cone.addColorStop(1, "rgba(255,60,50,0)");
+  ctx.fillStyle = cone; ctx.beginPath(); ctx.moveTo(x - 8, ey); ctx.lineTo(tx - spread, ty + 40); ctx.lineTo(tx + spread, ty + 40); ctx.lineTo(x + 8, ey); ctx.closePath(); ctx.fill();
+  if (strong) {
+    const fl = .75 + .25 * Math.sin(t * 50);
+    ex.forEach((xx, i) => {
+      const dx = tx + (i ? 9 : -9);
+      ctx.strokeStyle = `rgba(255,40,30,${.35 * fl})`; ctx.lineWidth = 9; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(xx, ey); ctx.lineTo(dx, ty); ctx.stroke();
+      ctx.strokeStyle = `rgba(255,200,190,${.95 * fl})`; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(xx, ey); ctx.lineTo(dx, ty); ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(xx, ey, 3.2, 0, 7); ctx.fill();
+    });
+    ctx.fillStyle = `rgba(255,60,50,${.25 * fl})`; ctx.beginPath(); ctx.ellipse(tx, ty + 6, 30, 10, 0, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawPerson(x, y, n, t, sneak, isW, dt) {
   const T = n.me ? null : TYPES[n.type];
   ctx.save(); ctx.translate(x, y);
+  if (isW && JUICE) { ctx.strokeStyle = "rgba(255,90,79,.35)"; ctx.setLineDash([4, 4]); ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(0, 22, 24, 8, 0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
   ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(0, 22, 18, 6, 0, 0, 7); ctx.fill();
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
   if (n.me) {
     const crouch = sneak ? 6 : 0, bob = sneak ? Math.sin(t * 18) * 2 : 0;
     ctx.fillStyle = "#ffb020"; rr(-14, -4 + crouch, 28, 26 - crouch, 10); ctx.fill();
-    ctx.font = "30px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(sneak ? "🫣" : L && L.glare > 0 ? "😳" : "😋", 0, -16 + crouch + bob);
-    ctx.fillStyle = "#ffb020"; ctx.font = "800 10px -apple-system"; ctx.fillText("나", 0, 30);
+    ctx.fillStyle = "rgba(255,255,255,.25)"; rr(-10, -1 + crouch, 8, 10, 4); ctx.fill();
+    ctx.font = "30px sans-serif"; ctx.fillText(sneak ? "🫣" : L && L.glare > 0 ? "😳" : "😋", 0, -16 + crouch + bob);
+    ctx.fillStyle = "#ffb020"; ctx.font = "800 10px -apple-system"; ctx.fillText("나", 0, 32);
   } else {
+    // 고개 회전: vt 0(뒤통수) → 1(얼굴). 가로로 접히듯 돌아간다
+    const target = n.st === "look" || fx.allLook > 0 ? 1 : n.st === "tele" ? .18 : 0;
+    n.vt = n.vt ?? 0; n.vt += (target - n.vt) * Math.min(1, dt * (target > n.vt ? 16 : 7));
+    const vt = JUICE ? n.vt : target, sx = Math.max(.08, Math.abs(Math.cos(vt * Math.PI))), facing = vt > .5;
+    n.popT = (n.popT ?? 9) + dt;
+    const pop = JUICE && n.popT < .25 ? 1 + .35 * Math.sin(n.popT / .25 * Math.PI) : 1;
     ctx.fillStyle = T.body; rr(-15, -4, 30, 26, 10); ctx.fill();
-    if (n.st === "look") { ctx.font = "30px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(FACES[n.type], 0, -16); }
-    else {
-      const tw = n.st === "tele" ? Math.sin(t * 40) * 2 : 0;
-      ctx.fillStyle = T.hair; ctx.beginPath(); ctx.arc(tw, -16, 13, 0, 7); ctx.fill();
-      ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.beginPath(); ctx.arc(tw - 4, -21, 4, 0, 7); ctx.fill();
-      ctx.font = "15px sans-serif"; ctx.textAlign = "center"; ctx.fillText(T.e, 16, -4);
+    ctx.fillStyle = "rgba(255,255,255,.12)"; rr(-11, -1, 8, 10, 4); ctx.fill();
+    ctx.save(); ctx.translate(0, -16); ctx.scale(sx * pop, pop); ctx.rotate((facing ? 1 - vt : vt) * .5 * (n.id % 2 ? 1 : -1));
+    if (facing) {
+      ctx.font = "30px sans-serif"; ctx.fillText(fx.allLook > 0 && n.angry ? n.angry : FACES[n.type], 0, 0);
+    } else {
+      const tw = n.st === "tele" ? Math.sin(t * 40) * 1.5 : 0;
+      ctx.fillStyle = T.skin; ctx.beginPath(); ctx.arc(tw, 1, 13, 0, 7); ctx.fill();
+      ctx.fillStyle = T.hair; ctx.beginPath(); ctx.arc(tw, -1, 13, 0, 7); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.14)"; ctx.beginPath(); ctx.arc(tw - 4, -6, 4, 0, 7); ctx.fill();
     }
-    if (n.st === "tele") { const s = 1 + Math.sin(t * 20) * .15; ctx.save(); ctx.translate(0, -42); ctx.scale(s, s); ctx.fillStyle = "#ff5a4f"; ctx.beginPath(); ctx.arc(0, 0, 11, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.font = "900 15px -apple-system"; ctx.textBaseline = "middle"; ctx.fillText("!", 0, 1); ctx.restore(); }
-    if (n.st === "look") { ctx.strokeStyle = "rgba(255,90,79,.35)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-40, 120); ctx.moveTo(10, 0); ctx.lineTo(40, 120); ctx.stroke(); }
+    ctx.restore();
+    if (!facing) { ctx.font = "15px sans-serif"; ctx.fillText(T.e, 16, -4); }
+    // ❗ 예고: 지켜보는 사람은 크게 + 남은 시간 링, 먼 사람은 작고 흐리게
+    if (n.st === "tele") {
+      if (isW) {
+        const k = n.popT < .18 && JUICE ? 1 + .8 * (1 - n.popT / .18) : 1 + Math.sin(t * 20) * .1, left = Math.max(0, 1 - n.t / n.dur);
+        ctx.save(); ctx.translate(30, -24); ctx.scale(k, k);
+        ctx.fillStyle = "rgba(255,90,79,.3)"; ctx.beginPath(); ctx.arc(0, 0, 21, 0, 7); ctx.fill();
+        ctx.fillStyle = "#ff3b30"; ctx.beginPath(); ctx.arc(0, 0, 15, 0, 7); ctx.fill();
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 18, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = "#fff"; ctx.font = "900 22px -apple-system"; ctx.fillText("!", 0, 1);
+        ctx.restore();
+      } else { ctx.globalAlpha = .55; ctx.fillStyle = "#8a93a6"; ctx.beginPath(); ctx.arc(22, -24, 7, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.font = "900 10px -apple-system"; ctx.fillText("!", 22, -23); ctx.globalAlpha = 1; }
+    }
+    if (fx.allLook > 0 && !isW && JUICE) { ctx.fillStyle = "#ff5a4f"; ctx.font = "900 12px -apple-system"; ctx.fillText("?!", 14, -32); }
   }
   ctx.restore();
 }
 function draw(t, dt) {
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  // 하늘·거리
   const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#2b3a55"); g.addColorStop(1, "#1a2232"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   if (!L) return;
   ctx.save(); if (fx.shake > .3 && JUICE) ctx.translate((Math.random() - .5) * fx.shake, (Math.random() - .5) * fx.shake);
@@ -231,43 +409,92 @@ function draw(t, dt) {
   // 인도 블록
   ctx.fillStyle = "#2a3448"; ctx.fillRect(cx - 60, 0, 120, H);
   for (let k = Math.floor((camY - H) / 40); k < (camY + H) / 40; k++) { const yy = Y(k * 40); ctx.fillStyle = k % 2 ? "#2f3a50" : "#2a3448"; ctx.fillRect(cx - 60, yy, 120, 40); }
+  ctx.fillStyle = "rgba(255,255,255,.06)"; ctx.fillRect(cx - 62, 0, 3, H); ctx.fillRect(cx + 59, 0, 3, H);
   // 가게
-  const shopY = Y(-SP * 1.6);
+  const shopY = Y(-SP * 1.6), S = L.shop;
   if (shopY > -160) {
+    ctx.fillStyle = "rgba(0,0,0,.3)"; rr(cx - 106, shopY - 112, 220, 110, 10); ctx.fill();
     ctx.fillStyle = "#5b2d2a"; rr(cx - 110, shopY - 120, 220, 110, 10); ctx.fill();
     ctx.fillStyle = "#ffcc5c"; rr(cx - 90, shopY - 108, 180, 34, 8); ctx.fill();
-    ctx.fillStyle = "#3a2300"; ctx.font = "900 18px -apple-system"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`${SHOPS[li].food} ${SHOPS[li].name}`, cx, shopY - 91);
+    ctx.fillStyle = "#3a2300"; ctx.font = "900 18px -apple-system"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`${S.food} ${S.name}`, cx, shopY - 91);
     ctx.fillStyle = "#1a0f0e"; rr(cx - 26, shopY - 64, 52, 54, 6); ctx.fill();
+    ctx.fillStyle = "rgba(255,204,92,.18)"; rr(cx - 22, shopY - 60, 44, 46, 4); ctx.fill();
     for (let s = 0; s < 3; s++) { ctx.globalAlpha = .25 + .2 * Math.sin(t * 2 + s); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(cx + 70 + Math.sin(t + s) * 6, shopY - 130 - s * 16 - (t * 20 % 16), 7 + s * 2, 0, 7); ctx.fill(); }
     ctx.globalAlpha = 1;
   }
-  // 줄 서 있는 사람들 (뒤에서부터 그려 앞사람이 위에)
-  for (let i = L.line.length - 1; i >= 0; i--) {
+  // 위치 계산
+  const ws = watchers(L), pos = new Map();
+  for (let i = 0; i < L.line.length; i++) {
     const n = L.line[i]; let wy = posY(i), x = cx + Math.sin(n.id * 1.7) * 10;
     if (n.me) { x = cx + (p > 0 && L.prog > 0 ? Math.sin(L.prog * Math.PI) * 34 : 0); wy -= p > 0 ? L.prog * SP : 0; }
-    const yy = Y(wy); if (yy < -60 || yy > H + 60) continue;
-    drawPerson(x, yy, n, t, n.me && holding && L.prog > 0);
+    pos.set(n.id, [x, Y(wy)]);
   }
-  // 말풍선
-  fx.bubbles = fx.bubbles.filter(b => (b.t += dt) < 1.6);
-  fx.bubbles.forEach(b => { const yy = Y(posY(p) - SP * 1.4); ctx.globalAlpha = Math.min(1, 2 - b.t); ctx.fillStyle = "#fff"; rr(cx - 95, yy - 70, 190, 38, 12); ctx.fill(); ctx.fillStyle = "#d93a30"; ctx.font = "900 16px -apple-system"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.txt, cx, yy - 51); ctx.globalAlpha = 1; });
+  const [mx, my] = pos.get(99);
+  // 줄 서 있는 사람들 (뒤에서부터 그려 앞사람이 위에)
+  for (let i = L.line.length - 1; i >= 0; i--) {
+    const n = L.line[i], [x, yy] = pos.get(n.id); if (yy < -60 || yy > H + 60) continue;
+    drawPerson(x, yy, n, t, n.me && holding && L.prog > 0, ws.includes(n), dt);
+  }
+  // 레이저 시야선 (지켜보는 사람이 돌아봤을 때)
+  ws.forEach(n => { if (n.st === "look" && (n.vt ?? 1) > .5) { const [x, yy] = pos.get(n.id); drawLaser(x, yy, mx, my - 6, t, true); } });
+  if (fx.allLook > 0 && JUICE) L.line.forEach(n => { if (!n.me && !ws.includes(n)) { const q = pos.get(n.id); if (q[1] > -60 && q[1] < H + 60 && Math.abs(q[1] - my) < SP * 5) drawLaser(q[0], q[1], mx, my - 6, t, false); } });
+  // 휙! 표시
+  fx.pops = fx.pops.filter(o => (o.t += dt) < .5);
+  fx.pops.forEach(o => { const q = pos.get(o.id); if (!q) return; ctx.globalAlpha = 1 - o.t / .5; ctx.fillStyle = "#fff"; ctx.font = "italic 900 16px -apple-system"; ctx.textAlign = "center"; ctx.fillText(o.txt, q[0] - 30, q[1] - 36 - o.t * 30); ctx.globalAlpha = 1; });
+  // 말풍선 (여러 명)
+  fx.bubbles = fx.bubbles.filter(b => (b.t += dt) < 1.9);
+  fx.bubbles.forEach((b, i) => {
+    if (b.t < 0) return; const q = pos.get(b.id); if (!q) return;
+    const k = JUICE ? Math.min(1, b.t / .12) * (1 + .15 * Math.max(0, 1 - b.t / .25)) : 1, a = Math.min(1, (1.9 - b.t) * 3);
+    ctx.font = "900 14px -apple-system"; const tw = ctx.measureText(b.txt).width + 20;
+    let bx = q[0] + b.side * (tw / 2 + 14); bx = Math.max(tw / 2 + 6, Math.min(W - tw / 2 - 6, bx)); const by = q[1] - 30;
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(bx, by); ctx.scale(k, k);
+    ctx.fillStyle = "rgba(0,0,0,.25)"; rr(-tw / 2 + 2, -15, tw, 32, 12); ctx.fill();
+    ctx.fillStyle = "#fff"; rr(-tw / 2, -17, tw, 32, 12); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-b.side * (tw / 2 - 14), 10); ctx.lineTo(-b.side * (tw / 2 + 2), 20); ctx.lineTo(-b.side * (tw / 2 - 26), 12); ctx.fill();
+    ctx.fillStyle = "#d93a30"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.txt, 0, -1); ctx.restore();
+  });
   // 파티클
   fx.parts = fx.parts.filter(q => (q.life -= dt) > 0); fx.parts.forEach(q => { q.x += q.vx * dt; q.y += q.vy * dt; ctx.globalAlpha = q.life / q.max; ctx.fillStyle = q.col; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 7); ctx.fill(); }); ctx.globalAlpha = 1;
   ctx.restore();
+  // 들킴 번쩍
+  if (fx.flash > 0 && JUICE) { ctx.fillStyle = `rgba(255,60,50,${fx.flash})`; ctx.fillRect(0, 0, W, H); fx.flash -= dt; }
+  if (fx.allLook > 0) { fx.allLook -= dt; ctx.fillStyle = "#fff"; ctx.font = "900 34px -apple-system"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.globalAlpha = Math.min(1, fx.allLook * 2); ctx.strokeStyle = "#8f1d15"; ctx.lineWidth = 6; ctx.strokeText("들켰다!", W / 2, H * .82 - 40); ctx.fillText("들켰다!", W / 2, H * .82 - 40); ctx.globalAlpha = 1; }
   // 휴… / 긴장 테두리
   if (fx.phew > 0 && JUICE) { ctx.globalAlpha = fx.phew; ctx.fillStyle = "#fff"; ctx.font = "900 30px -apple-system"; ctx.textAlign = "center"; ctx.fillText("휴…", W / 2, H * .45); ctx.globalAlpha = 1; fx.phew -= dt * 1.2; }
-  const danger = watchers(L).some(n => n.st === "tele"); if (danger && JUICE) { ctx.strokeStyle = `rgba(255,90,79,${.35 + .25 * Math.sin(t * 20)})`; ctx.lineWidth = 10; ctx.strokeRect(0, 0, W, H); }
+  const danger = ws.some(n => n.st === "tele"); if (danger && JUICE) { ctx.strokeStyle = `rgba(255,90,79,${.35 + .25 * Math.sin(t * 20)})`; ctx.lineWidth = 10; ctx.strokeRect(0, 0, W, H); }
 }
+let lastNeed = -1;
 function hud() {
-  if (!L) return; $("bowl").textContent = L.bowls; $("ahead").textContent = meIdx(L); $("warn").textContent = "✕".repeat(L.strikes) + "○".repeat(3 - L.strikes);
+  if (!L) return; const p = meIdx(L), k = needPass(L);
+  $("bowl").textContent = L.bowls; $("ahead").textContent = p; $("warn").textContent = L.tut ? "연습" : "✕".repeat(L.strikes) + "○".repeat(3 - L.strikes);
+  const need = $("need");
+  const practice = L.tut && L.tut.s < 3;
+  if (practice) { if (lastNeed !== -2) { need.className = "g2"; need.textContent = "🧪 연습 중 · 줄은 아직 안 움직여요"; lastNeed = -2; } }
+  else if (k * 2 + (p === 0) !== lastNeed) { need.className = "g2" + (k === 0 ? " ok" : ""); need.innerHTML = k === 0 ? (p === 0 ? "🚪 맨 앞! 곧 들어가요" : "✓ 이대로 기다리면 먹어요!") : `→ 최소 <b>${k}</b>명 앞질러야 먹음`; lastNeed = k * 2 + (p === 0); }
   $("bar").style.width = Math.round(L.prog * 100) + "%"; $("hold").disabled = mode !== "play" || L.cool > 0;
-  $("bowl").style.color = L.bowls <= meIdx(L) ? "#ff5a4f" : "";
+  $("bowl").style.color = L.bowls <= p ? "#ff5a4f" : "";
+  const ws = watchers(L), dz = mode === "play" && ws.some(n => n.st !== "fwd") && p > 0;
+  $("hold").classList.toggle("danger", dz);
+  const ht = dz ? (ws.some(n => n.st === "look") ? "👀 보고 있어요! 가만히" : "✋ 손 떼요! 돌아봐요") : L.cool > 0 ? "😳 들켰다…" : "🤫 살금살금";
+  if ($("holdT").textContent !== ht) { $("holdT").textContent = ht; $("holdS").textContent = dz ? "누르고 있으면 들켜요" : "누르고 있기 · ❗ 뜨면 손 떼기"; }
+  if (L.tut) {
+    const U = L.tut;
+    if (U.changed) { U.changed = false; $("cmsg").innerHTML = U.msg; $("cmsg").className = "msg" + (U.good ? " good" : ""); const c = $("coach"); if (JUICE) { c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse"); } }
+    $("dots").textContent = `연습 ${Math.min(U.s + 1, TUT_STEPS)}/${TUT_STEPS} ` + "●".repeat(U.s + 1) + "○".repeat(Math.max(0, TUT_STEPS - U.s - 1));
+    $("arrow").classList.toggle("on", U.s === 0 && !holding && U.okT <= 0);
+  }
 }
 function loop(tm) {
   const dt = Math.min(.05, (tm - lastT) / 1000 || 0); lastT = tm;
   if (mode === "play" && L) {
-    acc += dt;
-    while (acc >= DT && mode === "play") { acc -= DT; stepLevel(L, auto ? botHold(L) : holding, onEv); }
+    if (fx.stop > 0) fx.stop -= dt; else acc += dt;
+    while (acc >= DT && mode === "play") {
+      acc -= DT; const h = auto ? (L.tut ? tutBot(L) : botHold(L)) : holding;
+      if (L.tut && L.tut.okT > 0) { L.tut.okT -= DT; if (L.tut.okT <= 0) L.tut.changed = true; continue; }   // 칭찬 중엔 세상도 잠깐 멈춤
+      stepLevel(L, h, onEv);
+      if (L.tut) { tutTick(L, h, onEv); if (L.tut.done) { endTut(false); break; } }
+    }
     hud();
   }
   fx.shake *= Math.pow(.02, dt);
@@ -277,14 +504,27 @@ function loop(tm) {
 // ───────── 시작 ─────────
 resize();
 const q = new URLSearchParams(location.search);
+// 튜토리얼을 헤드리스로 끝까지 돌림 (렌더링 없이, 같은 틱 로직)
+function runTutHeadless(maxSec = 180) {
+  const T = newTut(); let k = 0;
+  while (!T.tut.done && k++ < 60 * maxSec) {
+    const h = tutBot(T);
+    if (T.tut.okT > 0) { T.tut.okT -= DT; continue; }
+    stepLevel(T, h); tutTick(T, h);
+  }
+  return { done: T.tut.done, sec: k / 60, caught: T.caughtN };
+}
 if (q.has("selftest")) {
   const rows = []; let ok = 0, total = 0;
   SHOPS.forEach((S, i) => { let win = 0, minB = 99; for (let s = 1; s <= 5; s++) { const T = newLevel(i, s * 101 + i); let k = 0; while (!T.over && k++ < 60 * 300) stepLevel(T, botHold(T)); if (T.over === "win") { win++; minB = Math.min(minB, T.bowls); } } total++; const pass = win === 5; if (pass) ok++; rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${S.name}\t봇 성공 ${win}/5\t남은 그릇 최소 ${minB === 99 ? "-" : minB}`); });
+  const tr = runTutHeadless(); total++; const tp = tr.done && tr.sec <= 60; if (tp) ok++;
+  rows.push(`T\t${tp ? "OK" : "FAIL"}\t연습\t끝까지 ${tr.done ? "완료" : "미완"}\t${tr.sec.toFixed(1)}초 (60초 이내) · 들킴 ${tr.caught}`);
   document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px">${rows.join("\n")}</pre>`);
   document.title = `SELFTEST ${ok}/${total}`;
-} else if (q.has("autoplay")) { auto = true; start((Number(q.get("autoplay")) || 1) - 1, 7); }
+} else if (q.has("autoplay")) { auto = true; const a = q.get("autoplay"); if (a === "tut") startTut(); else start((Number(a) || 1) - 1, 7); }
+else if (q.has("tut") || !save.tut) startTut();
 else menu();
-window.__g006 = { newLevel, stepLevel, botHold };
+window.__g006 = { newLevel, stepLevel, botHold, newTut, tutTick, tutBot, runTutHeadless, needPass };
 requestAnimationFrame(t => { lastT = t; loop(t); });
 </script>
 </body>
