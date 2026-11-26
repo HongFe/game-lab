@@ -13,6 +13,18 @@ window.CATALOG = [
   "version": "2026-11-26 13:27"
  },
  {
+  "id": "G002",
+  "title": "인형뽑기 군단",
+  "one_liner": "집게로 뽑은 인형이 그대로 내 부대가 된다. 못 뽑으면 맨몸으로 싸운다.",
+  "type": "엄청난 중독성",
+  "stage": "프로토",
+  "deadline": "2026-12-03",
+  "path": "../G002_claw-army/game/index.html",
+  "color": "#ff7ab6",
+  "icon": "🧸",
+  "version": "2026-11-26 15:03"
+ },
+ {
   "id": "G003",
   "title": "폭락 러너",
   "one_liner": "주식 차트가 곧 지형이다. 폭락은 낭떠러지, 급등은 벽. 레버리지를 올릴수록 빨라진다.",
@@ -22,7 +34,7 @@ window.CATALOG = [
   "path": "../G003_crash-runner/game/index.html",
   "color": "#3cc98a",
   "icon": "📉",
-  "version": "2026-11-26 13:55"
+  "version": "2026-11-26 14:58"
  },
  {
   "id": "G004",
@@ -35,5 +47,41 @@ window.CATALOG = [
   "color": "#b07bff",
   "icon": "🐈",
   "version": "2026-11-26 14:02"
+ },
+ {
+  "id": "G006",
+  "title": "맛집 새치기",
+  "one_liner": "줄 선 지 3시간째. 들키지 않고 한 칸씩 앞으로 가라.",
+  "type": "하이 콘셉트",
+  "stage": "프로토",
+  "deadline": "2026-12-03",
+  "path": "../G006_queue-cutter/game/index.html",
+  "color": "#ffb020",
+  "icon": "🍜",
+  "version": "2026-11-26 15:06"
+ },
+ {
+  "id": "G011",
+  "title": "출근길 피하기",
+  "one_liner": "환승통로에 쏟아지는 백팩·우산·킥보드를 손가락 하나로 피해 9시 전에 사무실 도착.",
+  "type": "엄청난 중독성",
+  "stage": "프로토",
+  "deadline": "2026-12-03",
+  "path": "../G011_commute-dodge/game/index.html",
+  "color": "#2fc4c4",
+  "icon": "🚇",
+  "version": "2026-11-26 15:29"
+ },
+ {
+  "id": "G012",
+  "title": "집 강화하기",
+  "one_liner": "고시원에서 시작해 강화 버튼으로 반지하→원룸→아파트→펜트하우스. 실패하면 한 단계 이사 가야 한다.",
+  "type": "엄청난 중독성",
+  "stage": "프로토",
+  "deadline": "2026-12-03",
+  "path": "../G012_house-upgrade/game/index.html",
+  "color": "#4d9dff",
+  "icon": "🏠",
+  "version": "2026-11-26 15:25"
  }
 ];

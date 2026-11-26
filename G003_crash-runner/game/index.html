@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d1016">
 <title>폭락 러너</title>
 <style>
-:root{--bg:#0d1016;--tx:#eef1f7;--sub:#8b93a7;--up:#26d07c;--dn:#ff4d5e;--acc:#ffcc4d;--panel:rgba(22,26,36,.86);--line:#2a3142}
+:root{--bg:#0d1016;--tx:#eef1f7;--sub:#8b93a7;--up:#ff4d5e;--dn:#3d8bff;--danger:#ff3b2f;--acc:#ffcc4d;--panel:rgba(22,26,36,.86);--line:#2a3142}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
 #game{position:fixed;inset:0;max-width:520px;margin:0 auto}
@@ -16,7 +16,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .ticker span{display:inline-block;padding-left:100%;animation:tick 28s linear infinite;line-height:22px}
 @keyframes tick{to{transform:translateX(-100%)}}
 .row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.ret{font:800 34px/1 ui-monospace,Menlo,monospace;letter-spacing:-1px;transition:color .15s}
+.ret{font:800 34px/1 ui-monospace,Menlo,monospace;letter-spacing:-1px;transition:color .15s,transform .12s;transform-origin:left center}
 .ret small{display:block;font:600 11px -apple-system,sans-serif;color:var(--sub);letter-spacing:0;margin-top:4px}
 .lev{font:900 22px ui-monospace,Menlo,monospace;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px 10px;text-align:center;min-width:66px;transition:transform .12s}
 .lev small{display:block;font:600 10px -apple-system,sans-serif;color:var(--sub)}
@@ -41,7 +41,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .btn:active{transform:translateY(2px)}
 .title{display:inline-block;background:#232a3a;border-radius:999px;padding:3px 10px;font-size:12px;color:var(--acc);font-weight:800}
 .disc{font-size:10.5px;color:#5d6578;margin-top:10px}
-.stamp{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) rotate(-12deg) scale(2.2);border:5px solid var(--dn);color:var(--dn);font:900 34px -apple-system,sans-serif;padding:4px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.3,1.6,.6,1),opacity .2s}
+.stamp{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) rotate(-12deg) scale(2.2);border:5px solid var(--danger);color:var(--danger);font:900 34px -apple-system,sans-serif;padding:4px 16px;border-radius:10px;opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.3,1.6,.6,1),opacity .2s}
 .stamp.on{opacity:1;transform:translate(-50%,-50%) rotate(-12deg) scale(1)}
 .pop{position:absolute;font:900 26px ui-monospace,Menlo,monospace;pointer-events:none;animation:popup .9s ease-out forwards;text-shadow:0 2px 8px rgba(0,0,0,.6)}
 @keyframes popup{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{transform:translate(-50%,-8px) scale(1.15);opacity:1}100%{transform:translate(-50%,-60px) scale(1);opacity:0}}
@@ -57,7 +57,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
       <div class="lev" id="lev">x1<small>레버리지</small></div>
     </div>
   </div>
-  <div class="tip" id="tip">탭: 점프 (공중에서 한 번 더)</div>
+  <div class="tip" id="tip">탭: 점프 · 🟥 밟으면 + 🟦 밟으면 −</div>
   <button id="cash">💰 익절<small>수익 확정</small></button>
   <div class="stamp" id="stamp">강제 청산</div>
   <div class="ov on" id="ov"><div class="box" id="box"></div></div>
@@ -66,6 +66,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 "use strict";
 // ───────── 상수 ─────────
 const CW = 28, G = 1500, JV1 = 560, JV2 = 500, STEP = 12, HALF = 9, DT = 1 / 120;
+const UP = "#ff4d5e", DN = "#3d8bff";
 const LEV_EVERY = 8, MAX_LEV = 10, START_GRACE = 3;
 const TITLES = [[0, "개미"], [3e6, "동학개미"], [1e7, "슈퍼개미"], [1e8, "큰손"], [1e9, "고래"]];
 const NEWS = ["[속보] 개미들, 오늘도 출근 전 차트 확인", "전문가 \"지금이 바닥… 아마도\"", "세력 등장설에 커뮤니티 술렁", "\"익절은 늘 옳다\" 오래된 격언 재조명",
@@ -165,7 +166,13 @@ function step(st, jump, ev) {
   if ((sup === null && st.y < st.lastG - 140) || st.y < st.lastG - 2500) { st.dead = "delist"; ev && ev("dead", "delist"); return; }
   // 수익: 캔들 하나 지날 때마다
   const idx = Math.floor(st.x / CW);
-  while (st.lastIdx < idx) { st.lastIdx++; st.ret += 0.0015 * lev(st); }
+  while (st.lastIdx < idx) {
+    st.lastIdx++; let g = 0.0015 * lev(st);
+    const c = st.W.C[st.lastIdx], p = st.W.C[st.lastIdx - 1];
+    // 밟고 지나간 캔들: 빨강(상승)이면 +, 파랑(하락)이면 − (공중으로 건너뛴 캔들은 영향 없음)
+    if (st.gnd && c !== null && c !== undefined && p !== null && p !== undefined) { const dl = Math.max(-40, Math.min(40, c - p)); if (Math.abs(dl) > 2) { const b = dl * 0.00025 * lev(st); g += b; ev && ev("candle", b); } }
+    st.ret += g;
+  }
   // 아이템
   for (let k = 0; k < st.W.items.length; k++) {
     const it = st.W.items[k]; if (st.got.has(k) || Math.abs(it.x - st.x) > 24) continue;
@@ -217,15 +224,16 @@ function puff(x, y, n, o = {}) { if (!JUICE) return; for (let i = 0; i < n; i++)
 function popText(txt, col, xFrac = .5, yFrac = .32) { if (!JUICE) return; const d = document.createElement("div"); d.className = "pop"; d.textContent = txt; d.style.color = col; d.style.left = xFrac * 100 + "%"; d.style.top = yFrac * 100 + "%"; $("game").appendChild(d); setTimeout(() => d.remove(), 950); }
 
 // ───────── 게임 진행 ─────────
-let st = null, mode = "menu", acc = 0, lastT = 0, jumpQ = false, camY = 0, runPhase = 0, mem = {}, auto = false, lastLev = 1, deadAt = 0;
+let candleAcc = 0, candleT = 0, st = null, mode = "menu", acc = 0, lastT = 0, jumpQ = false, camY = 0, runPhase = 0, mem = {}, auto = false, lastLev = 1, deadAt = 0;
 function emit(ev, data = {}) { try { if (parent !== window) parent.postMessage({ type: "nhc-game", game: "G003", ev, data }, "*"); } catch (e) {} }
 let lastInputEmit = 0;
 function onEvent(kind, a) {
   const sx = VW * .3, sy = () => VH * .58;
   if (kind === "jump") { SFX.jump(a - 1); fx.squash = -.25; puff(st.x, st.y, a === 2 ? 8 : 4, { angle: Math.PI / 2 + Math.PI, spread: 1.2, speed: 70, life: .35, r: 3 }); }
   if (kind === "land") { SFX.land(a); fx.squash = Math.min(.45, .12 + a / 400); puff(st.x, st.y, 4 + Math.min(14, a / 12), { angle: -Math.PI / 2, spread: 2.6, speed: 60 + a / 2, life: .5, r: 4, g: -60 }); if (a > 120) { fx.shake = Math.min(14, a / 14); buzz(15); } }
-  if (kind === "coin") { SFX.coin(st.streak); puff(a.x, a.y, 14, { speed: 160, life: .6, r: 3, cols: ["#26d07c", "#ffcc4d", "#fff"], sq: true }); popText("호재 +" + (2 * lev(st)) + "%", "#26d07c", .3, .4); }
-  if (kind === "bomb") { SFX.bomb(); fx.flash = { t: 0, dur: .3, col: "#ff4d5e" }; fx.shake = 10; puff(a.x, a.y, 18, { speed: 200, life: .6, r: 4, cols: ["#ff4d5e", "#ff9a3d", "#333"] }); popText("악재 -15%", "#ff4d5e", .3, .4); }
+  if (kind === "candle") { candleAcc += a; if (a > 0) beep(1500 + Math.random() * 200, .025, "square", .018); else beep(420 - Math.random() * 60, .04, "triangle", .03); return; }
+  if (kind === "coin") { SFX.coin(st.streak); puff(a.x, a.y, 14, { speed: 160, life: .6, r: 3, cols: [UP, "#ffcc4d", "#fff"], sq: true }); popText("호재 +" + (2 * lev(st)) + "%", UP, .3, .4); }
+  if (kind === "bomb") { SFX.bomb(); fx.flash = { t: 0, dur: .3, col: DN }; fx.shake = 10; puff(a.x, a.y, 18, { speed: 200, life: .6, r: 4, cols: [DN, "#9cc3ff", "#333"] }); popText("악재 -15%", DN, .3, .4); }
   if (kind === "dead") die(a);
 }
 function startRun(seed) {
@@ -234,7 +242,7 @@ function startRun(seed) {
   save.runs++; store.set(save); emit("level_start", { level: save.runs }); hud(true);
 }
 function die(why) {
-  mode = "dying"; deadAt = performance.now(); fx.slow = .22; SFX.dead(); fx.shake = 16; fx.flash = { t: 0, dur: .6, col: "#ff2b3b" };
+  mode = "dying"; deadAt = performance.now(); fx.slow = .22; SFX.dead(); fx.shake = 16; fx.flash = { t: 0, dur: .6, col: "#ff3b2f" };
   puff(st.x, st.y + 10, 30, { speed: 220, life: .9, r: 4, cols: ["#ff4d5e", "#ffcc4d", "#e8a33d"], g: 300 });
   setTimeout(() => $("stamp").classList.add("on"), 250);
   const before = save.total; save.total = Math.max(1e5, Math.round(save.total * .9)); store.set(save);
@@ -248,14 +256,14 @@ function cashOut() {
   save.total = Math.max(1e5, Math.round(save.total * (1 + st.ret))); save.cashouts++;
   const best = st.ret > save.bestRet; if (best) save.bestRet = st.ret; save.bestLev = Math.max(save.bestLev, lev(st)); store.set(save);
   SFX.cash(); buzz([20, 40, 20]); fx.flash = { t: 0, dur: .35, col: "#ffe28a" };
-  for (let i = 0; i < 5; i++) setTimeout(() => puff(st.x + (Math.random() - .3) * 300, st.y + 340, 14, { angle: Math.PI / 2 * 3, spread: 1, speed: 40, g: -500, life: 1.6, r: 5, cols: ["#ffcc4d", "#ffe28a", "#26d07c", "#fff"], sq: true }), i * 120);
+  for (let i = 0; i < 5; i++) setTimeout(() => puff(st.x + (Math.random() - .3) * 300, st.y + 340, 14, { angle: Math.PI / 2 * 3, spread: 1, speed: 40, g: -500, life: 1.6, r: 5, cols: ["#ffcc4d", "#ffe28a", UP, "#fff"], sq: true }), i * 120);
   $("cash").style.display = "none"; emit("level_clear", { ret: st.ret, lev: lev(st) });
   setTimeout(() => result(true, best, before, gain), 900);
 }
 function result(ok, extra, before, gain) {
   mode = "over"; $("tip").style.display = "none";
   const box = ok ? `<h2 style="color:var(--up)">익절!</h2><div class="big" style="color:var(--up)">${pct(st.ret)}</div>${extra ? '<p style="color:var(--acc);font-weight:800">🏆 최고 수익률 갱신!</p>' : ""}`
-    : `<h2 style="color:var(--dn)">강제 청산</h2><div class="big" style="color:var(--dn)">${pct(st.ret)} → 0%</div><p>${extra === "wall" ? "급등 벽에 부딪혔어요" : "상장폐지 구멍에 빠졌어요"} · 수수료 -10%</p>`;
+    : `<h2 style="color:var(--danger)">강제 청산</h2><div class="big" style="color:var(--danger)">${pct(st.ret)} → 0%</div><p>${extra === "wall" ? "급등 벽에 부딪혔어요" : "상장폐지 구멍에 빠졌어요"} · 수수료 -10%</p>`;
   $("box").innerHTML = `${box}
     <div class="grid"><div>계좌<b>${fmtWon(save.total)}</b></div><div>변화<b style="color:${save.total >= before ? "var(--up)" : "var(--dn)"}">${save.total >= before ? "+" : ""}${fmtWon(save.total - before)}</b></div>
     <div>최고 레버리지<b>x${lev(st)} / 기록 x${save.bestLev}</b></div><div>최고 수익률<b>${pct(save.bestRet)}</b></div></div>
@@ -266,7 +274,7 @@ function result(ok, extra, before, gain) {
 }
 function menu() {
   $("box").innerHTML = `<h1>📉 폭락 러너</h1><p>차트가 곧 지형. 개미가 달린다.</p>
-    <ul><li><b>탭</b> = 점프 · 공중에서 한 번 더 = 2단 점프</li><li>🟩 <b>급등 벽</b>은 넘고, 🕳 <b>상장폐지 구멍</b>은 건너뛰기</li><li>📈 호재 먹기 · 📉 악재 피하기</li><li>8초마다 <b>레버리지 +1</b> (빨라지고 더 번다)</li><li>💰 <b>익절</b>로 수익 확정 · 청산되면 이번 판 수익 0</li></ul>
+    <ul><li><b>탭</b> = 점프 · 공중에서 한 번 더 = 2단 점프</li><li>🟥 <b>빨간 캔들</b>을 밟으면 수익률 +, 🟦 <b>파란 캔들</b>은 − (점프로 건너뛰면 영향 없음)</li><li><b>급등 벽</b>은 넘고, 🕳 <b>상장폐지 구멍</b>은 건너뛰기</li><li>📈 호재 먹기 · 📉 악재 피하기</li><li>8초마다 <b>레버리지 +1</b> (빨라지고 더 번다)</li><li>💰 <b>익절</b>로 수익 확정 · 청산되면 이번 판 수익 0</li></ul>
     <div class="grid"><div>계좌<b>${fmtWon(save.total)}</b></div><div>칭호<b>${titleOf(save.total)}</b></div><div>최고 수익률<b>${pct(save.bestRet)}</b></div><div>최고 레버리지<b>x${save.bestLev}</b></div></div>
     <button class="btn" id="go">시작</button><div class="disc">가상 차트 · 투자와 무관</div>`;
   $("ov").classList.add("on"); $("go").onclick = () => startRun();
@@ -316,16 +324,16 @@ function draw(dt) {
     const X = sx(i * CW);
     if (top === null || top === undefined) {
       // 상장폐지 구멍 표시
-      ctx.fillStyle = "rgba(255,77,94,.06)"; ctx.fillRect(X, sy(st.lastG + 40), CW * SC, H);
-      if (C[i - 1] !== null && C[i - 1] !== undefined) { ctx.fillStyle = "#ff4d5e"; ctx.font = `800 ${11}px -apple-system,sans-serif`; ctx.textAlign = "left"; ctx.fillText("상폐", X + 3, sy(C[i - 1]) + 18); }
+      ctx.fillStyle = "rgba(255,59,47,.07)"; ctx.fillRect(X, sy(st.lastG + 40), CW * SC, H);
+      if (C[i - 1] !== null && C[i - 1] !== undefined) { ctx.fillStyle = "#ff3b2f"; ctx.font = `800 ${11}px -apple-system,sans-serif`; ctx.textAlign = "left"; ctx.fillText("상폐", X + 3, sy(C[i - 1]) + 18); }
       continue;
     }
     const p = prev === null ? top : prev, up = top > p + 2, dn = top < p - 2;
     // 땅덩어리
-    const grd = ctx.createLinearGradient(0, sy(top), 0, sy(top) + 260 * SC); grd.addColorStop(0, up ? "rgba(38,208,124,.22)" : dn ? "rgba(255,77,94,.2)" : "rgba(120,135,165,.16)"); grd.addColorStop(1, "rgba(18,23,34,0)");
+    const grd = ctx.createLinearGradient(0, sy(top), 0, sy(top) + 260 * SC); grd.addColorStop(0, up ? "rgba(255,77,94,.2)" : dn ? "rgba(61,139,255,.2)" : "rgba(120,135,165,.16)"); grd.addColorStop(1, "rgba(18,23,34,0)");
     ctx.fillStyle = grd; ctx.fillRect(X, sy(top), CW * SC + .5, 260 * SC);
     // 캔들 몸통 (이전 높이 → 이번 높이)
-    const col = up ? "#26d07c" : dn ? "#ff4d5e" : "#7d879c";
+    const col = up ? UP : dn ? DN : "#7d879c";
     const yA = sy(Math.max(top, p)), yB = sy(Math.min(top, p)), bw = (CW - 8) * SC;
     ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X + CW * SC / 2, yA - 6 * SC); ctx.lineTo(X + CW * SC / 2, yB + 6 * SC); ctx.stroke();
     ctx.fillStyle = col; ctx.fillRect(X + 4 * SC, yA, bw, Math.max(3, yB - yA));
@@ -337,7 +345,7 @@ function draw(dt) {
   st.W.items.forEach((it, k) => {
     if (st.got.has(k) || it.x < camX - 40 || it.x > camX + W / SC + 40) return;
     const X = sx(it.x), Y = sy(it.y) + Math.sin(T * 4 + k) * 3, R = 11 * SC;
-    ctx.fillStyle = it.kind === "up" ? "#26d07c" : "#ff4d5e"; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12;
+    ctx.fillStyle = it.kind === "up" ? UP : DN; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12;
     ctx.beginPath(); ctx.arc(X, Y, R, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
     ctx.fillStyle = "#0d1016"; ctx.beginPath();
     if (it.kind === "up") { ctx.moveTo(X, Y - R * .55); ctx.lineTo(X + R * .5, Y + R * .35); ctx.lineTo(X - R * .5, Y + R * .35); } else { ctx.moveTo(X, Y + R * .55); ctx.lineTo(X + R * .5, Y - R * .35); ctx.lineTo(X - R * .5, Y - R * .35); }
@@ -391,6 +399,8 @@ function loop(t) {
     const L = lev(st);
     if (L > lastLev) { lastLev = L; SFX.lev(L); fx.edge = .9; const el = $("lev"); el.classList.add("pop"); setTimeout(() => el.classList.remove("pop"), 160); popText("x" + L + "!", "#ffcc4d", .78, .2); }
     runPhase += dt * speed(st) / 14;
+    candleT += dt;
+    if (candleT > .45) { candleT = 0; if (Math.abs(candleAcc) >= .0015) { popText((candleAcc > 0 ? "+" : "") + (candleAcc * 100).toFixed(1) + "%", candleAcc > 0 ? UP : DN, .34, .5); const el = $("ret"); el.style.transform = "scale(1.08)"; setTimeout(() => el.style.transform = "", 120); } candleAcc = 0; }
     hud();
   }
   // 손맛 갱신

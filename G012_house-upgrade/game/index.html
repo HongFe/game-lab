@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#16213a">
+<title>집 강화하기</title>
+<style>
+:root{--bg:#16213a;--tx:#f5f7ff;--sub:#a9b4d0;--acc:#ffd166;--ok:#4ade80;--bad:#ff6b6b;--blue:#60a5fa;--panel:rgba(255,255,255,.07);--line:rgba(255,255,255,.13)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+#app{position:fixed;inset:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:9px;padding:calc(10px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom))}
+.hud{display:flex;gap:6px}
+.hud div{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px 8px;text-align:center;font-size:10.5px;color:var(--sub)}
+.hud b{display:block;font:900 17px ui-monospace,Menlo,monospace;color:var(--tx);white-space:nowrap}
+.hud .money b{color:var(--acc)}
+.scene{position:relative;flex:1;min-height:0;border-radius:22px;overflow:hidden;background:linear-gradient(#6aa8ff,#bfe0ff 70%,#7fc47f 70%,#5fa85f);box-shadow:inset 0 -6px 0 rgba(0,0,0,.12);transition:background 1s}
+.scene.night{background:linear-gradient(#0b1430,#26345e 70%,#2f5a3a 70%,#24452d)}
+.sun{position:absolute;right:18px;top:16px;width:46px;height:46px;border-radius:50%;background:radial-gradient(#fff6c2,#ffd166);box-shadow:0 0 30px #ffd16699}
+.cloud{position:absolute;font-size:34px;opacity:.85;animation:drift 26s linear infinite}
+@keyframes drift{from{transform:translateX(-80px)}to{transform:translateX(520px)}}
+.house{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);font-size:118px;line-height:1;filter:drop-shadow(0 10px 8px rgba(0,0,0,.25));transition:transform .2s}
+.house.up{animation:hup .7s cubic-bezier(.3,1.6,.6,1)}
+@keyframes hup{0%{transform:translateX(-50%) scale(.3) translateY(60px)}100%{transform:translateX(-50%) scale(1)}}
+.house.crack{animation:crack .5s}
+@keyframes crack{20%{transform:translateX(calc(-50% - 10px)) rotate(-4deg)}40%{transform:translateX(calc(-50% + 10px)) rotate(4deg)}60%{transform:translateX(calc(-50% - 6px))}80%{transform:translateX(calc(-50% + 4px))}}
+.name{position:absolute;left:0;right:0;bottom:10%;text-align:center;font:900 22px -apple-system,sans-serif;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.45)}
+.name small{display:block;font-size:12px;font-weight:700;opacity:.9}
+.lvl{position:absolute;left:12px;top:12px;background:rgba(0,0,0,.35);border-radius:999px;padding:4px 10px;font:900 13px ui-monospace,Menlo,monospace}
+.truck{position:absolute;bottom:18%;left:-90px;font-size:56px;display:none}
+.truck.go{display:block;animation:truck 1.6s linear forwards}
+@keyframes truck{to{left:110%}}
+.odds{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.odds b{font:900 22px ui-monospace,Menlo,monospace;color:var(--ok)}
+.odds .nx{font-size:12px;color:var(--sub);text-align:right}
+.odds .nx span{font-size:22px;vertical-align:middle}
+.dex{display:flex;gap:3px;justify-content:center;font-size:17px;flex-wrap:wrap}
+.dex span{filter:grayscale(1) brightness(.5);opacity:.6} .dex span.got{filter:none;opacity:1}
+.btns{display:flex;gap:10px}
+.btns button{flex:1;border:0;border-radius:18px;padding:14px 0;font:900 17px -apple-system,sans-serif;cursor:pointer;touch-action:manipulation}
+.btns small{display:block;font-size:12px;font-weight:700;opacity:.85;margin-top:2px}
+#work{background:#334155;color:#fff;box-shadow:0 5px 0 #1e293b}
+#up{background:linear-gradient(#ffe08a,#ffb703);color:#3b2a00;box-shadow:0 5px 0 #b07d00;flex:1.25}
+.btns button:active{transform:translateY(4px);box-shadow:none}
+.btns button:disabled{filter:grayscale(.8) brightness(.65)}
+.roll{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;background:rgba(5,8,20,.72);z-index:5;gap:10px}
+.roll.on{display:flex}
+.roll .g{width:min(300px,80vw);height:18px;border-radius:999px;background:#1f2a44;overflow:hidden;position:relative}
+.roll .g i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ffd166,#ff8c42);width:0}
+.roll .g em{position:absolute;top:0;bottom:0;width:3px;background:#fff}
+.roll .num{font:900 64px ui-monospace,Menlo,monospace}
+.roll .msg{font:900 26px -apple-system,sans-serif;min-height:34px}
+.roll .sub{font-size:13px;color:var(--sub);min-height:18px}
+.coin{position:fixed;font:900 16px -apple-system,sans-serif;color:var(--acc);pointer-events:none;animation:coin .8s ease-out forwards;z-index:4;text-shadow:0 2px 4px #000}
+@keyframes coin{to{transform:translateY(-60px);opacity:0}}
+.conf{position:fixed;width:9px;height:6px;z-index:6;pointer-events:none;animation:conf 1.4s ease-out forwards}
+@keyframes conf{to{transform:translate(var(--dx),var(--dy)) rotate(720deg);opacity:0}}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(5,8,20,.7);padding:18px;z-index:7}
+.ov.on{display:flex}
+.box{background:#1f2a44;border:1px solid var(--line);border-radius:18px;padding:18px;width:min(360px,100%);text-align:center}
+.box h1{margin:0;font-size:26px} .box h2{margin:0 0 6px}
+.box p{color:var(--sub);font-size:13.5px;line-height:1.6;margin:6px 0}
+.box ul{text-align:left;font-size:13px;line-height:1.75;padding-left:18px}
+.box button{width:100%;border:0;border-radius:12px;padding:12px;font:900 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:var(--acc);color:#3b2a00}
+.box button.sec{background:#334155;color:#fff}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:6;transition:opacity .35s}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hud"><div class="money">돈<b id="money">0</b></div><div>월세 수입<b id="inc">0</b></div><div>시도<b id="tries">0</b></div></div>
+  <div class="scene" id="scene"><div class="sun"></div><div class="cloud" style="top:12%">☁️</div><div class="cloud" style="top:26%;animation-delay:-12s;font-size:26px">☁️</div>
+    <div class="lvl" id="lvl">+0</div><div class="house" id="house">🛏️</div><div class="truck" id="truck">🚚💨</div><div class="name" id="name"></div></div>
+  <div class="odds"><div>성공 확률<br><b id="p">95%</b></div><div style="font-size:11.5px;color:var(--sub);flex:1" id="rule"></div><div class="nx">다음<br><span id="next"></span></div></div>
+  <div class="dex" id="dex"></div>
+  <div class="btns"><button id="work">🔨 알바<small id="workAmt">+1만</small></button><button id="up">✨ 강화<small id="cost">-5만</small></button></div>
+</div>
+<div class="roll" id="roll"><div class="msg" id="rmsg">두근두근…</div><div class="num" id="rnum">0</div><div class="g"><i id="rbar"></i><em id="rline"></em></div><div class="sub" id="rsub"></div></div>
+<div class="flash" id="flash"></div>
+<div class="ov" id="ov"><div class="box" id="box"></div></div>
+<script>
+"use strict";
+// ───────── 데이터 (확률은 화면에 공개한다 · 실제 돈·결제 없음) ─────────
+const HOMES = [["고시원", "🛏️"], ["옥탑방", "🏚️"], ["반지하", "🪟"], ["원룸", "🏠"], ["투룸", "🏡"], ["오피스텔", "🏢"], ["빌라", "🏘️"], ["신축 빌라", "🏫"], ["구축 아파트", "🏬"], ["역세권 아파트", "🚉"], ["신축 아파트", "🏙️"], ["한강뷰", "🌉"], ["타운하우스", "🛖"], ["단독주택", "🏰"], ["펜트하우스", "🌆"], ["달 기지", "🌙"]];
+const P = [.95, .9, .85, .8, .75, .7, .65, .6, .55, .5, .47, .44, .4, .37, .33];
+const GOAL = 14, DROP = .4, C0 = 5, CG = 1.55, I0 = .6, IG = 1.4;
+const cost = s => Math.round(C0 * Math.pow(CG, s)), inc = s => I0 * Math.pow(IG, s), tapAmt = s => Math.round((1 + s * .2) * 10) / 10;
+const $ = id => document.getElementById(id);
+const fmt = n => n >= 10000 ? (n / 10000).toFixed(n >= 100000 ? 0 : 1) + "억" : Math.floor(n).toLocaleString() + "만";
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const store = { get() { try { return JSON.parse(localStorage.getItem("g012") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g012", JSON.stringify(v)); } catch (e) {} } };
+let save = Object.assign({ best: 0, seen: [0], clears: 0, bestTries: 0, cur: null }, store.get());
+
+// ───────── 로직 (봇 공통) ─────────
+function newGame(seed) { return { s: 0, m: 15, tries: 0, R: rng(seed), t0: Date.now() }; }
+function attempt(G) {   // 반환 {ok, roll, need, from, to}
+  const from = G.s, need = Math.round(P[G.s] * 100), c = cost(G.s); if (G.m < c || G.s >= HOMES.length - 1) return null;
+  G.m -= c; G.tries++;
+  const roll = 1 + Math.floor(G.R() * 100), ok = roll <= need;
+  if (ok) G.s++; else if (G.s >= 4 && G.R() < DROP) G.s--;
+  return { ok, roll, need, from, to: G.s };
+}
+
+// ───────── 소리 ─────────
+let ac = null;
+function beep(f, d = .06, type = "square", v = .04, w = 0, f2) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + w, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {} }
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+const JUICE = !new URLSearchParams(location.search).has("nojuice");
+let workCombo = 0, workT = 0;
+const SFX = {
+  work() { const p = 1 + Math.min(workCombo, 20) * .03; beep(660 * p, .03, "square", .03); beep(990 * p, .04, "square", .02, .02); buzz(4); },
+  heart() { beep(70, .09, "sine", .14); beep(58, .09, "sine", .11, .15); },
+  tick(i) { beep(500 + i * 18, .02, "square", .02); },
+  ok(s) { [523, 659, 784, 1046, 1319].forEach((f, i) => beep(f * (1 + s * .02), .1, "square", .045, i * .06)); buzz([20, 30, 40]); },
+  stay() { beep(440, .12, "triangle", .05); beep(392, .16, "triangle", .05, .1); },
+  down() { beep(300, .35, "sawtooth", .05, 0, 120); buzz([50, 40, 50]); },
+  clear() { [523, 659, 784, 1046, 784, 1046, 1319, 1568].forEach((f, i) => beep(f, .14, "square", .05, i * .1)); },
+};
+function emit(ev, data = {}) { try { if (parent !== window) parent.postMessage({ type: "nhc-game", game: "G012", ev, data }, "*"); } catch (e) {} }
+let lastInputEmit = 0;
+addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastInputEmit > 4000) { lastInputEmit = t; emit("input"); } }, true);
+
+// ───────── 화면 ─────────
+let G = null, busy = false, auto = false;
+function render(anim) {
+  const s = G.s, h = HOMES[s];
+  $("house").textContent = h[1]; $("name").innerHTML = `${h[0]}<small>${s >= GOAL ? "목표 달성!" : `펜트하우스까지 ${GOAL - s}단계`}</small>`;
+  $("lvl").textContent = "+" + s; $("scene").classList.toggle("night", s >= 10);
+  if (anim) { const el = $("house"); el.classList.remove("up", "crack"); void el.offsetWidth; el.classList.add(anim); }
+  const last = s >= HOMES.length - 1;
+  $("p").textContent = last ? "-" : Math.round(P[s] * 100) + "%"; $("p").style.color = P[s] >= .7 ? "var(--ok)" : P[s] >= .45 ? "var(--acc)" : "var(--bad)";
+  $("rule").textContent = last ? "끝까지 왔어요!" : s < 4 ? "실패해도 그대로 (4단계 전까지)" : `실패하면 ${Math.round(DROP * 100)}% 확률로 한 단계 아래로 이사`;
+  $("next").textContent = last ? "🏁" : HOMES[s + 1][1];
+  $("dex").innerHTML = HOMES.map((x, i) => `<span class="${save.seen.includes(i) ? "got" : ""}" title="${x[0]}">${x[1]}</span>`).join("");
+  hud();
+}
+function hud() {
+  $("money").textContent = fmt(G.m); $("inc").textContent = "+" + (inc(G.s) >= 10 ? Math.round(inc(G.s)) : inc(G.s).toFixed(1)) + "만/초"; $("tries").textContent = G.tries;
+  const c = cost(G.s), last = G.s >= HOMES.length - 1;
+  $("cost").textContent = last ? "완료" : "-" + fmt(c); $("workAmt").textContent = "+" + tapAmt(G.s) + "만";
+  $("up").disabled = busy || last || G.m < c; $("work").disabled = busy;
+}
+function coinPop(x, y, txt) { if (!JUICE) return; const d = document.createElement("div"); d.className = "coin"; d.textContent = txt; d.style.left = x - 20 + "px"; d.style.top = y - 30 + "px"; document.body.appendChild(d); setTimeout(() => d.remove(), 820); }
+function confetti(n) { if (!JUICE) return; for (let i = 0; i < n; i++) { const c = document.createElement("div"); c.className = "conf"; c.style.background = ["#ffd166", "#4ade80", "#60a5fa", "#ff6b6b", "#fff"][i % 5]; c.style.left = "50%"; c.style.top = "40%"; c.style.setProperty("--dx", (Math.random() - .5) * 420 + "px"); c.style.setProperty("--dy", (Math.random() - .2) * 520 + "px"); document.body.appendChild(c); setTimeout(() => c.remove(), 1450); } }
+function flash() { if (!JUICE) return; const f = $("flash"); f.style.transition = "none"; f.style.opacity = .85; requestAnimationFrame(() => { f.style.transition = "opacity .4s"; f.style.opacity = 0; }); }
+function persist() { save.cur = { s: G.s, m: G.m, tries: G.tries }; store.set(save); }
+
+function work(e) {
+  if (busy) return; const a = tapAmt(G.s); G.m += a; workCombo = Date.now() - workT < 400 ? workCombo + 1 : 0; workT = Date.now(); SFX.work();
+  const r = (e && e.clientX !== undefined) ? { x: e.clientX, y: e.clientY } : (() => { const b = $("work").getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top }; })();
+  coinPop(r.x + (Math.random() - .5) * 30, r.y, "+" + a); hud();
+}
+function enhance() {
+  if (busy) return; const res = attempt(G); if (!res) return;
+  busy = true; hud(); const fast = auto ? .35 : 1;
+  const ro = $("roll"); ro.classList.add("on"); $("rmsg").textContent = `${HOMES[res.from][0]} → ${HOMES[res.from + 1][0]}`; $("rmsg").style.color = "#fff"; $("rsub").textContent = `성공 확률 ${res.need}% · 1~${res.need}이 나오면 성공`;
+  $("rline").style.left = res.need + "%"; $("rbar").style.width = "0"; $("rnum").textContent = "··"; $("rnum").style.color = "#fff";
+  const D = 1100 * fast, t0 = performance.now(); let lastI = -1;
+  if (JUICE) SFX.heart();
+  (function spin(t) {
+    const u = Math.min(1, (t - t0) / D), shown = u < 1 ? 1 + Math.floor(Math.random() * 100) : res.roll;
+    $("rnum").textContent = shown; $("rbar").style.width = (u < 1 ? u * 100 : res.roll) + "%";
+    const i = Math.floor(u * 14); if (i !== lastI && JUICE) { lastI = i; SFX.tick(i); if (i === 7) SFX.heart(); }
+    if (u < 1) { requestAnimationFrame(spin); return; }
+    const near = !res.ok && res.roll - res.need <= 5;
+    if (res.ok) { $("rmsg").textContent = "강화 성공!"; $("rmsg").style.color = "var(--ok)"; $("rnum").style.color = "var(--ok)"; SFX.ok(res.to); }
+    else if (res.to < res.from) { $("rmsg").textContent = "실패… 이사 갑니다"; $("rmsg").style.color = "var(--bad)"; $("rnum").style.color = "var(--bad)"; SFX.down(); }
+    else { $("rmsg").textContent = "실패! 그래도 그대로"; $("rmsg").style.color = "var(--acc)"; $("rnum").style.color = "var(--acc)"; SFX.stay(); }
+    $("rsub").textContent = `나온 수 ${res.roll} / 필요 ${res.need} 이하${near ? " — 아깝다!" : ""}`;
+    setTimeout(() => {
+      ro.classList.remove("on"); busy = false;
+      if (res.ok) {
+        if (!save.seen.includes(res.to)) save.seen.push(res.to);
+        save.best = Math.max(save.best, res.to); flash(); confetti(res.to >= 10 ? 60 : 24); render("up"); emit("level_clear", { level: res.to, tries: G.tries });
+        if (res.to === GOAL) setTimeout(cleared, 700);
+      } else { render("crack"); if (res.to < res.from && JUICE) { const tr = $("truck"); tr.classList.remove("go"); void tr.offsetWidth; tr.classList.add("go"); } emit("fail", { level: res.from, roll: res.roll }); }
+      persist();
+    }, 900 * fast);
+  })(t0);
+}
+function cleared() {
+  save.clears++; if (!save.bestTries || G.tries < save.bestTries) save.bestTries = G.tries; store.set(save); SFX.clear(); confetti(120);
+  const min = Math.round((Date.now() - G.t0) / 6000) / 10;
+  $("box").innerHTML = `<h2>🌆 펜트하우스 입성!</h2><p>강화 ${G.tries}번 · ${min}분</p><p>최소 시도 기록: ${save.bestTries}번 · 클리어 ${save.clears}회</p><p style="font-size:12.5px">하나 더 남았어요… 🌙 (확률 33%)</p>
+    <button id="cont">계속 강화하기</button><button class="sec" id="newg">처음부터 다시</button>`;
+  $("ov").classList.add("on"); $("cont").onclick = () => $("ov").classList.remove("on"); $("newg").onclick = () => { newRun(); $("ov").classList.remove("on"); };
+}
+function newRun(seed) { G = newGame(seed ?? Date.now() % 1e6); save.cur = null; render(); persist(); emit("level_start", { level: 1 }); }
+function menu() {
+  const c = save.cur;
+  $("box").innerHTML = `<h1>🏠 집 강화하기</h1><ul><li><b>✨ 강화</b>: 돈을 내고 확률에 걸어 한 단계 위 집으로</li><li>실패하면 그대로이거나(초반), 한 단계 아래로 이사(4단계부터)</li><li><b>🔨 알바</b>를 탭하거나, 가만있어도 <b>월세 수입</b>이 들어와요 (좋은 집일수록 많이)</li><li>목표: 🌆 펜트하우스 (확률은 전부 공개)</li></ul>
+    <p style="font-size:22px;letter-spacing:2px">${HOMES.slice(0, 15).map(h => h[1]).join("")}</p>
+    ${c ? `<button id="resume">이어 하기 (${HOMES[c.s][0]})</button><button class="sec" id="go">처음부터</button>` : '<button id="go">시작</button>'}<p style="font-size:11px">실제 돈·결제 없음 · 게임 속 숫자예요</p>`;
+  $("ov").classList.add("on");
+  $("go").onclick = () => { newRun(); $("ov").classList.remove("on"); };
+  if (c) $("resume").onclick = () => { G = newGame(Date.now() % 1e6); Object.assign(G, c); render(); $("ov").classList.remove("on"); emit("level_start", { level: G.s + 1 }); };
+}
+
+$("work").addEventListener("pointerdown", e => { e.preventDefault(); if (!auto) work(e); });
+$("up").addEventListener("pointerdown", e => { e.preventDefault(); if (!auto) enhance(); });
+addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); work(); } if (e.code === "Enter") enhance(); });
+let lastT = performance.now(), saveT = 0;
+function loop(t) {
+  const dt = Math.min(.25, (t - lastT) / 1000); lastT = t;
+  if (G) {
+    G.m += inc(G.s) * dt; saveT += dt;
+    if (auto && !busy) { if (G.m >= cost(G.s) && G.s < HOMES.length - 1) enhance(); else if (Math.random() < .3) work(); }
+    if (saveT > 2) { saveT = 0; persist(); }
+    hud();
+  }
+  requestAnimationFrame(loop);
+}
+
+// ───────── 자체 검사: 봇(돈 있으면 강화, 없으면 알바 · 초당 4번)이 펜트하우스까지 가는지, 너무 빠르지 않은지 ─────────
+const q = new URLSearchParams(location.search);
+if (q.has("selftest")) {
+  const rows = []; let ok = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const g = newGame(seed); let act = 0;
+    while (g.s < GOAL && act < 100000) { act++; if (g.m >= cost(g.s)) attempt(g); else g.m += tapAmt(g.s); g.m += inc(g.s) * .25; }
+    const min = act * .25 / 60, pass = g.s >= GOAL && min >= 1.5 && min <= 40; if (pass) ok++;
+    rows.push(`${seed}\t${pass ? "OK" : "FAIL"}\t도달 ${HOMES[g.s][0]}\t강화 ${g.tries}번\t약 ${min.toFixed(1)}분(초당 4탭 기준)`);
+  }
+  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px">${rows.join("\n")}</pre>`);
+  document.title = `SELFTEST ${ok}/20`;
+} else if (q.has("autoplay")) { auto = true; G = newGame(Number(q.get("autoplay")) || 1); G.m = 60; render(); }
+else { G = newGame(Date.now() % 1e6); render(); menu(); }
+window.__g012 = { newGame, attempt, cost, inc };
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
