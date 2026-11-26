@@ -44,7 +44,7 @@ window.CATALOG = [
   "color": "#3cc98a",
   "icon": "📉",
   "version": "2026-11-26 20:23",
-  "note": "G003 2차 QA 결과",
+  "note": "FOMC 인상·블랙스완 손실 정상화, 상점 🏅 배지 화폐 분리, 황소…",
   "rating": null,
   "hot": true
  },
