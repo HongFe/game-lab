@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>NHC POCKET 관리자</title>
+<style>
+:root{--bg:#14131a;--panel:#1d1b26;--tx:#f0eef6;--sub:#9c98ad;--line:#302d3c;--acc:#ffcc4d;--ok:#5fd39a;--bad:#ff6b6b;--mid:#f5b54a;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;padding:18px 16px 40px}
+main{max-width:1180px;margin:0 auto}
+h1{margin:0;font-size:22px} h2{font-size:16px;margin:26px 0 8px;display:flex;gap:8px;align-items:baseline} h2 small{color:var(--sub);font-size:12px;font-weight:600}
+.sub{color:var(--sub);font-size:13px;margin:4px 0 0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+button{cursor:pointer;font-weight:700} button.pri{background:var(--acc);color:#1b1b1b;border-color:var(--acc)}
+textarea{width:100%;min-height:120px;font-size:12.5px}
+.chip{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800;background:#2a2735}
+.games{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.card h3{margin:0 0 8px;font-size:15px;display:flex;justify-content:space-between;gap:8px}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11.5px;color:var(--sub)}
+.nums b{display:block;font:800 17px var(--mono);color:var(--tx)}
+.v-ok{color:var(--ok)} .v-bad{color:var(--bad)} .v-mid{color:var(--mid)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--sub);font-size:11.5px;position:sticky;top:0;background:var(--panel)}
+td.m{font-family:var(--mono);white-space:nowrap}
+.note{font-size:12px;color:var(--sub);line-height:1.6}
+.login{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;display:none}
+.login.on{display:block} .login input{width:220px}
+</style>
+</head>
+<body>
+<main>
+  <h1>NHC POCKET 관리자</h1>
+  <p class="sub" id="src"></p>
+  <div class="login" id="login">
+    <b>관리자 로그인</b> <span class="note">Supabase에 만든 관리자 계정(이메일·비밀번호). 테스터는 쓰기만 되고, 읽기는 로그인한 관리자만 됩니다.</span>
+    <div class="bar"><input id="em" type="email" placeholder="이메일" autocomplete="username"><input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password"><button class="pri" id="lg">로그인</button></div>
+  </div>
+  <div class="bar">
+    <select id="fGame"><option value="">모든 게임</option></select>
+    <select id="fTester"><option value="">모든 테스터</option></select>
+    <button id="reload">새로고침</button><button id="exJson">JSON 내보내기</button><button id="exCsv">CSV 내보내기</button>
+  </div>
+
+  <h2>게임별 판정 <small>테스터 5명부터 판정 · 계속: 5명 중 3명 '한 판 더' / 그만: 1명 이하</small></h2>
+  <div class="games" id="games"></div>
+
+  <h2>테스터 <small id="tCount"></small></h2>
+  <div class="tw"><table id="testers"></table></div>
+
+  <h2>의견 <small id="fCount"></small></h2>
+  <div class="tw"><table id="fb"></table></div>
+
+  <h2>비교 투표 <small id="vCount"></small></h2>
+  <div class="tw"><table id="votes"></table></div>
+
+  <h2>카톡으로 받은 피드백 붙여넣기 <small>공유 DB가 없을 때: 테스터가 보낸 '[NHC POCKET 피드백]' 글을 여러 개 한꺼번에 붙여 넣으면 표에 합쳐집니다 (이 브라우저에 저장)</small></h2>
+  <textarea id="paste" placeholder="[NHC POCKET 피드백] G001 이중주차 탈출 (빌드 …)&#10;테스터: T-ABCDE (닉네임)&#10;좋아요: ♥ / 별점: ★4 / 한 판 더: 예 / 바로 이해: 예&#10;플레이: 4분 12초 · 클리어 3 · 실패 1 · mobile&#10;의견: …"></textarea>
+  <div class="bar"><button class="pri" id="imp">가져오기</button><button id="clrImp">가져온 것 지우기</button><span class="note" id="impMsg"></span></div>
+</main>
+<script src="config.js"></script>
+<script src="catalog.js"></script>
+<script>
+"use strict";
+const CFG = window.ARCADE_CONFIG || {}, CAT = window.CATALOG || [];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const LS = { get(k, d) { try { const v = localStorage.getItem("nhcpocket_" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("nhcpocket_" + k, JSON.stringify(v)); } catch (e) {} } };
+const remote = CFG.feedback === "supabase" && CFG.supabaseUrl && CFG.supabaseAnonKey;
+let token = sessionStorage.getItem("nhc_admin_token") || "";
+let DATA = { feedback: [], compare_votes: [], sessions: [] };
+
+async function login() {
+  const r = await fetch(`${CFG.supabaseUrl}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: CFG.supabaseAnonKey, "Content-Type": "application/json" }, body: JSON.stringify({ email: $("em").value, password: $("pw").value }) });
+  const j = await r.json(); if (!r.ok) { alertMsg("로그인 실패: " + (j.error_description || j.msg || r.status)); return; }
+  token = j.access_token; try { sessionStorage.setItem("nhc_admin_token", token); } catch (e) {} load();
+}
+function alertMsg(m) { $("src").textContent = m; }
+async function fetchTable(t) {
+  const r = await fetch(`${CFG.supabaseUrl}/rest/v1/${t}?select=*&order=created_at.desc&limit=5000`, { headers: { apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + token } });
+  if (r.status === 401 || r.status === 403) throw new Error("auth"); return r.ok ? r.json() : [];
+}
+async function load() {
+  if (remote) {
+    if (!token) { $("login").classList.add("on"); alertMsg("공유 DB 모드 · 로그인이 필요합니다"); return; }
+    try { DATA.feedback = await fetchTable("feedback"); DATA.compare_votes = await fetchTable("compare_votes"); DATA.sessions = await fetchTable("sessions"); $("login").classList.remove("on"); alertMsg(`공유 DB (${CFG.supabaseUrl.replace("https://", "")}) · 로그인됨`); }
+    catch (e) { token = ""; try { sessionStorage.removeItem("nhc_admin_token"); } catch (x) {} $("login").classList.add("on"); alertMsg("세션 만료 · 다시 로그인하세요"); return; }
+  } else {
+    DATA.feedback = LS.get("feedback", []).concat(LS.get("admin_imported", [])); DATA.compare_votes = LS.get("compare_votes", []).concat(LS.get("admin_imported_votes", [])); DATA.sessions = LS.get("sessions", []);
+    alertMsg("이 기기 모드 (공유 DB 미연결) · 이 브라우저에 있는 기록 + 붙여 넣어 가져온 피드백을 보여 줍니다. config.js 에 Supabase 키를 넣으면 모든 테스터 기록이 모입니다.");
+  }
+  render();
+}
+const med = a => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const pct = (a, k) => { const v = a.filter(x => x[k] === true || x[k] === false); return v.length ? Math.round(100 * v.filter(x => x[k]).length / v.length) + "%" : "-"; };
+const mins = s => s ? (Math.round(s / 6) / 10) + "분" : "-";
+const yn = v => v === true ? "예" : v === false ? "아니오" : "-";
+function render() {
+  const fg = $("fGame").value, ft = $("fTester").value;
+  const games = [...new Set(CAT.map(g => g.id).concat(DATA.feedback.map(f => f.game_id), DATA.sessions.map(s => s.game_id)))].sort();
+  const testers = [...new Set(DATA.feedback.map(f => f.anon_id).concat(DATA.sessions.map(s => s.anon_id)))].filter(Boolean).sort();
+  const fill = (el, list, label, cur) => { el.innerHTML = `<option value="">${label}</option>` + list.map(x => `<option${x === cur ? " selected" : ""}>${esc(x)}</option>`).join(""); };
+  fill($("fGame"), games, "모든 게임", fg); fill($("fTester"), testers, "모든 테스터", ft);
+  const F = DATA.feedback.filter(f => (!fg || f.game_id === fg) && (!ft || f.anon_id === ft));
+  const SS = DATA.sessions.filter(s => (!fg || s.game_id === fg) && (!ft || s.anon_id === ft));
+  // 게임별 카드
+  $("games").innerHTML = games.filter(g => !fg || g === fg).map(id => {
+    const g = CAT.find(c => c.id === id) || { id, title: "", icon: "🎮" };
+    const a = DATA.feedback.filter(f => f.game_id === id), ses = DATA.sessions.filter(s => s.game_id === id);
+    const T = new Set(a.map(f => f.anon_id).concat(ses.map(s => s.anon_id))).size;
+    const againT = new Set(a.filter(f => f.again === true).map(f => f.anon_id)).size;
+    const rs = a.filter(f => f.rating).map(f => f.rating);
+    const perT = {}; ses.forEach(s => perT[s.anon_id] = (perT[s.anon_id] || 0) + (s.play_seconds || 0)); a.forEach(f => { if (!(f.anon_id in perT)) perT[f.anon_id] = f.play_seconds || 0; });
+    const replayT = Object.keys(perT).filter(t => ses.filter(s => s.anon_id === t).length >= 2).length;
+    const v = T >= 5 ? (againT >= 3 || med(Object.values(perT)) >= 600 ? ["계속할 신호", "v-ok"] : againT <= 1 ? ["그만둘 신호", "v-bad"] : ["애매 → 폐기 권장", "v-mid"]) : [`테스터 ${T}/5`, ""];
+    return `<div class="card"><h3><span>${esc(g.icon)} ${esc(id)} ${esc(g.title)}</span><span class="chip ${v[1]}">${v[0]}</span></h3>
+      <div class="nums"><div>테스터<b>${T}</b></div><div>한 판 더(사람)<b>${againT}</b></div><div>다시 들어옴<b>${replayT}</b></div>
+      <div>★ 평균<b>${rs.length ? (rs.reduce((x, y) => x + y, 0) / rs.length).toFixed(1) : "-"}</b></div><div>바로 이해<b>${pct(a, "understood")}</b></div><div>1인 시간 중앙값<b>${mins(med(Object.values(perT)))}</b></div></div></div>`;
+  }).join("") || '<p class="note">아직 데이터가 없습니다</p>';
+  // 테스터 표
+  const tRows = testers.filter(t => !ft || t === ft).map(t => {
+    const ss = DATA.sessions.filter(s => s.anon_id === t), ff = DATA.feedback.filter(f => f.anon_id === t);
+    const nick = (ff.find(f => f.tester) || ss.find(s => s.tester) || {}).tester || "";
+    const times = ss.concat(ff).map(x => x.created_at).filter(Boolean).sort();
+    const gs = [...new Set(ss.map(s => s.game_id).concat(ff.map(f => f.game_id)))];
+    return `<tr><td class="m">${esc(t)}</td><td>${esc(nick)}</td><td class="m">${ss.length}</td><td class="m">${mins(ss.reduce((x, s) => x + (s.play_seconds || 0), 0))}</td><td>${esc(gs.join(", "))}</td><td class="m">${ff.length}</td><td class="m">${esc((times[0] || "").slice(0, 16).replace("T", " "))}</td><td class="m">${esc((times[times.length - 1] || "").slice(0, 16).replace("T", " "))}</td></tr>`;
+  });
+  $("tCount").textContent = `${tRows.length}명`;
+  $("testers").innerHTML = `<tr><th>테스터 번호</th><th>닉네임</th><th>플레이</th><th>총 시간</th><th>한 게임</th><th>의견</th><th>처음</th><th>최근</th></tr>` + tRows.join("");
+  // 의견 표
+  $("fCount").textContent = `${F.length}건`;
+  $("fb").innerHTML = `<tr><th>시각</th><th>게임</th><th>테스터</th><th>♥</th><th>★</th><th>한 판 더</th><th>이해</th><th>플레이</th><th>클리어</th><th>기기</th><th>의견</th></tr>` +
+    F.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).map(f => `<tr><td class="m">${esc(String(f.created_at || "").slice(5, 16).replace("T", " "))}</td><td class="m">${esc(f.game_id)}</td><td class="m">${esc(f.anon_id)}${f.tester ? "<br>" + esc(f.tester) : ""}</td><td>${f.liked ? "♥" : ""}</td><td class="m">${f.rating || "-"}</td><td>${yn(f.again)}</td><td>${yn(f.understood)}</td><td class="m">${mins(f.play_seconds)}</td><td class="m">${f.levels_cleared ?? "-"}</td><td>${esc(f.device || "")}</td><td>${esc(f.comment || "")}</td></tr>`).join("");
+  // 투표
+  const V = DATA.compare_votes;
+  $("vCount").textContent = `${V.length}건`;
+  $("votes").innerHTML = `<tr><th>시각</th><th>테스터</th><th>A</th><th>B</th><th>더 하고 싶은 쪽</th><th>이유</th></tr>` + V.map(v => `<tr><td class="m">${esc(String(v.created_at || "").slice(5, 16).replace("T", " "))}</td><td class="m">${esc(v.anon_id)}</td><td class="m">${esc(v.game_a)}</td><td class="m">${esc(v.game_b)}</td><td class="m">${esc(v.winner === "tie" ? "비슷" : v.winner)}</td><td>${esc(v.reason || "")}</td></tr>`).join("");
+}
+// 카톡 텍스트 가져오기
+function parseBlocks(txt) {
+  const out = [], votes = [];
+  txt.split(/(?=\[NHC POCKET (?:피드백|비교)\])/).forEach(b => {
+    if (b.startsWith("[NHC POCKET 피드백]")) {
+      const g = b.match(/\]\s*(G\d{3})/), ver = b.match(/빌드 ([^)]+)\)/), t = b.match(/테스터:\s*(T-[A-Z0-9]{5})(?:\s*\(([^)]*)\))?/), nk = b.match(/닉네임:\s*(.+)/);
+      const r = b.match(/별점:\s*★(\d)/), ag = b.match(/한 판 더:\s*(예|아니오)/), un = b.match(/바로 이해:\s*(예|아니오)/), pl = b.match(/플레이:\s*(\d+)분\s*(\d+)초\s*·\s*클리어\s*(\d+)\s*·\s*실패\s*(\d+)\s*·\s*(\w+)/), cm = b.match(/의견:\s*([\s\S]*)$/);
+      if (!g) return;
+      out.push({ created_at: new Date().toISOString(), imported: true, game_id: g[1], version: ver ? ver[1] : null, anon_id: t ? t[1] : "imported-" + Math.random().toString(36).slice(2, 7), tester: t && t[2] ? t[2] : nk && nk[1].trim() !== "-" ? nk[1].trim() : null,
+        liked: /좋아요:\s*♥/.test(b), rating: r ? +r[1] : null, again: ag ? ag[1] === "예" : null, understood: un ? un[1] === "예" : null,
+        play_seconds: pl ? +pl[1] * 60 + +pl[2] : null, levels_cleared: pl ? +pl[3] : null, fails: pl ? +pl[4] : null, device: pl ? pl[5] : null, comment: cm && cm[1].trim() !== "-" ? cm[1].trim() : null });
+    } else if (b.startsWith("[NHC POCKET 비교]")) {
+      const t = b.match(/테스터\s*(T-[A-Z0-9]{5})/), ab = b.match(/A\s+(G\d{3}).*?vs\s+B\s+(G\d{3})/), w = b.match(/더 하고 싶은 쪽:\s*(\S+)/), rs = b.match(/이유:\s*(.*)/);
+      if (ab && w) votes.push({ created_at: new Date().toISOString(), anon_id: t ? t[1] : "imported", game_a: ab[1], game_b: ab[2], winner: w[1] === "비슷" ? "tie" : w[1], reason: rs && rs[1].trim() !== "-" ? rs[1].trim() : null });
+    }
+  });
+  return { out, votes };
+}
+$("imp").onclick = () => {
+  const { out, votes } = parseBlocks($("paste").value);
+  LS.set("admin_imported", LS.get("admin_imported", []).concat(out)); LS.set("admin_imported_votes", LS.get("admin_imported_votes", []).concat(votes));
+  $("impMsg").textContent = `피드백 ${out.length}건 · 비교 ${votes.length}건 가져옴${remote ? " (공유 DB 모드에서는 표에 섞이지 않음 — DB에 이미 있음)" : ""}`; $("paste").value = ""; load();
+};
+$("clrImp").onclick = () => { if (confirm("붙여 넣어 가져온 피드백을 지울까요?")) { LS.set("admin_imported", []); LS.set("admin_imported_votes", []); load(); } };
+$("reload").onclick = load; $("lg").onclick = login; $("fGame").onchange = render; $("fTester").onchange = render;
+function dl(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); }
+$("exJson").onclick = () => dl("nhc-pocket-data.json", JSON.stringify(DATA, null, 1), "application/json");
+$("exCsv").onclick = () => { const cols = ["created_at", "game_id", "version", "anon_id", "tester", "liked", "rating", "again", "understood", "play_seconds", "levels_cleared", "fails", "device", "comment"];
+  dl("nhc-pocket-feedback.csv", "﻿" + [cols.join(",")].concat(DATA.feedback.map(f => cols.map(c => `"${String(f[c] ?? "").replace(/"/g, '""')}"`).join(","))).join("\n"), "text/csv"); };
+load();
+</script>
+</body>
+</html>

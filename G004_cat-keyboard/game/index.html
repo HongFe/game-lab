@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f4efe6">
+<title>고양이 타자수</title>
+<style>
+:root{--bg:#f4efe6;--ink:#2b2633;--sub:#857c8f;--card:#fffdf8;--line:#e2d9ca;--acc:#ff8a3d;--ok:#2fae6b;--bad:#e5484d;--key:#fbf8f2;--key2:#d9d0c1;--blue:#3b6fe0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+body{display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom))}
+.wrap{width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px;position:relative}
+.top{display:flex;justify-content:space-between;align-items:center}
+.top h1{margin:0;font-size:17px} .top h1 small{display:block;font-size:11.5px;color:var(--sub);font-weight:600}
+.stars{font-size:15px;color:#f2b01e;letter-spacing:2px}
+.mail{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 4px 0 var(--line);overflow:hidden;position:relative}
+.mail .bar{display:flex;gap:6px;align-items:center;padding:7px 10px;background:#efe7da;font-size:11.5px;color:var(--sub)}
+.mail .bar i{width:9px;height:9px;border-radius:50%;background:#e6c8b0;display:inline-block}
+.mail .f{display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #f0e8dc;font-size:13px} .mail .f b{color:var(--sub);font-weight:600;width:44px}
+.subj{font:800 28px/1.2 ui-monospace,Menlo,monospace;padding:10px 12px 4px;min-height:52px;letter-spacing:2px;word-break:break-all}
+.subj .c{display:inline-block;width:3px;height:26px;background:var(--blue);vertical-align:-4px;animation:blink 1s steps(1) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.subj span.n{display:inline-block;animation:pop .25s ease-out}
+@keyframes pop{from{transform:translateY(-10px) scale(1.5);color:var(--acc)}}
+.goal{padding:0 12px 10px;font-size:12.5px;color:var(--sub)} .goal b{color:var(--ink);font-family:ui-monospace,Menlo,monospace;letter-spacing:1px}
+#kb{width:100%;display:block;touch-action:none}
+.ctl{display:flex;gap:8px}
+.ctl button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px 0;font:800 14px -apple-system,sans-serif;color:var(--ink);box-shadow:0 3px 0 var(--line);cursor:pointer}
+.ctl button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.ctl button.go{flex:1.6;background:var(--acc);border-color:#e27120;color:#fff;box-shadow:0 3px 0 #c45e15}
+.ctl button:disabled{opacity:.4}
+.fish{font-size:13px;color:var(--sub);text-align:center}
+.modes{display:flex;gap:8px}
+.modes button{flex:1;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:7px 4px;font:800 13.5px -apple-system,sans-serif;color:var(--ink);cursor:pointer}
+.modes button small{display:block;font-size:10.5px;color:var(--sub);font-weight:600}
+.modes button.on{border-color:var(--acc);background:#fff3e8}
+#mJump.on{border-color:var(--blue);background:#eaf0ff}
+.modes button:disabled{opacity:.35}
+.modes b{display:inline-block;background:var(--blue);color:#fff;border-radius:999px;padding:0 6px;font-size:11px}
+.nav{display:flex;justify-content:space-between;font-size:12.5px;color:var(--sub)} .nav button{background:none;border:0;color:var(--sub);font:inherit;padding:4px 6px;cursor:pointer} .nav button:disabled{opacity:.3}
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(43,38,51,.45);padding:18px;z-index:5}
+.ov.on{display:flex}
+.box{background:var(--card);border-radius:18px;padding:18px;width:min(360px,100%);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);animation:rise .25s ease-out}
+@keyframes rise{from{transform:translateY(20px);opacity:.5}}
+.box h2{margin:0 0 4px} .box .big{font-size:34px;color:#f2b01e;letter-spacing:4px}
+.reply{background:#f3eee6;border-radius:12px;padding:10px 12px;margin:10px 0;text-align:left;font-size:14px}
+.reply small{display:block;color:var(--sub);font-size:11.5px;margin-bottom:3px}
+.box .sent{font:800 20px ui-monospace,Menlo,monospace;letter-spacing:2px}
+.box button{width:100%;border:0;border-radius:12px;padding:12px;font:800 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:#efe7da;color:var(--ink)}
+.box button.pri{background:var(--acc);color:#fff}
+.box ul{text-align:left;font-size:13.5px;line-height:1.7;padding-left:18px}
+.shake{animation:shk .35s}
+@keyframes shk{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.plane{position:fixed;font-size:34px;z-index:6;pointer-events:none;animation:fly 1s ease-in forwards}
+@keyframes fly{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(70vw,-60vh) rotate(-20deg) scale(.5);opacity:0}}
+.conf{position:fixed;width:8px;height:5px;z-index:6;pointer-events:none;animation:conf 1.2s ease-out forwards}
+@keyframes conf{to{transform:translate(var(--dx),var(--dy)) rotate(540deg);opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="top"><h1>🐈 고양이 타자수<small id="lvl">메일 1</small></h1><div class="stars" id="best"></div></div>
+  <div class="mail" id="mail">
+    <div class="bar"><i></i><i></i><i></i>&nbsp;새 메일</div>
+    <div class="f"><b>받는 이</b>부장님</div>
+    <div class="f"><b>미션</b><span id="mission"></span></div>
+    <div class="subj" id="subj"><span class="c"></span></div>
+    <div class="goal">목표: <b id="goal"></b> · 간식은 <b id="maxT"></b>개까지</div>
+  </div>
+  <div class="modes"><button id="mWalk" class="on">🐟 걸어가기<small>지나는 키 전부 입력</small></button><button id="mJump">🐭 뛰어오르기 <b id="jl">0</b><small>착지한 키만 입력</small></button></div>
+  <canvas id="kb"></canvas>
+  <div class="fish" id="fish"></div>
+  <div class="ctl"><button id="undo">↶ 간식 빼기</button><button id="clear">비우기</button><button class="go" id="go">▶ 출발</button></div>
+  <div class="nav"><button id="prev">◀ 이전 메일</button><span>키를 탭해 간식을 순서대로 놓기</span><button id="next">다음 메일 ▶</button></div>
+</div>
+<div class="ov" id="ov"><div class="box" id="box"></div></div>
+<script>
+"use strict";
+/*CORE_START*/
+const ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"], OFF = [0, .5, 1];
+const KEYS = [];
+ROWS.forEach((row, r) => [...row].forEach((ch, c) => KEYS.push({ id: KEYS.length, ch, x: c + OFF[r] + .5, y: r + .5, w: 1 })));
+KEYS.push({ id: KEYS.length, ch: "⌫", x: 8.75, y: 2.5, w: 1.5 });
+const BS = KEYS.length - 1, KW = 10.5, KH = 3;
+function keyAt(x, y) { for (const k of KEYS) if (Math.abs(x - k.x) <= k.w / 2 && Math.abs(y - k.y) <= .5) return k.id; return -1; }
+// 고양이가 start 키에서 간식들을 차례로 찾아간다.
+//  🐟 걷기(j=false): 직선으로 걸으며 새로 들어선 키를 전부 입력  ·  🐭 점프(j=true): 날아가서 착지한 키만 입력. ⌫는 한 글자 지움
+function walk(start, treats) {
+  let cx = KEYS[start].x, cy = KEYS[start].y, cur = start, typed = "", dist = 0; const ev = [], pts = [{ x: cx, y: cy, d: 0, j: false }];
+  const hit = (k, d) => { cur = k; if (k >= 0) { typed = k === BS ? typed.slice(0, -1) : typed + KEYS[k].ch; ev.push({ key: k, typed, d }); } };
+  for (const t of treats) {
+    const tk = t.k, tx = KEYS[tk].x, ty = KEYS[tk].y, L = Math.hypot(tx - cx, ty - cy);
+    if (t.j) { if (tk !== cur) hit(tk, dist + L); }
+    else {
+      const n = Math.max(1, Math.ceil(L / .02));
+      for (let i = 1; i <= n; i++) { const x = cx + (tx - cx) * i / n, y = cy + (ty - cy) * i / n, k = keyAt(x, y); if (k !== cur) hit(k, dist + L * i / n); }
+    }
+    dist += L; cx = tx; cy = ty; pts.push({ x: cx, y: cy, d: dist, j: !!t.j });
+  }
+  return { typed, ev, pts, dist };
+}
+/*CORE_END*/
+const LEVELS = /*LEVELS_START*/[{"word":"HI","start":14,"sol":[{"k":15,"j":false},{"k":7,"j":true}],"opt":2,"jumps":1,"usesBS":false,"trap":false,"n":1},{"word":"OK","start":25,"sol":[{"k":8,"j":true},{"k":17,"j":false}],"opt":2,"jumps":1,"usesBS":false,"trap":false,"n":2},{"word":"NO","start":23,"sol":[{"k":24,"j":false},{"k":8,"j":true}],"opt":2,"jumps":1,"usesBS":false,"trap":false,"n":3},{"word":"ASK","start":1,"sol":[{"k":10,"j":false},{"k":11,"j":false},{"k":17,"j":true}],"opt":3,"jumps":1,"usesBS":false,"trap":false,"n":4},{"word":"SAD","start":20,"sol":[{"k":11,"j":false},{"k":10,"j":false},{"k":12,"j":true}],"opt":3,"jumps":1,"usesBS":false,"trap":false,"n":5},{"word":"WET","start":10,"sol":[{"k":1,"j":false},{"k":2,"j":false},{"k":4,"j":true}],"opt":3,"jumps":1,"usesBS":false,"trap":false,"n":6},{"word":"YES","start":25,"sol":[{"k":5,"j":true},{"k":2,"j":true},{"k":11,"j":false}],"opt":3,"jumps":2,"usesBS":false,"trap":false,"n":7},{"word":"SOS","start":1,"sol":[{"k":11,"j":false},{"k":8,"j":true},{"k":11,"j":true}],"opt":3,"jumps":2,"usesBS":false,"trap":false,"n":8},{"word":"CAT","start":12,"sol":[{"k":21,"j":false},{"k":10,"j":true},{"k":4,"j":true}],"opt":3,"jumps":2,"usesBS":false,"trap":false,"n":9},{"word":"QUEST","start":21,"sol":[{"k":0,"j":true},{"k":6,"j":true},{"k":2,"j":true},{"k":11,"j":false},{"k":4,"j":true}],"opt":5,"jumps":4,"usesBS":false,"trap":false,"n":10},{"word":"MILK","start":24,"sol":[{"k":25,"j":false},{"k":7,"j":true},{"k":26,"j":false},{"k":18,"j":false},{"k":17,"j":false}],"opt":5,"jumps":1,"usesBS":true,"trap":true,"n":11},{"word":"TREE","start":20,"sol":[{"k":4,"j":true},{"k":1,"j":false},{"k":26,"j":true},{"k":2,"j":true}],"opt":4,"jumps":3,"usesBS":true,"trap":true,"n":12},{"word":"POOL","start":7,"sol":[{"k":9,"j":true},{"k":8,"j":false},{"k":26,"j":false},{"k":8,"j":true},{"k":18,"j":false}],"opt":5,"jumps":2,"usesBS":true,"trap":true,"n":13},{"word":"LUNCH","start":16,"sol":[{"k":17,"j":false},{"k":26,"j":false},{"k":18,"j":false},{"k":6,"j":true},{"k":24,"j":true},{"k":21,"j":true},{"k":15,"j":true}],"opt":7,"jumps":4,"usesBS":true,"trap":true,"n":14}]/*LEVELS_END*/;
+const MEANING = { HI: "안녕하세요", OK: "확인했습니다", YES: "네", NO: "아니요", BYE: "퇴근합니다", SOS: "살려 주세요", HELP: "도와주세요", LATE: "지각합니다", SICK: "아파서 쉽니다", QUIT: "그만두겠습니다", NAP: "낮잠 좀…", HOME: "집에 갈래요", LUNCH: "점심 먹고 올게요", SORRY: "죄송합니다", MEOW: "야옹", TUNA: "참치 주세요", FISH: "생선 사 주세요", PURR: "골골골", COFFEE: "커피 마시고 올게요", THANKS: "감사합니다", BOSS: "부장님", DONE: "다 했습니다", WIFI: "와이파이 안 돼요", ZZZ: "졸려요", TACO: "타코 먹고 싶어요", JOB: "제 일이요?", CAT: "고양이가 썼어요", EXIT: "퇴사합니다", MILK: "우유 주세요", WORK: "일하는 중입니다", ASK: "여쭤볼게 있어요", SAD: "슬퍼요", WET: "비 맞았어요", QUEST: "퀘스트 중이에요", TREE: "나무 보러 갑니다", POOL: "수영장 갑니다", TYPE: "타자 연습 중", WEST: "서쪽으로 갑니다", DESK: "자리에 있어요", ZOOM: "줌 회의 들어갈게요", BUG: "버그 있어요", FIX: "고쳤습니다", SAVE: "저장했습니다", CODE: "코드 보냈어요", RED: "빨간불이에요", TOP: "1등 했어요", HOP: "뛰어갑니다", JOKE: "농담이에요", POLO: "폴로티 입었어요", ERROR: "에러 났어요", TEXT: "문자 보냈어요", FAX: "팩스 보냈어요", NEWS: "뉴스 보셨어요?", ZIP: "압축했어요", GAS: "가스 점검", FUN: "재밌어요", HUG: "안아 주세요", YOU: "당신이요", WHY: "왜요?" };
+const OK_REPLY = ["확인. 수고해요 👍", "…알겠어요. 근데 고양이 키우세요?", "오, 오늘은 오타가 없네요", "네 알겠습니다. 🐟 이모지는 뭐죠?", "답장 빠르네요. 좋아요", "ㅇㅋ"];
+const BAD_REPLY = ["“{t}”? 무슨 뜻이죠?", "암호인가요? {t}…", "다시 보내세요.", "{t}… 고양이가 쓴 거 아니죠?", "회의 때 얘기해요. {t}?", "?????"];
+const $ = id => document.getElementById(id);
+const kb = $("kb"), ctx = kb.getContext("2d");
+
+const store = { get() { try { return JSON.parse(localStorage.getItem("g004") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g004", JSON.stringify(v)); } catch (e) {} } };
+let save = Object.assign({ stars: {}, unlocked: 1 }, store.get());
+
+let ac = null;
+function beep(f, d = .05, type = "square", v = .04, w = 0, f2) { try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + w, o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {} }
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+const JUICE = !new URLSearchParams(location.search).has("nojuice");
+const SFX = {
+  place(n) { beep(520 + n * 90, .06, "triangle", .06); buzz(6); },
+  remove() { beep(300, .06, "triangle", .05, 0, 200); },
+  key(ch) { const i = Math.max(0, "QWERTYUIOPASDFGHJKLZXCVBNM".indexOf(ch)); beep(700 + (i % 10) * 45 + (i / 10 | 0) * 30, .035, "square", .035); beep(120, .03, "triangle", .05); buzz(4); },
+  bs() { beep(220, .12, "sawtooth", .04, 0, 90); buzz(10); },
+  meow() { beep(700, .18, "sine", .06, 0, 1100); beep(1100, .25, "sine", .05, .17, 600); },
+  win() { [659, 784, 988, 1319].forEach((f, i) => beep(f, .12, "square", .045, .1 + i * .08)); },
+  fail() { beep(330, .16, "triangle", .07); beep(247, .28, "triangle", .07, .15); buzz([30, 30, 30]); },
+};
+function emit(ev, data = {}) { try { if (parent !== window) parent.postMessage({ type: "nhc-game", game: "G004", ev, data }, "*"); } catch (e) {} }
+let lastInputEmit = 0;
+addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastInputEmit > 4000) { lastInputEmit = t; emit("input"); } }, true);
+
+// ───────── 상태 ─────────
+let mode = "walk", L = 0, treats = [], running = false, cat = { x: 0, y: 0, face: 1, bob: 0 }, typedShown = "", pressed = {}, parts = [], preview = null, runT0 = 0, runInfo = null, evIdx = 0, auto = false;
+let S = 36, PX = 8, PY = 14;
+function lv() { return LEVELS[L]; }
+function load(n) {
+  L = Math.max(0, Math.min(LEVELS.length - 1, n)); treats = []; running = false; typedShown = ""; parts = []; pressed = {};
+  const k = KEYS[lv().start]; cat = { x: k.x, y: k.y, face: 1, bob: 0 };
+  $("lvl").textContent = `메일 ${L + 1} / ${LEVELS.length}`;
+  $("mission").textContent = `“${lv().word}” 보내기` + (MEANING[lv().word] ? ` (${MEANING[lv().word]})` : "");
+  $("goal").textContent = lv().word; $("maxT").textContent = lv().opt + 1; mode = "walk";
+  const b = save.stars[L]; $("best").textContent = b ? "★".repeat(b) + "☆".repeat(3 - b) : "";
+  $("ov").classList.remove("on"); renderSubj(); update(); emit("level_start", { level: L + 1 });
+}
+function renderSubj(newCh) {
+  const t = typedShown;
+  $("subj").innerHTML = [...t].map((c, i) => `<span${newCh && i === t.length - 1 ? ' class="n"' : ""}>${c}</span>`).join("") + '<span class="c"></span>';
+}
+function update() {
+  preview = treats.length ? walk(lv().start, treats) : null;
+  const max = lv().opt + 1, jl = lv().jumps - treats.filter(t => t.j).length;
+  if (jl <= 0 && mode === "jump") mode = "walk";
+  $("fish").textContent = `간식 ${treats.length} / ${max}` + (treats.length === max ? " · 다 놓았어요" : "");
+  $("mWalk").classList.toggle("on", mode === "walk"); $("mJump").classList.toggle("on", mode === "jump");
+  $("mJump").disabled = jl <= 0 || running; $("jl").textContent = jl;
+  $("mJump").style.display = lv().jumps ? "" : "none";
+  $("go").disabled = running || !treats.length; $("undo").disabled = running || !treats.length; $("clear").disabled = running || !treats.length;
+  $("prev").disabled = running || L === 0; $("next").disabled = running || L + 1 >= Math.min(save.unlocked, LEVELS.length);
+}
+
+// ───────── 그리기 ─────────
+function resize() {
+  const w = Math.min(480, $("wrap").clientWidth), dpr = window.devicePixelRatio || 1;
+  PX = 6; S = (w - PX * 2) / KW; PY = 10;
+  const h = Math.round(PY * 2 + KH * S + 6);
+  kb.width = Math.round(w * dpr); kb.height = Math.round(h * dpr); kb.style.height = h + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+const X = x => PX + x * S, Y = y => PY + y * S;
+function draw(t) {
+  const w = kb.width / (window.devicePixelRatio || 1), h = kb.height / (window.devicePixelRatio || 1);
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#e6dccb"; rr(0, 0, w, h, 14); ctx.fill();
+  const willStep = new Set(preview && !running ? preview.ev.map(e => e.key) : []);
+  KEYS.forEach(k => {
+    const p = pressed[k.id] ? Math.max(0, 1 - (t - pressed[k.id]) / 220) : 0;
+    const kw = k.w * S - 5, kh = S - 5, x = X(k.x) - kw / 2, y = Y(k.y) - kh / 2 + p * 3;
+    ctx.fillStyle = "#c9bea9"; rr(x, y + 3 - p * 3, kw, kh, 7); ctx.fill();
+    ctx.fillStyle = k.id === BS ? "#f1dccd" : willStep.has(k.id) ? "#fff4d6" : "#fbf8f2"; rr(x, y, kw, kh - 1, 7); ctx.fill();
+    if (willStep.has(k.id)) { ctx.strokeStyle = "rgba(255,138,61,.55)"; ctx.lineWidth = 1.5; rr(x, y, kw, kh - 1, 7); ctx.stroke(); }
+    ctx.fillStyle = k.id === BS ? "#c2410c" : "#4a4352"; ctx.font = `800 ${Math.round(S * .4)}px ui-monospace,Menlo,monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(k.ch, X(k.x), Y(k.y) + p * 3);
+  });
+  // 예상 경로
+  if (preview && !running) {
+    preview.pts.forEach((p, i) => {
+      if (!i) return; const a = preview.pts[i - 1];
+      ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(X(a.x), Y(a.y));
+      if (p.j) { ctx.setLineDash([2, 6]); ctx.strokeStyle = "rgba(59,111,224,.9)"; const mx = (X(a.x) + X(p.x)) / 2, my = Math.min(Y(a.y), Y(p.y)) - S * .9; ctx.quadraticCurveTo(mx, my, X(p.x), Y(p.y)); }
+      else { ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(255,138,61,.85)"; ctx.lineTo(X(p.x), Y(p.y)); }
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  }
+  // 간식
+  treats.forEach((tr, i) => {
+    const k = KEYS[tr.k], bob = Math.sin(t / 250 + i) * 2;
+    if (running && runInfo && i < runInfo.eaten) return;
+    ctx.font = `${Math.round(S * .62)}px sans-serif`; ctx.fillText(tr.j ? "🐭" : "🐟", X(k.x) + S * .18, Y(k.y) - S * .12 + bob);
+    ctx.fillStyle = tr.j ? "#3b6fe0" : "#ff8a3d"; ctx.beginPath(); ctx.arc(X(k.x) - S * .28, Y(k.y) - S * .28, S * .17, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = `900 ${Math.round(S * .22)}px -apple-system,sans-serif`; ctx.fillText(i + 1, X(k.x) - S * .28, Y(k.y) - S * .27);
+  });
+  // 파티클
+  parts = parts.filter(p => (p.life -= 1 / 60) > 0);
+  parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .25; ctx.globalAlpha = p.life / p.max; ctx.fillStyle = p.col; ctx.fillRect(p.x, p.y, p.r, p.r); });
+  ctx.globalAlpha = 1;
+  drawCat(X(cat.x), Y(cat.y), t);
+}
+function drawCat(x, y, t) {
+  const s = S / 40, bob = running ? Math.abs(Math.sin(t / 90)) * 3 : Math.sin(t / 600) * 1.2;
+  ctx.save(); ctx.translate(x, y - 6 - bob); ctx.scale(s * cat.face, s);
+  ctx.fillStyle = "rgba(0,0,0,.15)"; ctx.beginPath(); ctx.ellipse(0, 18 + bob / s, 16, 5, 0, 0, 7); ctx.fill();
+  // 꼬리
+  ctx.strokeStyle = "#f08a3c"; ctx.lineWidth = 6; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(-12, 6); ctx.quadraticCurveTo(-26, 2 + Math.sin(t / 200) * 6, -22, -14); ctx.stroke();
+  // 몸
+  ctx.fillStyle = "#f6a25a"; ctx.beginPath(); ctx.ellipse(-2, 6, 15, 11, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#f08a3c"; ctx.fillRect(-10, 0, 4, 10); ctx.fillRect(-2, -1, 4, 11);
+  // 발
+  ctx.fillStyle = "#fff4e8"; const ph = running ? Math.sin(t / 70) * 3 : 0;
+  ctx.beginPath(); ctx.ellipse(-8 + ph, 16, 4, 3, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(6 - ph, 16, 4, 3, 0, 0, 7); ctx.fill();
+  // 머리
+  ctx.fillStyle = "#f6a25a"; ctx.beginPath(); ctx.arc(12, -6, 11, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(4, -13); ctx.lineTo(6, -24); ctx.lineTo(12, -15); ctx.fill(); ctx.beginPath(); ctx.moveTo(14, -15); ctx.lineTo(21, -23); ctx.lineTo(21, -11); ctx.fill();
+  ctx.fillStyle = "#ffc9b0"; ctx.beginPath(); ctx.moveTo(6.5, -15); ctx.lineTo(7.5, -21); ctx.lineTo(10.5, -15.5); ctx.fill();
+  ctx.fillStyle = "#2b2633"; const blink = (t % 3200) < 120 ? .2 : 1;
+  ctx.beginPath(); ctx.ellipse(9, -7, 1.8, 2.4 * blink, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(17, -7, 1.8, 2.4 * blink, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#e5677a"; ctx.beginPath(); ctx.arc(13, -3, 1.6, 0, 7); ctx.fill();
+  ctx.strokeStyle = "#2b2633"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(20, -3); ctx.lineTo(27, -5); ctx.moveTo(20, -1); ctx.lineTo(27, 0); ctx.stroke();
+  ctx.restore();
+}
+function burst(x, y, n, cols) { if (!JUICE) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = 1 + Math.random() * 3; parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 2, life: .6, max: .6, r: 3 + Math.random() * 3, col: cols[i % cols.length] }); } }
+
+// ───────── 입력 ─────────
+kb.addEventListener("pointerdown", e => {
+  if (running || $("ov").classList.contains("on")) return;
+  const b = kb.getBoundingClientRect(), x = (e.clientX - b.left - PX) / S, y = (e.clientY - b.top - PY) / S, k = keyAt(x, y);
+  if (k < 0) return;
+  if (treats.length && treats[treats.length - 1].k === k) { treats.pop(); SFX.remove(); update(); return; }
+  if (treats.length >= lv().opt + 1) { $("fish").classList.add("shake"); setTimeout(() => $("fish").classList.remove("shake"), 360); SFX.fail(); return; }
+  if (k === (treats.length ? treats[treats.length - 1].k : lv().start)) return;
+  const j = mode === "jump"; treats.push({ k, j }); SFX.place(treats.length); if (j) mode = "walk"; pressed[k] = performance.now(); burst(X(KEYS[k].x), Y(KEYS[k].y), 6, ["#ff8a3d", "#ffd27a"]); update();
+});
+$("mWalk").onclick = () => { mode = "walk"; SFX.remove(); update(); };
+$("mJump").onclick = () => { mode = "jump"; SFX.place(1); update(); };
+$("undo").onclick = () => { if (!running && treats.length) { treats.pop(); SFX.remove(); update(); } };
+$("clear").onclick = () => { if (!running) { treats = []; SFX.remove(); update(); } };
+$("go").onclick = () => run();
+$("prev").onclick = () => load(L - 1);
+$("next").onclick = () => load(L + 1);
+
+// ───────── 실행 ─────────
+const SPEED = 3.2; // 키/초
+function run() {
+  if (running || !treats.length) return;
+  running = true; typedShown = ""; renderSubj(); runInfo = Object.assign(walk(lv().start, treats), { eaten: 0 }); evIdx = 0; runT0 = performance.now(); update(); SFX.meow();
+}
+function stepRun(t) {
+  const d = Math.min(runInfo.dist, (t - runT0) / 1000 * SPEED);
+  // 위치
+  const P = runInfo.pts; let i = 1; while (i < P.length - 1 && P[i].d < d) i++;
+  const a = P[i - 1], b = P[i], u = b.d > a.d ? (d - a.d) / (b.d - a.d) : 1;
+  const nx = a.x + (b.x - a.x) * Math.min(1, u), ny = a.y + (b.y - a.y) * Math.min(1, u) - (b.j ? Math.sin(Math.min(1, u) * Math.PI) * .8 : 0);
+  if (Math.abs(nx - cat.x) > .001) cat.face = nx > cat.x ? 1 : -1;
+  cat.x = nx; cat.y = ny;
+  runInfo.eaten = P.filter((p, j) => j > 0 && p.d <= d).length;
+  // 입력 이벤트
+  while (evIdx < runInfo.ev.length && runInfo.ev[evIdx].d <= d) {
+    const e = runInfo.ev[evIdx++], k = KEYS[e.key];
+    pressed[e.key] = t; typedShown = e.typed;
+    if (e.key === BS) { SFX.bs(); burst(X(k.x), Y(k.y), 12, ["#c2410c", "#2b2633", "#fff"]); renderSubj(); }
+    else { SFX.key(k.ch); burst(X(k.x), Y(k.y), 4, ["#fff", "#ffd27a"]); renderSubj(true); }
+  }
+  if (d >= runInfo.dist) { running = false; finish(); }
+}
+function finish() {
+  const ok = typedShown === lv().word, used = treats.length, st = ok ? (used <= lv().opt ? 3 : 2) : 0;
+  update();
+  if (ok) {
+    save.stars[L] = Math.max(save.stars[L] || 0, st); save.unlocked = Math.max(save.unlocked, L + 2); store.set(save);
+    SFX.win(); emit("level_clear", { level: L + 1, treats: used, stars: st });
+    if (JUICE) { const pl = document.createElement("div"); pl.className = "plane"; pl.textContent = "✉️"; const r = $("mail").getBoundingClientRect(); pl.style.left = r.left + 20 + "px"; pl.style.top = r.top + 60 + "px"; document.body.appendChild(pl); setTimeout(() => pl.remove(), 1000);
+      for (let i = 0; i < 26; i++) { const c = document.createElement("div"); c.className = "conf"; c.style.background = ["#ff8a3d", "#2fae6b", "#3b6fe0", "#f2b01e", "#e5677a"][i % 5]; c.style.left = "50%"; c.style.top = "30%"; c.style.setProperty("--dx", (Math.random() - .5) * 360 + "px"); c.style.setProperty("--dy", (Math.random() - .3) * 400 + "px"); document.body.appendChild(c); setTimeout(() => c.remove(), 1250); } }
+    setTimeout(() => {
+      const last = L + 1 >= LEVELS.length;
+      $("box").innerHTML = `<h2>전송 완료 ✉️</h2><div class="big">${"★".repeat(st)}${"☆".repeat(3 - st)}</div><div class="sent">${lv().word}</div>
+        <div class="reply"><small>부장님의 답장</small>${OK_REPLY[(L * 7 + used) % OK_REPLY.length]}</div>
+        <p style="font-size:12.5px;color:var(--sub)">간식 ${used}개 사용 · 최소 ${lv().opt}개${st < 3 ? " — 더 적게 풀 수 있어요!" : ""}</p>
+        <button onclick="load(L)">다시</button>${last ? '<button class="pri" onclick="ending()">🎉 끝</button>' : '<button class="pri" onclick="load(L+1)">다음 메일</button>'}`;
+      $("ov").classList.add("on");
+    }, 700);
+  } else {
+    SFX.fail(); emit("fail", { level: L + 1, typed: typedShown });
+    if (JUICE) { $("wrap").classList.add("shake"); setTimeout(() => $("wrap").classList.remove("shake"), 360); }
+    setTimeout(() => {
+      const r = BAD_REPLY[(L + typedShown.length) % BAD_REPLY.length].replace("{t}", typedShown || "(빈 메일)");
+      $("box").innerHTML = `<h2>앗, 오타 😿</h2><div class="sent" style="color:var(--bad)">${typedShown || "(빈 메일)"}</div><p style="font-size:13px;color:var(--sub)">목표: <b>${lv().word}</b></p>
+        <div class="reply"><small>부장님의 답장</small>${r}</div><button class="pri" onclick="retry()">간식 다시 놓기</button><button onclick="load(L)">처음부터</button>`;
+      $("ov").classList.add("on");
+    }, 500);
+  }
+}
+function retry() { $("ov").classList.remove("on"); const k = KEYS[lv().start]; cat.x = k.x; cat.y = k.y; typedShown = ""; renderSubj(); update(); }
+function ending() { $("box").innerHTML = `<h2>오늘 메일 끝! 🐈</h2><p>모든 메일을 보냈어요. 고양이는 이제 키보드 위에서 잡니다.</p><button class="pri" onclick="load(0)">처음 메일부터</button>`; }
+function loop(t) { if (running) stepRun(t); draw(t); requestAnimationFrame(loop); }
+
+// ───────── 시작 ─────────
+addEventListener("resize", () => { resize(); });
+resize();
+const q = new URLSearchParams(location.search);
+if (q.has("selftest")) {
+  const rows = []; let ok = 0;
+  LEVELS.forEach((l, i) => { const r = walk(l.start, l.sol), pass = r.typed === l.word && l.sol.length === l.opt && l.sol.filter(t => t.j).length <= l.jumps; if (pass) ok++; rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${l.word}\t간식 ${l.sol.length}/${l.opt}\t결과 ${r.typed}\t함정 ${l.trap ? "O" : "-"}\t⌫ ${l.usesBS ? "O" : "-"}`); });
+  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest">${rows.join("\n")}</pre>`);
+  document.title = `SELFTEST ${ok}/${LEVELS.length}`;
+  load(0);
+} else if (q.has("autoplay")) {
+  auto = true; load((Number(q.get("autoplay")) || 1) - 1);
+  lv().sol.forEach((t, i) => setTimeout(() => { treats.push(t); SFX.place(treats.length); pressed[t.k] = performance.now(); update(); }, 500 + i * 450));
+  setTimeout(run, 700 + lv().sol.length * 450);
+} else {
+  load(q.has("level") ? Number(q.get("level")) - 1 : Math.min(save.unlocked - 1, LEVELS.length - 1));
+  if (!save.seenHelp) { save.seenHelp = 1; store.set(save); $("box").innerHTML = `<h2>🐈 고양이 타자수</h2><ul><li>키를 탭해 🐟 간식을 <b>순서대로</b> 놓아요</li><li>🐟 생선: 고양이가 <b>직선으로 걸어가며</b> 밟은 키가 <b>전부</b> 입력돼요</li><li>🐭 쥐: 고양이가 <b>폴짝 뛰어서</b> 착지한 키만 입력돼요 (개수 제한)</li><li>⌫를 밟으면 한 글자 지워져요</li><li>목표 단어를 정확히 만들어 부장님께 보내기!</li></ul><button class="pri" onclick="document.getElementById('ov').classList.remove('on')">시작</button>`; $("ov").classList.add("on"); }
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

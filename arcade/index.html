@@ -158,7 +158,7 @@ pre.out{white-space:pre-wrap;background:#14131a;border-radius:10px;padding:10px;
       <div class="brand">NHC <b>POCKET</b></div>
       <div class="controls">
         <div class="dpad"><button class="u" data-k="up" aria-label="위"></button><button class="d" data-k="down" aria-label="아래"></button><button class="l" data-k="left" aria-label="왼쪽"></button><button class="r" data-k="right" aria-label="오른쪽"></button><div class="c"></div></div>
-        <div class="ab"><button class="b" data-k="b" aria-label="B 결과"></button><button class="a" data-k="a" aria-label="A 플레이"></button><span class="lb">B</span><span class="la">A</span></div>
+        <div class="ab"><button class="b" data-k="b" aria-label="B 내 기록"></button><button class="a" data-k="a" aria-label="A 플레이"></button><span class="lb">B</span><span class="la">A</span></div>
         <div class="ss"><div><button data-k="select" aria-label="SELECT 비교 표시"></button><span>SELECT</span></div><div><button data-k="start" aria-label="START"></button><span>START</span></div></div>
         <div class="speaker"><i></i><i></i><i></i><i></i><i></i><i></i></div>
       </div>
@@ -185,8 +185,12 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem("nhcpocket_" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem("nhcpocket_" + k, JSON.stringify(v)); } catch (e) {} }
 };
-let anon = LS.get("anon", null);
-if (!anon) { anon = "t" + Math.random().toString(36).slice(2, 10); LS.set("anon", anon); }
+// 테스터 번호: 처음 들어올 때 이 브라우저에 발급하고 계속 쓴다 (IP 등 개인정보는 쓰지 않음)
+const CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const newCode = () => "T-" + Array.from({ length: 5 }, () => CODE_ABC[Math.floor(Math.random() * CODE_ABC.length)]).join("");
+let anon = LS.get("anon", null), firstVisit = false;
+if (!anon || !/^T-[A-Z0-9]{5}$/.test(anon)) { anon = newCode(); LS.set("anon", anon); LS.set("since", new Date().toISOString()); firstVisit = true; }
+const validCode = c => /^T-[A-HJ-NP-Z2-9]{5}$/.test(c);
 let likes = LS.get("likes", {});
 
 // ── 소리·진동 ──
@@ -239,9 +243,9 @@ function renderMenu() {
     return `<div class="cart${i === sel ? " sel" : ""}" data-i="${i}"><div class="ic">${esc(g.icon)}</div><div class="w"><div class="t">${esc(g.id)} ${esc(g.title)}</div><div class="m">${esc(meta)}</div></div>${mk >= 0 ? `<span class="mk">${"AB"[mk]}</span>` : ""}</div>`;
   }).join("");
   const N = CAT.length;
-  $("scr").innerHTML = `<h2>카트리지 <small>${N}개 · ${DB.remote ? "공유 DB" : "이 기기"}</small></h2>
+  $("scr").innerHTML = `<h2>카트리지 ${N} <small>${esc(anon)}${LS.get("nick", "") ? " · " + esc(LS.get("nick", "")) : ""}</small></h2>
     <div class="list" id="list">${N ? items : '<div class="cart">아직 꽂힌 게임이 없음</div>'}</div>
-    <div class="hint">▲▼ 고르기 · A 플레이 · SELECT 비교 표시(2개)<br>START 비교 시작 · B 결과 보기</div>`;
+    <div class="hint">▲▼ 고르기 · A 플레이 · SELECT 비교 표시(2개)<br>START 비교 시작 · B 내 기록</div>`;
   const list = $("list"), el = list.querySelector(".sel");
   if (el) { const top = el.offsetTop - list.offsetTop, h = list.clientHeight; if (top + el.offsetHeight > h) list.scrollTop = top - h + el.offsetHeight + 4; else if (top < list.scrollTop) list.scrollTop = top; }
   list.querySelectorAll(".cart[data-i]").forEach(c => c.onclick = () => { const i = +c.dataset.i; if (i === sel) press("a"); else { sel = i; SND.nav(); renderMenu(); } });
@@ -251,6 +255,7 @@ function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add
 
 function press(k) {
   if (view === "boot") return;
+  if (view === "welcome") { if (k === "a" || k === "start") welcome.go(); return; }
   const btn = document.querySelector(`[data-k="${k}"]`); if (btn) { btn.classList.add("press"); setTimeout(() => btn.classList.remove("press"), 110); }
   if (!CAT.length && k !== "b") { SND.back(); ltoast("꽂힌 게임이 없습니다"); return; }
   if (k === "up" || k === "left") { sel = (sel - 1 + CAT.length) % CAT.length; SND.nav(); renderMenu(); }
@@ -266,7 +271,7 @@ function press(k) {
     else if (CAT.length < 2) { SND.back(); ltoast("비교하려면 게임이 2개 이상 필요해요"); }
     else { SND.back(); ltoast("SELECT로 비교할 게임 2개를 표시하세요"); }
   }
-  else if (k === "b") { SND.back(); openResults(); }
+  else if (k === "b") { SND.back(); openMine(); }
 }
 document.querySelectorAll("[data-k]").forEach(b => b.addEventListener("pointerdown", e => { e.preventDefault(); press(b.dataset.k); }));
 addEventListener("keydown", e => {
@@ -310,9 +315,19 @@ function renderStage() {
   });
   tickStats();
 }
+function saveSessions() {
+  slots.forEach(sl => {
+    if (sl.saved || sl.s.activeMs < 5000) return; sl.saved = true;
+    DB.add("sessions", { anon_id: anon, tester: LS.get("nick", "") || null, game_id: sl.g.id, version: sl.g.version, play_seconds: Math.round(sl.s.activeMs / 1000),
+      levels_cleared: sl.s.levels, fails: sl.s.fails, starts: sl.s.starts, device: isDesk() ? "desktop" : "mobile" });
+  });
+}
+addEventListener("pagehide", () => { if (view === "play") saveSessions(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && view === "play") saveSessions(); });
 function toMenu() {
   if (slots.length === 2 && !slots.voted && slots.every(s => s.s.activeMs > 20000)) { openCompare(); return; }
   if (slots.length && slots.some(s => s.s.activeMs > 15000 && !s.sent)) { const i = slots.findIndex(s => s.s.activeMs > 15000 && !s.sent); openFeedback(i, true); return; }
+  saveSessions();
   view = "menu"; document.body.classList.remove("play"); $("stage").innerHTML = ""; slots = []; SND.back(); renderMenu();
 }
 function toggleLike(i, e) {
@@ -377,7 +392,7 @@ function openFeedback(i, leaving) {
 const yn = v => v === true ? "예" : v === false ? "아니오" : "-";
 function feedbackText(g, r) {
   return `[NHC POCKET 피드백] ${g.id} ${g.title} (빌드 ${g.version})
-닉네임: ${r.tester || "-"}
+테스터: ${anon}${r.tester ? " (" + r.tester + ")" : ""}
 좋아요: ${r.liked ? "♥" : "-"} / 별점: ${r.rating ? "★" + r.rating : "-"} / 한 판 더: ${yn(r.again)} / 바로 이해: ${yn(r.understood)}
 플레이: ${fmt(r.play_seconds * 1000)} · 클리어 ${r.levels_cleared} · 실패 ${r.fails} · ${r.device}
 의견: ${r.comment || "-"}`;
@@ -401,32 +416,35 @@ function openCompare() {
     if (!w) { toast("A · 비슷 · B 중 하나를 골라 주세요"); return; }
     const row = { anon_id: anon, tester: LS.get("nick", "") || null, game_a: A.id, game_b: B.id, winner: w, reason: $("cReason").value.trim() || null };
     const r = await DB.add("compare_votes", row); slots.voted = true; SND.like();
-    if (r.local) shareText(`[NHC POCKET 비교] A ${A.id} ${A.title} vs B ${B.id} ${B.title}\n더 하고 싶은 쪽: ${w === "tie" ? "비슷" : w}\n이유: ${row.reason || "-"}`, true);
+    if (r.local) shareText(`[NHC POCKET 비교] 테스터 ${anon}\nA ${A.id} ${A.title} vs B ${B.id} ${B.title}\n더 하고 싶은 쪽: ${w === "tie" ? "비슷" : w}\n이유: ${row.reason || "-"}`, true);
     else { closeSheet(); toast("고마워요!"); toMenu(); }
   };
 }
 
-// ── 결과 보기 (B) ──
-async function openResults() {
-  sheet(`<h3>결과</h3><p class="sub">불러오는 중…</p>`);
-  const fb = await DB.all("feedback"), votes = await DB.all("compare_votes");
-  const med = a => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-  const pct = (a, k) => { const v = a.filter(x => x[k] === true || x[k] === false); return v.length ? Math.round(100 * v.filter(x => x[k]).length / v.length) + "%" : "-"; };
-  const blocks = CAT.map(g => {
-    const a = fb.filter(f => f.game_id === g.id), testers = new Set(a.map(f => f.anon_id)).size, rs = a.filter(f => f.rating).map(f => f.rating);
-    const again = a.filter(f => f.again === true).length;
-    const verdict = testers >= 5 ? (again >= 3 ? "✅ 계속할 신호" : again <= 1 ? "🛑 그만둘 신호" : "⚖️ 애매") : `테스터 ${testers}/5`;
-    return `<div class="res"><h4><span>${esc(g.icon)} ${esc(g.id)} ${esc(g.title)}</span><span style="font-size:12.5px">${verdict}</span></h4>
-      <div class="nums"><div>응답<b>${a.length}</b></div><div>♥<b>${a.filter(f => f.liked).length}</b></div><div>★ 평균<b>${rs.length ? (rs.reduce((x, y) => x + y, 0) / rs.length).toFixed(1) : "-"}</b></div>
-      <div>한 판 더<b>${pct(a, "again")}</b></div><div>바로 이해<b>${pct(a, "understood")}</b></div><div>플레이 중앙값<b>${a.length ? Math.round(med(a.map(f => f.play_seconds || 0)) / 60 * 10) / 10 + "분" : "-"}</b></div></div>
-      ${a.filter(f => f.comment).length ? `<ul>${a.filter(f => f.comment).slice(0, 8).map(f => `<li>${esc(f.comment)} <span style="color:var(--sub)">— ${esc(f.tester || "익명")}</span></li>`).join("")}</ul>` : ""}</div>`;
-  }).join("");
-  const vs = votes.length ? `<div class="res"><h4>비교 투표 ${votes.length}건</h4><ul>${votes.slice(0, 10).map(v => `<li>${esc(v.game_a)} vs ${esc(v.game_b)} → <b>${esc(v.winner === "tie" ? "비슷" : v.winner)}</b>${v.reason ? " · " + esc(v.reason) : ""}</li>`).join("")}</ul></div>` : "";
-  sheet(`<h3>결과</h3><p class="sub">${DB.remote ? "모든 테스터의 응답 (공유 DB)" : "이 기기에 남은 응답만 보여요. 테스터들이 보낸 텍스트는 만든 사람이 따로 모읍니다."}</p>
-    ${CAT.length ? blocks : '<p class="empty">아직 게임이 없어요</p>'}${vs}
-    <div class="row"><button id="rExport">JSON 내보내기</button><button class="pri" id="rClose">닫기</button></div>`);
-  $("rClose").onclick = closeSheet;
-  $("rExport").onclick = () => { const b = new Blob([JSON.stringify({ exported: new Date().toISOString(), feedback: fb, compare_votes: votes }, null, 1)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "nhc-pocket-feedback.json"; a.click(); };
+// ── 내 기록 (B) — 사용자용. 전체 결과는 관리자 화면(admin.html) ──
+function openMine() {
+  const mine = LS.get("sessions", []).filter(x => x.anon_id === anon), fbs = LS.get("feedback", []).filter(x => x.anon_id === anon);
+  const per = {}; mine.forEach(x => { const g = per[x.game_id] || (per[x.game_id] = { n: 0, sec: 0, lv: 0 }); g.n++; g.sec += x.play_seconds || 0; g.lv += x.levels_cleared || 0; });
+  const rows = CAT.map(g => { const p = per[g.id]; const f = fbs.filter(x => x.game_id === g.id).length;
+    return `<div class="res"><h4><span>${esc(g.icon)} ${esc(g.title)}</span><span style="font-size:12.5px">${likes[g.id] ? "♥" : ""}</span></h4>
+      <div class="nums"><div>플레이<b>${p ? p.n : 0}회</b></div><div>총 시간<b>${p ? fmt(p.sec * 1000).replace(" ", "") : "-"}</b></div><div>의견<b>${f}개</b></div></div></div>`; }).join("");
+  sheet(`<h3>내 기록</h3><p class="sub">테스터 번호 <b style="color:var(--acc);font-family:var(--mono)">${esc(anon)}</b> · 이 브라우저에 저장돼요. 다른 기기에서는 아래에 이 번호를 입력하면 이어서 기록돼요.</p>
+    <div class="q">닉네임 (선택 · 실명은 적지 마세요)</div><input type="text" id="mNick" maxlength="20" value="${esc(LS.get("nick", ""))}">
+    ${rows || '<p class="empty">아직 기록이 없어요</p>'}
+    <div class="q">다른 기기에서 쓰던 번호로 이어 가기</div><input type="text" id="mCode" placeholder="T-XXXXX" maxlength="7" style="text-transform:uppercase">
+    <div class="row"><button id="mCodeBtn">번호 바꾸기</button><button class="pri" id="mDone">저장</button></div>`);
+  $("mDone").onclick = () => { LS.set("nick", $("mNick").value.trim().slice(0, 20)); closeSheet(); renderMenu(); toast("저장했어요"); };
+  $("mCodeBtn").onclick = () => { const c = $("mCode").value.trim().toUpperCase(); if (!validCode(c)) { toast("T-로 시작하는 7자리 번호를 넣어 주세요"); return; } anon = c; LS.set("anon", c); closeSheet(); renderMenu(); toast(`${c} 번호로 이어서 기록해요`); };
+}
+function welcome() {
+  $("scr").innerHTML = `<h2>테스터 등록 <small>환영해요</small></h2>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center">
+      <div style="font-size:10px">당신의 테스터 번호</div><div style="font:900 26px var(--mono);letter-spacing:2px">${esc(anon)}</div>
+      <div style="font-size:9.5px;line-height:1.5">이 브라우저에 저장돼요.<br>다음에 와도 이 번호로 기록이 쌓여요.<br>개인정보(이름·연락처·IP)는 받지 않아요.</div>
+    </div><div class="hint">A 또는 화면을 눌러 시작</div>`;
+  view = "welcome";
+  const go = () => { $("scr").onclick = null; view = "menu"; SND.ok(); renderMenu(); };
+  $("scr").onclick = go; welcome.go = go;
 }
 
 // ── 시작 ──
@@ -435,7 +453,7 @@ renderMenu();
 const q = new URLSearchParams(location.search);
 const boot = $("boot"), skip = q.has("noboot");
 document.addEventListener("pointerdown", function first() { SND.boot(); document.removeEventListener("pointerdown", first); }, { once: true });
-setTimeout(() => { boot.style.opacity = 0; $("led").classList.add("on"); setTimeout(() => { boot.remove(); view = "menu"; refreshSummary(); if (q.has("play")) { const g = q.get("play").split(","); play(g.filter(id => CAT.some(c => c.id === id))); } }, 400); }, skip ? 0 : 1900);
+setTimeout(() => { boot.style.opacity = 0; $("led").classList.add("on"); setTimeout(() => { boot.remove(); view = "menu"; refreshSummary(); if (firstVisit) { SND.ok(); welcome(); } if (q.has("play")) { const g = q.get("play").split(","); play(g.filter(id => CAT.some(c => c.id === id))); } }, 400); }, skip ? 0 : 1900);
 </script>
 </body>
 </html>

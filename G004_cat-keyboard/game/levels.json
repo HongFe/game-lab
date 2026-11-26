@@ -1,0 +1,356 @@
+[
+ {
+  "word": "HI",
+  "start": 14,
+  "sol": [
+   {
+    "k": 15,
+    "j": false
+   },
+   {
+    "k": 7,
+    "j": true
+   }
+  ],
+  "opt": 2,
+  "jumps": 1,
+  "usesBS": false,
+  "trap": false,
+  "n": 1
+ },
+ {
+  "word": "OK",
+  "start": 25,
+  "sol": [
+   {
+    "k": 8,
+    "j": true
+   },
+   {
+    "k": 17,
+    "j": false
+   }
+  ],
+  "opt": 2,
+  "jumps": 1,
+  "usesBS": false,
+  "trap": false,
+  "n": 2
+ },
+ {
+  "word": "NO",
+  "start": 23,
+  "sol": [
+   {
+    "k": 24,
+    "j": false
+   },
+   {
+    "k": 8,
+    "j": true
+   }
+  ],
+  "opt": 2,
+  "jumps": 1,
+  "usesBS": false,
+  "trap": false,
+  "n": 3
+ },
+ {
+  "word": "ASK",
+  "start": 1,
+  "sol": [
+   {
+    "k": 10,
+    "j": false
+   },
+   {
+    "k": 11,
+    "j": false
+   },
+   {
+    "k": 17,
+    "j": true
+   }
+  ],
+  "opt": 3,
+  "jumps": 1,
+  "usesBS": false,
+  "trap": false,
+  "n": 4
+ },
+ {
+  "word": "SAD",
+  "start": 20,
+  "sol": [
+   {
+    "k": 11,
+    "j": false
+   },
+   {
+    "k": 10,
+    "j": false
+   },
+   {
+    "k": 12,
+    "j": true
+   }
+  ],
+  "opt": 3,
+  "jumps": 1,
+  "usesBS": false,
+  "trap": false,
+  "n": 5
+ },
+ {
+  "word": "WET",
+  "start": 10,
+  "sol": [
+   {
+    "k": 1,
+    "j": false
+   },
+   {
+    "k": 2,
+    "j": false
+   },
+   {
+    "k": 4,
+    "j": true
+   }
+  ],
+  "opt": 3,
+  "jumps": 1,
+  "usesBS": false,
+  "trap": false,
+  "n": 6
+ },
+ {
+  "word": "YES",
+  "start": 25,
+  "sol": [
+   {
+    "k": 5,
+    "j": true
+   },
+   {
+    "k": 2,
+    "j": true
+   },
+   {
+    "k": 11,
+    "j": false
+   }
+  ],
+  "opt": 3,
+  "jumps": 2,
+  "usesBS": false,
+  "trap": false,
+  "n": 7
+ },
+ {
+  "word": "SOS",
+  "start": 1,
+  "sol": [
+   {
+    "k": 11,
+    "j": false
+   },
+   {
+    "k": 8,
+    "j": true
+   },
+   {
+    "k": 11,
+    "j": true
+   }
+  ],
+  "opt": 3,
+  "jumps": 2,
+  "usesBS": false,
+  "trap": false,
+  "n": 8
+ },
+ {
+  "word": "CAT",
+  "start": 12,
+  "sol": [
+   {
+    "k": 21,
+    "j": false
+   },
+   {
+    "k": 10,
+    "j": true
+   },
+   {
+    "k": 4,
+    "j": true
+   }
+  ],
+  "opt": 3,
+  "jumps": 2,
+  "usesBS": false,
+  "trap": false,
+  "n": 9
+ },
+ {
+  "word": "QUEST",
+  "start": 21,
+  "sol": [
+   {
+    "k": 0,
+    "j": true
+   },
+   {
+    "k": 6,
+    "j": true
+   },
+   {
+    "k": 2,
+    "j": true
+   },
+   {
+    "k": 11,
+    "j": false
+   },
+   {
+    "k": 4,
+    "j": true
+   }
+  ],
+  "opt": 5,
+  "jumps": 4,
+  "usesBS": false,
+  "trap": false,
+  "n": 10
+ },
+ {
+  "word": "MILK",
+  "start": 24,
+  "sol": [
+   {
+    "k": 25,
+    "j": false
+   },
+   {
+    "k": 7,
+    "j": true
+   },
+   {
+    "k": 26,
+    "j": false
+   },
+   {
+    "k": 18,
+    "j": false
+   },
+   {
+    "k": 17,
+    "j": false
+   }
+  ],
+  "opt": 5,
+  "jumps": 1,
+  "usesBS": true,
+  "trap": true,
+  "n": 11
+ },
+ {
+  "word": "TREE",
+  "start": 20,
+  "sol": [
+   {
+    "k": 4,
+    "j": true
+   },
+   {
+    "k": 1,
+    "j": false
+   },
+   {
+    "k": 26,
+    "j": true
+   },
+   {
+    "k": 2,
+    "j": true
+   }
+  ],
+  "opt": 4,
+  "jumps": 3,
+  "usesBS": true,
+  "trap": true,
+  "n": 12
+ },
+ {
+  "word": "POOL",
+  "start": 7,
+  "sol": [
+   {
+    "k": 9,
+    "j": true
+   },
+   {
+    "k": 8,
+    "j": false
+   },
+   {
+    "k": 26,
+    "j": false
+   },
+   {
+    "k": 8,
+    "j": true
+   },
+   {
+    "k": 18,
+    "j": false
+   }
+  ],
+  "opt": 5,
+  "jumps": 2,
+  "usesBS": true,
+  "trap": true,
+  "n": 13
+ },
+ {
+  "word": "LUNCH",
+  "start": 16,
+  "sol": [
+   {
+    "k": 17,
+    "j": false
+   },
+   {
+    "k": 26,
+    "j": false
+   },
+   {
+    "k": 18,
+    "j": false
+   },
+   {
+    "k": 6,
+    "j": true
+   },
+   {
+    "k": 24,
+    "j": true
+   },
+   {
+    "k": 21,
+    "j": true
+   },
+   {
+    "k": 15,
+    "j": true
+   }
+  ],
+  "opt": 7,
+  "jumps": 4,
+  "usesBS": true,
+  "trap": true,
+  "n": 14
+ }
+]
