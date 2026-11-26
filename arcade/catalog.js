@@ -43,8 +43,8 @@ window.CATALOG = [
   "path": "../G003_crash-runner/game/index.html",
   "color": "#3cc98a",
   "icon": "📉",
-  "version": "2026-11-26 19:10",
-  "note": "다음 단계 미리보기·성장 상점, 몹·아이템마다 판단 역할(콤보·진짜/가…",
+  "version": "2026-11-26 20:23",
+  "note": "G003 2차 QA 결과",
   "rating": null,
   "hot": true
  },
@@ -109,6 +109,22 @@ window.CATALOG = [
   "icon": "🏠",
   "version": "2026-11-26 19:43",
   "note": "시간 문구·현금 음수 버그, 실제 총 확률 표시, 청약 쏠림 해소, 알…",
+  "rating": null,
+  "hot": false
+ },
+ {
+  "id": "G013",
+  "title": "지옥철 밀어넣기",
+  "one_liner": "문 닫히기 3초 전, 승객을 밀어 넣어 한 명이라도 더 태워라. 너무 세게 밀면 반대편 문으로 튀어나간다.",
+  "type": "웃긴 샌드박스",
+  "stage": "프로토",
+  "deadline": "2026-12-03",
+  "created": "2026-11-26",
+  "path": "../G013_subway-push/game/index.html",
+  "color": "#8bc34a",
+  "icon": "🚃",
+  "version": "2026-11-26 20:22",
+  "note": "꾹 눌러 힘 조절·떼서 밀기, 정직한 초록 칸, 역 10개·승객 7종…",
   "rating": null,
   "hot": false
  }
