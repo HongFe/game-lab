@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#12141c">
+<title>이중주차 탈출</title>
+<style>
+:root{--bg:#12141c;--panel:#1c1f2b;--tx:#eef0f6;--sub:#9aa0b4;--line:#2c3142;--acc:#ffcc4d;--red:#ff5d5d;--grn:#5fd39a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overscroll-behavior:none}
+body{display:flex;flex-direction:column;align-items:center;padding:12px 16px 20px;user-select:none;-webkit-user-select:none}
+header{width:100%;max-width:480px;display:flex;justify-content:space-between;align-items:flex-end;gap:8px}
+h1{font-size:18px;margin:0;letter-spacing:-.3px} h1 small{display:block;font-size:12px;color:var(--sub);font-weight:500}
+.clock{font-family:ui-monospace,Menlo,monospace;font-size:30px;font-weight:800;color:var(--acc);line-height:1}
+.clock.late{color:var(--red)} .clock small{display:block;font-size:11px;color:var(--sub);font-weight:500;text-align:right}
+.hud{width:100%;max-width:480px;display:flex;gap:6px;margin:10px 0 8px;font-size:13px}
+.hud div{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+.hud b{font-family:ui-monospace,Menlo,monospace;font-size:17px;display:block}
+.goal{width:100%;max-width:480px;font-size:12.5px;color:var(--sub);margin-bottom:8px}
+.goal b{color:var(--acc)}
+#wrap{position:relative;width:100%;max-width:480px}
+canvas{display:block;width:100%;touch-action:none;border-radius:14px}
+.bar{width:100%;max-width:480px;display:flex;gap:8px;margin-top:10px}
+button{flex:1;font:inherit;font-size:14px;font-weight:700;color:var(--tx);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 0;cursor:pointer}
+button:active{transform:translateY(1px)} button.pri{background:var(--acc);color:#1b1b1b;border-color:var(--acc)}
+button:disabled{opacity:.35}
+.help{width:100%;max-width:480px;font-size:12.5px;color:var(--sub);margin-top:12px;line-height:1.6}
+.help span{display:inline-block;border-radius:5px;padding:0 6px;font-weight:800;color:#111;margin:0 2px}
+#ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,11,16,.72);border-radius:14px;text-align:center;padding:20px}
+#ov.on{display:flex} #ov .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px;width:min(320px,90%)}
+#ov h2{margin:0 0 6px;font-size:22px} #ov p{margin:6px 0;color:var(--sub);font-size:14px;line-height:1.5}
+#ov .stars{font-size:34px;letter-spacing:4px;color:var(--acc);margin:4px 0}
+#ov .box .bar{margin-top:12px}
+#toast{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:#fff;color:#111;border-radius:14px;padding:8px 12px;font-size:14px;font-weight:600;max-width:88%;box-shadow:0 6px 20px rgba(0,0,0,.35);opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1>이중주차 탈출<small id="lvname">레벨 1</small></h1>
+  <div class="clock" id="clock">05:00<small>06:00 출근</small></div>
+</header>
+<div class="hud">
+  <div>이동<b id="mv">0</b></div>
+  <div>전화<b id="cl">0</b></div>
+  <div>최고 기록<b id="best">-</b></div>
+</div>
+<div class="goal" id="goal"></div>
+<div id="wrap">
+  <canvas id="cv" width="480" height="480"></canvas>
+  <div id="toast"></div>
+  <div id="ov"><div class="box" id="ovbox"></div></div>
+</div>
+<div class="bar">
+  <button id="prev">◀</button>
+  <button id="undo">되돌리기</button>
+  <button id="reset">다시</button>
+  <button id="next">▶</button>
+</div>
+<p class="help"><span style="background:#7ee0a8">N</span> 중립 차는 끌어서 앞뒤로 밀기(1분) · <span style="background:#b8bccb">P</span> 주차 차는 눌러서 차주에게 전화(10분, 그 뒤 밀 수 있음) · <span style="background:#ff5d5d">내 차</span>를 오른쪽 출구로!</p>
+
+<script>
+"use strict";
+const LEVELS = /*LEVELS_START*/[{"cars":[[2,1,2,"H","ME"],[1,4,2,"V","N"],[1,1,3,"H","P"],[0,2,2,"H","P"],[4,2,2,"H","P"],[3,2,2,"H","N"],[5,2,3,"H","P"],[1,0,3,"V","N"],[4,1,2,"V","N"],[3,4,2,"H","N"],[1,5,2,"V","N"]],"opt_calls":0,"opt_moves":3,"diff":3,"n":1},{"cars":[[2,0,2,"H","ME"],[1,4,2,"V","N"],[5,1,2,"H","N"],[1,5,2,"V","N"],[1,2,2,"V","N"],[1,3,2,"V","N"],[0,1,2,"V","P"],[4,0,3,"H","N"],[4,3,2,"V","P"],[4,5,2,"V","N"]],"opt_calls":0,"opt_moves":5,"diff":5,"n":2},{"cars":[[2,0,2,"H","ME"],[4,1,3,"H","P"],[3,1,2,"H","P"],[2,3,2,"V","P"],[2,5,2,"V","N"],[1,1,2,"H","N"],[0,2,2,"H","N"],[3,0,2,"V","P"],[4,4,2,"V","N"],[0,5,2,"V","P"]],"opt_calls":1,"opt_moves":4,"diff":8,"n":3},{"cars":[[2,0,2,"H","ME"],[4,3,2,"V","P"],[3,2,2,"V","N"],[4,1,2,"V","P"],[0,4,3,"V","N"],[0,0,3,"H","N"],[1,0,2,"H","N"],[1,2,2,"V","N"],[3,5,2,"V","N"],[0,5,2,"V","N"],[3,0,2,"V","P"]],"opt_calls":0,"opt_moves":9,"diff":9,"n":4},{"cars":[[2,1,2,"H","ME"],[1,2,2,"H","N"],[4,3,2,"H","P"],[3,2,2,"V","N"],[0,4,2,"V","N"],[5,2,2,"H","N"],[2,4,2,"V","N"],[0,1,2,"H","N"]],"opt_calls":1,"opt_moves":6,"diff":10,"n":5},{"cars":[[2,1,2,"H","ME"],[3,0,2,"V","N"],[0,2,3,"H","P"],[1,3,3,"V","N"],[4,1,3,"H","N"],[5,4,2,"H","N"],[0,1,2,"V","N"],[2,4,2,"V","N"],[1,0,2,"V","N"],[5,0,2,"H","N"],[0,5,2,"V","N"],[3,1,2,"H","N"],[2,5,2,"V","P"]],"opt_calls":1,"opt_moves":7,"diff":11,"n":6},{"cars":[[2,0,2,"H","ME"],[0,3,3,"V","N"],[3,3,2,"H","N"],[0,4,2,"H","N"],[3,5,2,"V","N"],[3,0,2,"H","N"],[1,5,2,"V","N"],[5,4,2,"H","P"],[0,2,3,"V","N"]],"opt_calls":1,"opt_moves":8,"diff":12,"n":7},{"cars":[[2,1,2,"H","ME"],[1,3,3,"V","P"],[0,1,2,"V","P"],[0,0,2,"V","P"],[3,1,3,"V","N"],[5,2,2,"H","N"],[1,4,2,"V","P"],[0,3,2,"H","N"],[2,0,2,"V","N"],[3,2,2,"V","N"],[1,5,2,"V","N"],[4,0,2,"V","P"],[4,4,2,"H","N"]],"opt_calls":2,"opt_moves":6,"diff":14,"n":8},{"cars":[[2,0,2,"H","ME"],[5,1,2,"H","N"],[4,3,2,"V","N"],[1,3,2,"H","N"],[0,2,3,"V","N"],[1,5,3,"V","N"],[3,1,3,"H","N"],[4,4,2,"V","P"],[4,0,2,"H","N"],[0,4,2,"H","P"],[0,0,2,"H","N"]],"opt_calls":1,"opt_moves":10,"diff":14,"n":9},{"cars":[[2,0,2,"H","ME"],[3,4,2,"V","N"],[3,0,2,"V","N"],[5,3,2,"H","N"],[1,3,2,"V","N"],[4,1,2,"H","N"],[0,4,2,"H","N"],[1,2,3,"V","N"],[1,4,2,"V","N"]],"opt_calls":0,"opt_moves":14,"diff":14,"n":10},{"cars":[[2,0,2,"H","ME"],[5,1,2,"H","P"],[4,2,2,"H","N"],[0,2,3,"H","N"],[3,0,2,"V","N"],[0,0,2,"H","P"],[2,2,2,"V","P"],[4,5,2,"V","P"],[1,4,3,"V","N"],[1,3,2,"V","N"],[0,5,2,"V","N"]],"opt_calls":1,"opt_moves":11,"diff":15,"n":11},{"cars":[[2,0,2,"H","ME"],[0,3,2,"H","P"],[3,0,2,"V","N"],[2,3,2,"V","P"],[4,1,2,"H","N"],[1,4,2,"V","N"],[1,5,2,"V","N"],[1,1,2,"H","N"],[0,0,2,"V","N"],[0,1,2,"H","N"],[4,4,2,"H","N"]],"opt_calls":2,"opt_moves":8,"diff":16,"n":12},{"cars":[[2,0,2,"H","ME"],[0,0,2,"V","N"],[4,1,2,"V","N"],[2,4,3,"V","N"],[4,2,2,"H","N"],[0,3,3,"H","P"],[1,5,3,"V","P"],[1,3,3,"V","N"]],"opt_calls":1,"opt_moves":12,"diff":16,"n":13},{"cars":[[2,0,2,"H","ME"],[1,5,3,"V","N"],[2,4,3,"V","N"],[5,4,2,"H","N"],[1,2,2,"V","P"],[5,2,2,"H","N"],[3,0,2,"V","N"],[0,2,3,"H","N"],[0,0,2,"V","N"],[3,2,2,"H","P"],[4,2,2,"H","N"],[1,3,2,"V","N"]],"opt_calls":2,"opt_moves":10,"diff":18,"n":14},{"cars":[[2,1,2,"H","ME"],[4,3,2,"H","N"],[5,3,2,"H","N"],[2,5,3,"V","P"],[2,0,3,"V","P"],[0,1,2,"V","N"],[0,3,2,"H","N"],[5,0,2,"H","N"],[0,0,2,"V","N"],[1,4,3,"V","N"],[3,2,2,"V","N"],[3,1,2,"V","N"]],"opt_calls":2,"opt_moves":12,"diff":20,"n":15},{"cars":[[2,0,2,"H","ME"],[1,4,2,"H","N"],[1,1,2,"H","P"],[0,1,2,"H","N"],[4,2,2,"V","P"],[4,3,2,"H","N"],[4,0,2,"V","P"],[1,3,2,"V","P"],[2,5,2,"V","N"],[3,0,2,"H","N"],[2,4,2,"V","N"],[5,3,2,"H","N"],[0,4,2,"H","P"]],"opt_calls":3,"opt_moves":8,"diff":20,"n":16},{"cars":[[2,0,2,"H","ME"],[0,5,3,"V","N"],[3,4,2,"H","P"],[4,2,2,"H","P"],[1,1,2,"H","P"],[0,4,3,"V","N"],[2,3,2,"V","N"],[3,0,2,"V","N"],[5,1,2,"H","N"],[2,2,2,"V","N"],[0,0,3,"H","N"]],"opt_calls":2,"opt_moves":15,"diff":23,"n":17},{"cars":[[2,0,2,"H","ME"],[4,2,2,"H","P"],[5,2,2,"H","N"],[0,1,2,"V","N"],[2,5,2,"V","N"],[1,2,3,"V","P"],[4,0,2,"H","P"],[5,0,2,"H","N"],[1,3,3,"H","P"],[4,4,2,"V","N"],[0,4,2,"H","N"]],"opt_calls":3,"opt_moves":11,"diff":23,"n":18},{"cars":[[2,1,2,"H","ME"],[2,3,2,"V","P"],[0,2,2,"V","N"],[0,5,2,"V","P"],[1,3,2,"H","P"],[4,1,2,"V","N"],[4,5,2,"V","N"],[3,2,2,"V","P"],[4,3,2,"H","N"],[0,0,2,"H","N"],[3,0,2,"V","N"],[5,2,2,"H","N"]],"opt_calls":2,"opt_moves":17,"diff":25,"n":19},{"cars":[[2,0,2,"H","ME"],[1,3,2,"V","P"],[5,3,2,"H","N"],[3,0,2,"V","P"],[1,2,3,"V","N"],[5,1,2,"H","N"],[1,4,2,"V","N"],[3,4,2,"V","P"],[4,2,2,"H","N"],[0,4,2,"H","N"]],"opt_calls":3,"opt_moves":15,"diff":27,"n":20}]/*LEVELS_END*/;
+const W = 6, H = 6, EXIT_ROW = 2, START_MIN = 5 * 60, LIMIT = 60, CALL_MIN = 10;
+const OWNER_LINES = [
+  "아 네~ 지금 내려가요 (라고 한 지 10분)", "누구세요? …아 차요? 잠시만요", "거기 원래 제 자리인데요?",
+  "새벽에 전화하시면 어떡해요…", "아 죄송해요 사이드 풀어 놨어요", "저 지금 꿈속인데요",
+  "어머 제 차가 거기 있어요?", "엄마! 차 빼래!", "5분만요… 아니 10분만", "네 네 바로 갈게요 (슬리퍼 소리)"
+];
+const PAL = ["#7ee0a8", "#7cc4ff", "#c79bff", "#ffb36b", "#6fe0d8", "#f59ac8", "#c4e06b", "#9fb2ff", "#ffd36b", "#8ee6b0", "#a7d3ff", "#e0a8ff"];
+
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d");
+let L = 0, cars = [], moves = 0, calls = 0, minutes = 0, hist = [], over = false, drag = null, exiting = null, busy = false;
+
+// 저장 (막혀도 게임은 돈다)
+const store = {
+  get() { try { return JSON.parse(localStorage.getItem("g001") || "{}"); } catch (e) { return {}; } },
+  set(v) { try { localStorage.setItem("g001", JSON.stringify(v)); } catch (e) {} }
+};
+let save = store.get(); save.stars = save.stars || {}; save.unlocked = save.unlocked || 1;
+
+// 효과음 (Web Audio 합성, 파일 없음)
+let ac = null;
+function beep(freq, dur, type = "square", vol = .05, when = 0) {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const t = ac.currentTime + when, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + dur);
+  } catch (e) {}
+}
+const sfx = {
+  move(dist = 1) { const p = 1 + (Math.random() * .16 - .08) + Math.min(dist, 4) * .05; beep(300 * p, .07, "square", .045); beep(150 * p, .05, "triangle", .05, .01); },
+  bump() { beep(95 + Math.random() * 15, .07, "triangle", .09); },
+  ding() { beep(1175, .12, "square", .035); beep(1568, .16, "square", .03, .07); },
+  honk() { beep(415, .16, "square", .05); beep(466, .16, "square", .04); beep(415, .2, "square", .05, .2); beep(466, .2, "square", .04, .2); },
+  whoosh() { [600, 450, 320].forEach((f, i) => beep(f, .05, "sine", .04, i * .03)); },
+  ring() { for (let i = 0; i < 4; i++) beep(i % 2 ? 660 : 880, .09, "square", .04, i * .12); },
+  win() { [523, 659, 784, 1046].forEach((f, i) => beep(f, .16, "square", .05, i * .09)); },
+  fail() { [392, 330, 262].forEach((f, i) => beep(f, .2, "triangle", .06, i * .14)); }
+};
+
+// ── 오락실(NHC POCKET)에 플레이 신호 보내기: start / level_start / level_clear / fail / input ──
+function emit(ev, data = {}) { try { if (window.parent !== window) window.parent.postMessage({ type: "nhc-game", game: "G001", ev, data }, "*"); } catch (e) {} }
+let lastInputEmit = 0;
+addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastInputEmit > 4000) { lastInputEmit = t; emit("input"); } }, true);
+
+// ── 게임쥬스(손맛): 튕김·부딪힘·흔들림·번쩍임·먼지·꽃가루. ?nojuice 로 끄고 비교한다 ──
+const JUICE = !new URLSearchParams(location.search).has("nojuice");
+const fx = { parts: [], shake: 0, flash: null, car: {}, running: false };
+const now = () => performance.now();
+function kick() { if (JUICE && !fx.running) { fx.running = true; requestAnimationFrame(fxLoop); } }
+function fxActive() {
+  const t = now();
+  return fx.parts.length || fx.shake > .3 || (fx.flash && t - fx.flash.t0 < fx.flash.dur) ||
+    Object.values(fx.car).some(c => (c.b && t - c.b.t0 < c.b.dur) || (c.w && t - c.w.t0 < c.w.dur) || (c.f && t - c.f.t0 < c.f.dur));
+}
+function fxLoop() {
+  const dt = 1 / 60;
+  fx.parts = fx.parts.filter(p => (p.life -= dt) > 0);
+  fx.parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.g * dt; p.vx *= p.drag; p.vy *= p.drag; });
+  fx.shake *= .85;
+  draw();
+  if (fxActive()) requestAnimationFrame(fxLoop); else { fx.running = false; fx.shake = 0; draw(); }
+}
+function carFx(i) { return fx.car[i] || (fx.car[i] = {}); }
+function bounce(i, dir, amp = .1) { if (!JUICE) return; carFx(i).b = { t0: now(), dur: 320, amp: amp * dir }; kick(); }
+function wobble(i, dur = 900, amp = .05) { if (!JUICE) return; carFx(i).w = { t0: now(), dur, amp }; kick(); }
+function flashCar(i, col = "#fff", dur = 220) { if (!JUICE) return; carFx(i).f = { t0: now(), dur, col }; kick(); }
+function shake(px) { if (!JUICE) return; fx.shake = Math.max(fx.shake, px); kick(); }
+function screenFlash(col, dur = 260) { if (!JUICE) return; fx.flash = { t0: now(), dur, col }; kick(); }
+function puff(x, y, n, opt = {}) {
+  if (!JUICE) return;
+  for (let j = 0; j < n; j++) {
+    const a = opt.angle !== undefined ? opt.angle + (Math.random() - .5) * (opt.spread || 1.2) : Math.random() * Math.PI * 2, sp = (opt.speed || 40) * (.5 + Math.random());
+    fx.parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: opt.g || 0, drag: opt.drag || .92, life: (opt.life || .5) * (.7 + Math.random() * .6), max: opt.life || .5,
+      r: (opt.r || 3) * (.6 + Math.random() * .8), col: opt.cols ? opt.cols[j % opt.cols.length] : (opt.col || "rgba(200,205,220,.5)"), sq: !!opt.square });
+  }
+  kick();
+}
+const CONF = ["#ffcc4d", "#ff5d5d", "#7ee0a8", "#7cc4ff", "#c79bff", "#ffffff"];
+function carRect(k) { return { x: PAD + k.x * S + 4, y: PAD + k.y * S + 4, w: (k.dir === "H" ? k.len : 1) * S - 8, h: (k.dir === "H" ? 1 : k.len) * S - 8 }; }
+
+function load(n) {
+  L = Math.max(0, Math.min(LEVELS.length - 1, n));
+  const lv = LEVELS[L];
+  cars = lv.cars.map(([r, c, len, dir, kind], i) => ({ r, c, len, dir, kind, called: false, col: kind === "ME" ? "#ff5d5d" : PAL[i % PAL.length], x: c, y: r }));
+  moves = 0; calls = 0; minutes = 0; hist = []; over = false; drag = null; exiting = null; busy = false;
+  fx.parts = []; fx.car = {}; fx.shake = 0; fx.flash = null;
+  emit("level_start", { level: L + 1 });
+  $("ov").classList.remove("on");
+  hud(); draw();
+}
+
+function hud() {
+  const lv = LEVELS[L], t = START_MIN + minutes;
+  $("lvname").textContent = `레벨 ${L + 1} / ${LEVELS.length}`;
+  const c = $("clock");
+  c.firstChild.nodeValue = `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+  c.classList.toggle("late", minutes >= LIMIT - 10);
+  $("mv").textContent = moves; $("cl").textContent = calls;
+  const b = save.stars[L]; $("best").textContent = b ? "★".repeat(b) + "☆".repeat(3 - b) : "-";
+  $("goal").innerHTML = `별 3개: 전화 <b>${lv.opt_calls}번</b> · 이동 <b>${lv.opt_moves + 2}번</b> 이하 (최적 ${lv.opt_moves})`;
+  $("prev").disabled = L === 0; $("next").disabled = L + 1 >= save.unlocked || L + 1 >= LEVELS.length;
+  $("undo").disabled = !hist.length || over;
+}
+
+function occupied(ignore) {
+  const g = Array.from({ length: H }, () => Array(W).fill(-1));
+  cars.forEach((k, i) => { if (i === ignore) return; for (let j = 0; j < k.len; j++) { const r = k.dir === "H" ? k.r : k.r + j, c = k.dir === "H" ? k.c + j : k.c; g[r][c] = i; } });
+  return g;
+}
+function range(i) {
+  const k = cars[i], g = occupied(i);
+  let lo = k.dir === "H" ? k.c : k.r, hi = lo;
+  if (k.dir === "H") {
+    while (lo - 1 >= 0 && g[k.r][lo - 1] === -1) lo--;
+    while (hi + k.len < W && g[k.r][hi + k.len] === -1) hi++;
+  } else {
+    while (lo - 1 >= 0 && g[lo - 1][k.c] === -1) lo--;
+    while (hi + k.len < H && g[hi + k.len][k.c] === -1) hi++;
+  }
+  return [lo, hi];
+}
+
+// 그리기
+let S = 80, PAD = 10;
+function resize() {
+  const w = Math.min(480, $("wrap").clientWidth), dpr = window.devicePixelRatio || 1;
+  PAD = Math.round(w * .03); S = (w - PAD * 2 - w * .05) / W;
+  const h = Math.round(PAD * 2 + H * S);
+  cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function draw() {
+  const dpr = window.devicePixelRatio || 1, w = cv.width / dpr, hh = cv.height / dpr;
+  ctx.clearRect(0, 0, w, hh);
+  ctx.save();
+  if (fx.shake > .3) ctx.translate((Math.random() - .5) * fx.shake, (Math.random() - .5) * fx.shake);
+  ctx.fillStyle = "#1a1d27"; rr(0, 0, w, hh, 14); ctx.fill();
+  // 주차선
+  ctx.strokeStyle = "rgba(255,255,255,.07)"; ctx.lineWidth = 1;
+  for (let i = 0; i <= W; i++) { ctx.beginPath(); ctx.moveTo(PAD + i * S, PAD); ctx.lineTo(PAD + i * S, PAD + H * S); ctx.stroke(); ctx.beginPath(); ctx.moveTo(PAD, PAD + i * S); ctx.lineTo(PAD + W * S, PAD + i * S); ctx.stroke(); }
+  // 출구
+  const ex = PAD + W * S, ey = PAD + EXIT_ROW * S;
+  ctx.fillStyle = "rgba(255,204,77,.18)"; ctx.fillRect(ex, ey + 4, w - ex, S - 8);
+  ctx.fillStyle = "#ffcc4d"; ctx.font = `800 ${Math.round(S * .22)}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.save(); ctx.translate(ex + (w - ex) / 2, ey + S / 2); ctx.rotate(Math.PI / 2); ctx.fillText("출구", 0, 0); ctx.restore();
+  // 먼지 (차 아래)
+  const t = now();
+  fx.parts.forEach(p => { if (p.sq) return; ctx.globalAlpha = Math.max(0, p.life / p.max) * .9; ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (1.6 - p.life / p.max * .6), 0, 7); ctx.fill(); });
+  ctx.globalAlpha = 1;
+  // 차
+  cars.forEach((k, i) => {
+    let ox = 0, oy = 0, lift = 0;
+    const c = fx.car[i];
+    if (c && c.b && t - c.b.t0 < c.b.dur) { const u = (t - c.b.t0) / c.b.dur, d = c.b.amp * Math.sin(u * Math.PI * 2.5) * (1 - u) * S; if (k.dir === "H") ox += d; else oy += d; }
+    if (c && c.w && t - c.w.t0 < c.w.dur) { const u = (t - c.w.t0) / c.w.dur; ox += Math.sin(t / 22) * c.w.amp * S * (1 - u * .5); }
+    if (drag && drag.i === i && JUICE) lift = 1;
+    let x = PAD + k.x * S + 4 + ox, y = PAD + k.y * S + 4 + oy, cw = (k.dir === "H" ? k.len : 1) * S - 8, ch = (k.dir === "H" ? 1 : k.len) * S - 8;
+    if (lift) { x -= 2; y -= 3; cw += 4; ch += 4; }
+    const locked = k.kind === "P" && !k.called;
+    ctx.fillStyle = lift ? "rgba(0,0,0,.5)" : "rgba(0,0,0,.35)"; rr(x + 2, y + (lift ? 9 : 4), cw, ch, S * .18); ctx.fill();
+    ctx.fillStyle = locked ? "#b8bccb" : k.col; rr(x, y, cw, ch, S * .18); ctx.fill();
+    // 유리창
+    ctx.fillStyle = "rgba(18,20,28,.45)";
+    if (k.dir === "H") { rr(x + cw - S * .42, y + ch * .18, S * .2, ch * .64, 4); ctx.fill(); rr(x + S * .16, y + ch * .2, S * .14, ch * .6, 4); ctx.fill(); }
+    else { rr(x + cw * .18, y + S * .2, cw * .64, S * .2, 4); ctx.fill(); rr(x + cw * .2, y + ch - S * .32, cw * .6, S * .14, 4); ctx.fill(); }
+    // 표시
+    ctx.fillStyle = "#151515"; ctx.font = `900 ${Math.round(S * .34)}px sans-serif`;
+    const label = k.kind === "ME" ? "나" : locked ? "P" : "N";
+    ctx.fillText(label, x + cw / 2, y + ch / 2 + 1);
+    if (locked) { ctx.font = `${Math.round(S * .2)}px sans-serif`; ctx.fillText("☎", x + cw - S * .2, y + S * .2); }
+    if (drag && drag.i === i) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; rr(x, y, cw, ch, S * .18); ctx.stroke(); }
+    if (c && c.f && t - c.f.t0 < c.f.dur) { ctx.globalAlpha = .85 * (1 - (t - c.f.t0) / c.f.dur); ctx.fillStyle = c.f.col; rr(x, y, cw, ch, S * .18); ctx.fill(); ctx.globalAlpha = 1; }
+  });
+  // 꽃가루·반짝이 (차 위)
+  fx.parts.forEach(p => { if (!p.sq) return; ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.col; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 9); ctx.fillRect(-p.r, -p.r * .5, p.r * 2, p.r); ctx.restore(); });
+  ctx.globalAlpha = 1;
+  if (fx.flash && t - fx.flash.t0 < fx.flash.dur) { ctx.globalAlpha = .35 * (1 - (t - fx.flash.t0) / fx.flash.dur); ctx.fillStyle = fx.flash.col; ctx.fillRect(0, 0, w, hh); ctx.globalAlpha = 1; }
+  ctx.restore();
+}
+
+// 입력
+function cellAt(e) {
+  const b = cv.getBoundingClientRect(), x = (e.clientX - b.left - PAD) / S, y = (e.clientY - b.top - PAD) / S;
+  return { x, y };
+}
+function carAt(p) {
+  return cars.findIndex(k => p.x >= k.x && p.x < k.x + (k.dir === "H" ? k.len : 1) && p.y >= k.y && p.y < k.y + (k.dir === "H" ? 1 : k.len));
+}
+cv.addEventListener("pointerdown", e => {
+  if (over || busy || exiting) return;
+  const p = cellAt(e), i = carAt(p);
+  if (i < 0) return;
+  const k = cars[i];
+  if (k.kind === "P" && !k.called) { callOwner(i); return; }
+  const [lo, hi] = range(i);
+  drag = { i, start: k.dir === "H" ? p.x : p.y, base: k.dir === "H" ? k.c : k.r, lo, hi, bumped: 0 };
+  if (JUICE) beep(520, .03, "sine", .03);
+  cv.setPointerCapture(e.pointerId); draw();
+});
+cv.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const k = cars[drag.i], p = cellAt(e), d = (k.dir === "H" ? p.x : p.y) - drag.start;
+  const raw = drag.base + d;
+  let v = Math.max(drag.lo, Math.min(drag.hi, raw));
+  const push = raw < drag.lo - .22 ? -1 : raw > drag.hi + .22 ? 1 : 0;
+  if (push && drag.bumped !== push) {
+    drag.bumped = push; sfx.bump(); bounce(drag.i, -push, .05); shake(2);
+    const r = carRect(k), ex = push > 0 ? (k.dir === "H" ? r.x + r.w : r.x + r.w / 2) : (k.dir === "H" ? r.x : r.x + r.w / 2), ey = push > 0 ? (k.dir === "H" ? r.y + r.h / 2 : r.y + r.h) : (k.dir === "H" ? r.y + r.h / 2 : r.y);
+    puff(ex, ey, 5, { speed: 50, life: .35, r: 2.5, col: "rgba(255,255,255,.55)" });
+  } else if (!push) drag.bumped = 0;
+  if (k.dir === "H") k.x = v; else k.y = v;
+  draw();
+});
+function endDrag() {
+  if (!drag) return;
+  const k = cars[drag.i], v = Math.round(k.dir === "H" ? k.x : k.y);
+  if (v !== drag.base) {
+    hist.push({ i: drag.i, from: drag.base, calls, minutes, moves, called: null });
+    const dist = Math.abs(v - drag.base), dir = Math.sign(v - drag.base);
+    if (k.dir === "H") k.c = v; else k.r = v;
+    moves++; minutes += 1; sfx.move(dist);
+    k.x = k.c; k.y = k.r;
+    bounce(drag.i, dir, .07 + dist * .015);
+    const r = carRect(k), back = dir > 0 ? 0 : 1;
+    const px = k.dir === "H" ? r.x + r.w * back : r.x + r.w / 2, py = k.dir === "H" ? r.y + r.h / 2 : r.y + r.h * back;
+    puff(px, py, 3 + dist * 2, { angle: k.dir === "H" ? (dir > 0 ? Math.PI : 0) : (dir > 0 ? -Math.PI / 2 : Math.PI / 2), spread: 1.6, speed: 35 + dist * 10, life: .55, r: 4 });
+  }
+  k.x = k.c; k.y = k.r; drag = null;
+  hud(); draw(); check();
+}
+cv.addEventListener("pointerup", endDrag);
+cv.addEventListener("pointercancel", endDrag);
+
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2200);
+}
+function callOwner(i) {
+  busy = true; sfx.ring(); toast("☎ 차주에게 전화 거는 중…"); wobble(i, 900, .045);
+  setTimeout(() => {
+    hist.push({ i, from: null, calls, minutes, moves, called: i });
+    cars[i].called = true; calls++; minutes += CALL_MIN; busy = false;
+    sfx.ding(); flashCar(i); const r = carRect(cars[i]);
+    puff(r.x + r.w / 2, r.y + r.h / 2, 10, { speed: 90, life: .6, r: 3, cols: ["#ffffff", "#ffcc4d"], square: true, drag: .9 });
+    toast("“" + OWNER_LINES[Math.floor(Math.random() * OWNER_LINES.length)] + "”");
+    hud(); draw(); check();
+  }, 900);
+}
+
+function stars() {
+  const lv = LEVELS[L];
+  if (calls <= lv.opt_calls && moves <= lv.opt_moves + 2) return 3;
+  if (calls <= lv.opt_calls + 1 && moves <= lv.opt_moves + 6) return 2;
+  return 1;
+}
+function check() {
+  const me = cars[0];
+  if (me.c + me.len === W) {
+    over = true; exiting = true;
+    const st = stars(), prev = save.stars[L] || 0;
+    save.stars[L] = Math.max(prev, st); save.unlocked = Math.max(save.unlocked, L + 2); store.set(save);
+    const go = () => {
+      if (JUICE) { sfx.honk(); flashCar(0, "#fff", 160); shake(5); } else sfx.win();
+      const t0 = performance.now(); let last = t0;
+      (function anim(t) {
+        const u = (t - t0) / 1000;
+        me.x = me.c + (JUICE ? 1.4 * u * u + .4 * u : u * 11);
+        if (JUICE && t - last > 40) { last = t; const r = carRect(me); puff(r.x, r.y + r.h * .7, 2, { angle: Math.PI, spread: .8, speed: 30, life: .7, r: 5, col: "rgba(170,175,190,.45)" }); }
+        draw();
+        if (me.x < W + 1) requestAnimationFrame(anim);
+        else {
+          exiting = false;
+          if (JUICE) { sfx.win(); const ex = PAD + W * S, ey = PAD + EXIT_ROW * S + S / 2; puff(ex, ey, 40, { angle: Math.PI, spread: 2.6, speed: 260, g: 300, life: 1.2, r: 4, cols: CONF, square: true, drag: .96 }); }
+          setTimeout(() => showWin(st), JUICE ? 450 : 0);
+        }
+      })(t0);
+    };
+    JUICE ? setTimeout(go, 140) : go();
+    window.__g001.lastResult = { level: L + 1, moves, calls, minutes, stars: st };
+    emit("level_clear", { level: L + 1, moves, calls, stars: st });
+    return;
+  }
+  if (minutes >= LIMIT) {
+    over = true; sfx.fail(); screenFlash("#ff3b3b", 400); shake(8);
+    overlay(`<h2>지각!</h2><p>06:00이 넘었습니다. 이동 ${moves} · 전화 ${calls}</p><div class="bar"><button class="pri" onclick="load(L)">다시</button></div>`);
+    window.__g001.lastResult = { level: L + 1, moves, calls, minutes, stars: 0 };
+    emit("fail", { level: L + 1, moves, calls });
+  }
+}
+function showWin(st) {
+  const t = START_MIN + minutes, last = L + 1 >= LEVELS.length;
+  overlay(`<h2>탈출 성공</h2><div class="stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</div>
+  <p>${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")} 출발 · 이동 ${moves} · 전화 ${calls}</p>
+  <div class="bar"><button onclick="load(L)">다시</button>${last ? "" : '<button class="pri" onclick="load(L+1)">다음 레벨</button>'}</div>`);
+  hud();
+}
+function overlay(html) { $("ovbox").innerHTML = html; $("ov").classList.add("on"); hud(); }
+
+$("undo").onclick = () => {
+  const h = hist.pop(); if (!h || over) return;
+  if (h.called !== null) cars[h.called].called = false;
+  else { const k = cars[h.i], cur = k.dir === "H" ? k.c : k.r; if (k.dir === "H") k.c = h.from; else k.r = h.from; k.x = k.c; k.y = k.r; bounce(h.i, Math.sign(h.from - cur), .06); }
+  if (JUICE) sfx.whoosh();
+  calls = h.calls; minutes = h.minutes; moves = h.moves; hud(); draw();
+};
+$("reset").onclick = () => load(L);
+$("prev").onclick = () => load(L - 1);
+$("next").onclick = () => load(L + 1);
+window.addEventListener("resize", resize);
+
+// ── 자동 풀이 봇: 자체 검사(?selftest)와 자동 플레이 녹화(?autoplay=N, 자동화 파이프라인 P1)용 ──
+function solve(lvIdx) {
+  const cs = LEVELS[lvIdx].cars, n = cs.length, CALLC = 1000;
+  const fixed = cs.map(([r, c, ln, d]) => d === "H" ? r : c), start = cs.map(([r, c, ln, d]) => d === "H" ? c : r);
+  const pm = cs.reduce((m, x, i) => x[4] === "P" ? m | (1 << i) : m, 0);
+  const key = (p, m) => p.join(",") + "|" + m;
+  const dist = new Map(), prev = new Map(), pq = [[0, start, 0]];
+  dist.set(key(start, 0), 0);
+  const push = (c, p, m, from, act) => { const k = key(p, m); if (c < (dist.get(k) ?? Infinity)) { dist.set(k, c); prev.set(k, [from, act]); pq.push([c, p, m]); } };
+  while (pq.length) {
+    let bi = 0; for (let j = 1; j < pq.length; j++) if (pq[j][0] < pq[bi][0]) bi = j;
+    const [cost, pos, mask] = pq.splice(bi, 1)[0], k0 = key(pos, mask);
+    if (cost > dist.get(k0)) continue;
+    if (pos[0] + cs[0][2] === W) {
+      const acts = []; let k = k0;
+      while (prev.has(k)) { const [f, a] = prev.get(k); acts.push(a); k = f; }
+      return acts.reverse();
+    }
+    const g = Array.from({ length: H }, () => Array(W).fill(-1));
+    for (let i = 0; i < n; i++) for (let j = 0; j < cs[i][2]; j++) { const h = cs[i][3] === "H"; g[h ? fixed[i] : pos[i] + j][h ? pos[i] + j : fixed[i]] = i; }
+    for (let i = 0; i < n; i++) {
+      if ((pm >> i & 1) && !(mask >> i & 1)) { push(cost + CALLC, pos, mask | (1 << i), k0, { t: "call", i }); continue; }
+      const ln = cs[i][2], h = cs[i][3] === "H", f = fixed[i];
+      for (const st of [-1, 1]) for (let v = pos[i] + st; ; v += st) {
+        const head = st < 0 ? v : v + ln - 1; if (head < 0 || head >= W) break;
+        if ((h ? g[f][head] : g[head][f]) !== -1) break;
+        const np = pos.slice(); np[i] = v; push(cost + 1, np, mask, k0, { t: "move", i, to: v });
+      }
+    }
+  }
+  return null;
+}
+function apply(a) {
+  const k = cars[a.i];
+  if (a.t === "call") { hist.push({ i: a.i, from: null, calls, minutes, moves, called: a.i }); k.called = true; calls++; minutes += CALL_MIN; }
+  else { hist.push({ i: a.i, from: k.dir === "H" ? k.c : k.r, calls, minutes, moves, called: null }); if (k.dir === "H") k.c = a.to; else k.r = a.to; k.x = k.c; k.y = k.r; moves++; minutes += 1; }
+}
+
+window.__g001 = { load: n => load(n - 1), solve: n => solve(n - 1), state: () => ({ level: L + 1, cars: cars.map(k => ({ ...k })), moves, calls, minutes, over }), lastResult: null };
+
+const q = new URLSearchParams(location.search);
+if (q.has("selftest")) {
+  const rows = []; let ok = 0;
+  for (let n = 0; n < LEVELS.length; n++) {
+    load(n); const acts = solve(n);
+    if (acts) acts.forEach(apply);
+    const me = cars[0], won = !!acts && me.c + me.len === W, lv = LEVELS[n];
+    const match = won && calls === lv.opt_calls && moves === lv.opt_moves && minutes < LIMIT;
+    if (match) ok++;
+    rows.push(`${n + 1}\t${match ? "OK" : "FAIL"}\t전화 ${calls}/${lv.opt_calls}\t이동 ${moves}/${lv.opt_moves}\t${minutes}분`);
+  }
+  document.body.insertAdjacentHTML("beforeend", `<pre id="selftest">${rows.join("\n")}</pre>`);
+  document.title = `SELFTEST ${ok}/${LEVELS.length}`;
+  load(0);
+} else if (q.has("autoplay")) {
+  const n = Number(q.get("autoplay")) - 1; load(n);
+  const acts = solve(n) || [];
+  let j = 0;
+  const step = () => {
+    if (j >= acts.length) { check(); return; }
+    const a = acts[j++];
+    if (a.t === "call") { sfx.ring(); toast("☎ 차주에게 전화 거는 중…"); wobble(a.i, 900, .045); setTimeout(() => { apply(a); sfx.ding(); flashCar(a.i); toast("“" + OWNER_LINES[j % OWNER_LINES.length] + "”"); hud(); draw(); setTimeout(step, 700); }, 900); return; }
+    const k = cars[a.i], from = k.dir === "H" ? k.c : k.r, t0 = performance.now();
+    (function anim(t) {
+      const u = Math.min(1, (t - t0) / 260), v = from + (a.to - from) * u;
+      if (k.dir === "H") k.x = v; else k.y = v; draw();
+      if (u < 1) requestAnimationFrame(anim); else { apply(a); sfx.move(Math.abs(a.to - from)); bounce(a.i, Math.sign(a.to - from), .07); const r = carRect(k); puff(r.x + r.w / 2, r.y + r.h / 2, 4, { speed: 40, life: .5, r: 4 }); hud(); draw(); setTimeout(step, 260); }
+    })(t0);
+  };
+  setTimeout(step, 600);
+} else {
+  load(q.has("level") ? Number(q.get("level")) - 1 : Math.min(save.unlocked - 1, LEVELS.length - 1));
+}
+resize();
+</script>
+</body>
+</html>

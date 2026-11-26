@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d1b26">
+<title>NHC POCKET — 프로토타입 오락실</title>
+<style>
+:root{
+  --bg:#1d1b26; --tx:#f3f1ea; --sub:#a9a6b8; --line:#34313f; --panel:#26232f;
+  --shell:#d9d5cb; --shell2:#c4bfb3; --shell-dark:#9a9588; --bezel:#4a4b63; --ink:#3a3a52;
+  --lcd0:#0f380f; --lcd1:#306230; --lcd2:#8bac0f; --lcd3:#9bbc0f;
+  --a:#b3264f; --acc:#ffcc4d; --grn:#5fd39a; --red:#ff5d5d;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif}
+body{overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer}
+.hide{display:none!important}
+
+/* ── 배치 ── */
+#app{position:fixed;inset:0;display:flex;gap:24px;align-items:stretch;justify-content:center;padding:16px}
+#menuCol{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:100%;max-width:400px}
+#stage{flex:1;display:none;gap:18px;align-items:center;justify-content:center;min-width:0}
+@media (min-width:980px){
+  #stage{display:flex} #menuCol{width:380px}
+  body.play #menuCol{display:flex}
+}
+@media (max-width:979px){
+  #app{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+  body.play #menuCol{display:none}
+  body.play #stage{display:flex;position:fixed;inset:0;padding:0}
+}
+
+/* ── 휴대용 게임기 ── */
+.device{position:relative;width:100%;max-width:380px;aspect-ratio:380/640;max-height:calc(100vh - 32px);background:linear-gradient(160deg,var(--shell),var(--shell2));
+  border-radius:22px 22px 70px 22px;box-shadow:inset -4px -6px 0 rgba(0,0,0,.08),inset 3px 3px 0 rgba(255,255,255,.5),0 20px 40px rgba(0,0,0,.45);padding:22px 22px 0;display:flex;flex-direction:column;user-select:none;-webkit-user-select:none}
+.device:before{content:"";position:absolute;left:0;right:0;top:12px;height:2px;background:rgba(0,0,0,.08)}
+.bezel{background:var(--bezel);border-radius:12px 12px 40px 12px;padding:16px 26px 26px;position:relative;box-shadow:inset 0 2px 0 rgba(0,0,0,.25)}
+.bezel .led{position:absolute;left:9px;top:42%;width:8px;height:8px;border-radius:50%;background:#3a1416;box-shadow:0 0 0 2px rgba(0,0,0,.25)}
+.bezel .led.on{background:#ff3348;box-shadow:0 0 8px #ff3348,0 0 0 2px rgba(0,0,0,.25)}
+.bezel .cap{font:700 8px var(--mono);letter-spacing:1.5px;color:#9fa0bf;text-align:center;margin:-8px 0 6px}
+.lcd{aspect-ratio:1/1;background:var(--lcd3);border-radius:4px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18),inset 0 0 24px rgba(15,56,15,.25);overflow:hidden;position:relative;color:var(--lcd0);font-family:var(--mono)}
+.lcd:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(15,56,15,.05) 0 1px,transparent 1px 3px);pointer-events:none}
+.brand{font:italic 900 15px/1 var(--mono);color:var(--ink);letter-spacing:.5px;margin:10px 0 0 2px}
+.brand b{font-style:normal;font-weight:900;color:var(--a)}
+.controls{flex:1;position:relative;min-height:220px}
+.dpad{position:absolute;left:6px;top:34px;width:112px;height:112px}
+.dpad button{position:absolute;background:#2b2b35;border:0;box-shadow:0 3px 0 #15151b;border-radius:4px}
+.dpad button:active,.dpad button.press{transform:translateY(2px);box-shadow:0 1px 0 #15151b}
+.dpad .u,.dpad .d{left:38px;width:36px;height:40px} .dpad .u{top:0} .dpad .d{bottom:0}
+.dpad .l,.dpad .r{top:38px;width:40px;height:36px} .dpad .l{left:0} .dpad .r{right:0}
+.dpad .c{left:38px;top:38px;width:36px;height:36px;background:#2b2b35;position:absolute;border-radius:2px}
+.dpad button:after{content:"";position:absolute;left:50%;top:50%;border:6px solid transparent;transform:translate(-50%,-50%)}
+.dpad .u:after{border-bottom-color:#55556a;margin-top:-3px} .dpad .d:after{border-top-color:#55556a;margin-top:3px}
+.dpad .l:after{border-right-color:#55556a;margin-left:-3px} .dpad .r:after{border-left-color:#55556a;margin-left:3px}
+.ab{position:absolute;right:8px;top:40px;width:150px;height:96px;transform:rotate(-24deg)}
+.ab button{position:absolute;width:58px;height:58px;border-radius:50%;border:0;background:var(--a);box-shadow:0 4px 0 #6d1530,inset 0 -3px 0 rgba(0,0,0,.18);color:transparent}
+.ab button:active,.ab button.press{transform:translateY(3px);box-shadow:0 1px 0 #6d1530}
+.ab .b{left:0;top:30px} .ab .a{right:0;top:0}
+.ab span{position:absolute;font:900 13px var(--mono);color:var(--ink);transform:rotate(24deg)}
+.ab .la{right:14px;top:66px} .ab .lb{left:16px;top:96px}
+.ss{position:absolute;left:50%;transform:translateX(-50%);bottom:34px;display:flex;gap:22px}
+.ss div{display:flex;flex-direction:column;align-items:center;gap:6px;transform:rotate(-24deg)}
+.ss button{width:46px;height:12px;border-radius:8px;border:0;background:#8d8a93;box-shadow:0 2px 0 #5c5961}
+.ss button:active,.ss button.press{transform:translateY(2px);box-shadow:none}
+.ss span{font:800 9px var(--mono);letter-spacing:1px;color:var(--ink)}
+.speaker{position:absolute;right:22px;bottom:22px;display:flex;gap:7px;transform:rotate(-28deg)}
+.speaker i{width:6px;height:46px;border-radius:4px;background:var(--shell-dark);box-shadow:inset 1px 1px 2px rgba(0,0,0,.35)}
+
+/* ── LCD 화면 내용 ── */
+.scr{position:absolute;inset:0;padding:10px 10px 8px;display:flex;flex-direction:column}
+.scr h2{margin:0;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--lcd0);padding-bottom:4px}
+.scr h2 small{font-size:10px;font-weight:700}
+.list{flex:1;overflow:hidden;margin-top:6px;display:flex;flex-direction:column;gap:4px}
+.cart{display:flex;gap:7px;align-items:center;padding:5px 6px;border-radius:3px;cursor:pointer;position:relative}
+.cart.sel{background:var(--lcd0);color:var(--lcd3)}
+.cart .ic{width:26px;height:26px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:15px;background:var(--lcd2);flex:none}
+.cart.sel .ic{background:var(--lcd1)}
+.cart .t{font-size:12px;font-weight:800;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cart .m{font-size:9.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cart .w{min-width:0;flex:1}
+.cart .mk{position:absolute;right:5px;top:4px;font-size:9px;font-weight:900;border:1.5px solid currentColor;border-radius:3px;padding:0 3px}
+.hint{font-size:8.5px;line-height:1.35;border-top:2px solid var(--lcd0);padding-top:4px;margin-top:4px}
+.boot{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--lcd3);z-index:2;transition:opacity .4s}
+.boot .logo{font:italic 900 22px var(--mono);letter-spacing:1px;transform:translateY(-120px);animation:drop 1.1s cubic-bezier(.3,1.4,.6,1) .15s forwards}
+.boot .sub{font-size:9px;margin-top:6px;opacity:0;animation:fade .3s 1.3s forwards}
+@keyframes drop{to{transform:translateY(0)}} @keyframes fade{to{opacity:1}}
+.toast-lcd{position:absolute;left:8px;right:8px;bottom:8px;background:var(--lcd0);color:var(--lcd3);font-size:10px;padding:5px 7px;border-radius:3px;opacity:0;transition:opacity .2s;z-index:3}
+.toast-lcd.on{opacity:1}
+
+/* ── 플레이 무대 ── */
+.slot{position:relative;display:flex;flex-direction:column;background:#000;border-radius:28px;padding:10px;box-shadow:0 18px 40px rgba(0,0,0,.5),0 0 0 2px #2c2a36;width:400px;height:min(820px,calc(100vh - 32px))}
+.slot.off{display:none}
+.slot .bar{display:flex;align-items:center;gap:6px;padding:4px 6px 8px;color:#fff}
+.slot .bar .tt{flex:1;min-width:0;font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .bar .tt small{display:block;font-weight:500;font-size:10.5px;color:var(--sub)}
+.pill{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 11px;font-size:13px;font-weight:700;white-space:nowrap}
+.pill.on{background:#ff4d7a;border-color:#ff4d7a;color:#fff}
+.pill.pri{background:var(--acc);border-color:var(--acc);color:#1b1b1b}
+.slot iframe{flex:1;width:100%;border:0;border-radius:20px;background:#12141c}
+.slot .tag{position:absolute;left:-10px;top:-10px;width:30px;height:30px;border-radius:50%;background:var(--acc);color:#111;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.4)}
+.stats{font:600 11px var(--mono);color:var(--sub);padding:6px 8px 0;display:flex;justify-content:space-between}
+.tabs{display:none}
+@media (max-width:979px){
+  .slot{width:100%;height:100%;border-radius:0;padding:calc(6px + env(safe-area-inset-top)) 0 env(safe-area-inset-bottom);box-shadow:none}
+  .slot iframe{border-radius:0}
+  .slot .tag{display:none}
+  .tabs{display:flex;gap:4px;margin:0 6px 6px}
+  .tabs button{flex:1;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px;font-size:12.5px;font-weight:800}
+  .tabs button.on{background:var(--acc);color:#111;border-color:var(--acc)}
+}
+
+/* ── 시트 (피드백·비교·결과) ── */
+.sheet{position:fixed;inset:0;display:none;z-index:20;background:rgba(8,8,12,.55);align-items:flex-end;justify-content:center}
+.sheet.on{display:flex}
+.sheet .card{background:var(--panel);border:1px solid var(--line);border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:92vh;overflow:auto;padding:18px 18px calc(18px + env(safe-area-inset-bottom));animation:up .22s ease-out}
+@media (min-width:980px){.sheet{align-items:center}.sheet .card{border-radius:20px}}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+.card h3{margin:0 0 2px;font-size:18px} .card .sub{color:var(--sub);font-size:12.5px;margin:0 0 12px}
+.q{margin:14px 0 6px;font-size:13.5px;font-weight:700}
+.stars{display:flex;gap:6px} .stars button{flex:1;font-size:26px;background:none;border:0;color:#4b4858;padding:2px 0;transition:transform .1s}
+.stars button.on{color:var(--acc)} .stars button:active{transform:scale(1.25)}
+.yn{display:flex;gap:8px} .yn button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:#1f1d28;font-weight:800}
+.yn button.on{background:var(--acc);color:#111;border-color:var(--acc)}
+textarea,input[type=text]{width:100%;background:#1a1822;color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:14px}
+textarea{min-height:84px;resize:vertical}
+.auto{background:#1a1822;border:1px dashed var(--line);border-radius:10px;padding:8px 10px;font:12px var(--mono);color:var(--sub);margin-top:12px}
+.row{display:flex;gap:8px;margin-top:14px} .row button{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);background:#1f1d28;font-weight:800}
+.row button.pri{background:var(--acc);color:#111;border-color:var(--acc)}
+pre.out{white-space:pre-wrap;background:#14131a;border-radius:10px;padding:10px;font-size:12px;color:#d9d6e6;user-select:text;-webkit-user-select:text}
+.res{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+.res h4{margin:0 0 6px;font-size:15px;display:flex;justify-content:space-between}
+.res .nums{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px;color:var(--sub)}
+.res .nums b{display:block;font:800 17px var(--mono);color:var(--tx)}
+.res ul{margin:8px 0 0;padding-left:18px;font-size:13px;color:#d9d6e6} .res li{margin:4px 0}
+.big-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#fff;color:#111;border-radius:14px;padding:10px 16px;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.4);opacity:0;transition:.25s;z-index:40;pointer-events:none;max-width:90vw}
+.big-toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.burst{position:fixed;pointer-events:none;z-index:50;font-size:22px;animation:burst .8s ease-out forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) scale(.4);opacity:0}}
+.empty{color:var(--sub);text-align:center;font-size:14px;line-height:1.7}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="menuCol">
+    <div class="device" id="device">
+      <div class="bezel">
+        <div class="cap">PROTOTYPE ARCADE · TOUCH OR PRESS</div>
+        <span class="led" id="led"></span>
+        <div class="lcd" id="lcd">
+          <div class="boot" id="boot"><div class="logo">NHC POCKET</div><div class="sub">프로토타입 오락실</div></div>
+          <div class="scr" id="scr"></div>
+          <div class="toast-lcd" id="ltoast"></div>
+        </div>
+      </div>
+      <div class="brand">NHC <b>POCKET</b></div>
+      <div class="controls">
+        <div class="dpad"><button class="u" data-k="up" aria-label="위"></button><button class="d" data-k="down" aria-label="아래"></button><button class="l" data-k="left" aria-label="왼쪽"></button><button class="r" data-k="right" aria-label="오른쪽"></button><div class="c"></div></div>
+        <div class="ab"><button class="b" data-k="b" aria-label="B 결과"></button><button class="a" data-k="a" aria-label="A 플레이"></button><span class="lb">B</span><span class="la">A</span></div>
+        <div class="ss"><div><button data-k="select" aria-label="SELECT 비교 표시"></button><span>SELECT</span></div><div><button data-k="start" aria-label="START"></button><span>START</span></div></div>
+        <div class="speaker"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+  </div>
+  <div id="stage"></div>
+</div>
+
+<div class="sheet" id="sheet"><div class="card" id="sheetCard"></div></div>
+<div class="big-toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="catalog.js"></script>
+<script>
+"use strict";
+const CFG = window.ARCADE_CONFIG || { feedback: "local" };
+const CAT = window.CATALOG || [];
+const $ = id => document.getElementById(id);
+const isDesk = () => matchMedia("(min-width:980px)").matches;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ── 저장 (막혀도 동작) ──
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem("nhcpocket_" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("nhcpocket_" + k, JSON.stringify(v)); } catch (e) {} }
+};
+let anon = LS.get("anon", null);
+if (!anon) { anon = "t" + Math.random().toString(36).slice(2, 10); LS.set("anon", anon); }
+let likes = LS.get("likes", {});
+
+// ── 소리·진동 ──
+let ac = null;
+function beep(f, d = .06, type = "square", v = .04, w = 0) {
+  try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); const t = ac.currentTime + w, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + d); } catch (e) {}
+}
+const buzz = ms => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+const SND = {
+  nav() { beep(880, .03, "square", .03); buzz(6); },
+  ok() { beep(988, .05); beep(1319, .08, "square", .04, .05); buzz(12); },
+  back() { beep(523, .05, "square", .035); buzz(8); },
+  mark() { beep(660, .04); beep(880, .04, "square", .035, .04); buzz(10); },
+  boot() { beep(1047, .09, "square", .04, 1.15); beep(2093, .35, "square", .035, 1.25); },
+  like() { [784, 988, 1319].forEach((f, i) => beep(f, .07, "square", .035, i * .05)); buzz([10, 30, 10]); },
+};
+
+// ── 피드백 저장소 ──
+const DB = {
+  remote: CFG.feedback === "supabase" && CFG.supabaseUrl && CFG.supabaseAnonKey,
+  headers() { return { apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey, "Content-Type": "application/json" }; },
+  async add(table, row) {
+    const local = LS.get(table, []); local.push({ ...row, created_at: new Date().toISOString() }); LS.set(table, local);
+    if (!this.remote) return { ok: true, local: true };
+    try {
+      const r = await fetch(`${CFG.supabaseUrl}/rest/v1/${table}`, { method: "POST", headers: { ...this.headers(), Prefer: "return=minimal" }, body: JSON.stringify(row) });
+      return { ok: r.ok, local: false, status: r.status };
+    } catch (e) { return { ok: false, local: false, error: String(e) }; }
+  },
+  async all(table) {
+    if (!this.remote) return LS.get(table, []);
+    try { const r = await fetch(`${CFG.supabaseUrl}/rest/v1/${table}?select=*&order=created_at.desc&limit=2000`, { headers: this.headers() }); if (r.ok) return await r.json(); } catch (e) {}
+    return LS.get(table, []);
+  }
+};
+let summary = {};   // game_id → {n, likes, rating, again, ...}
+async function refreshSummary() {
+  const fb = await DB.all("feedback"); const s = {};
+  fb.forEach(f => { const g = s[f.game_id] || (s[f.game_id] = { n: 0, likes: 0, rsum: 0, rn: 0 }); g.n++; if (f.liked) g.likes++; if (f.rating) { g.rsum += f.rating; g.rn++; } });
+  summary = s; if (view === "menu") renderMenu();
+}
+
+// ── 메뉴 (LCD) ──
+let view = "boot", sel = 0, marks = [];
+function renderMenu() {
+  const items = CAT.map((g, i) => {
+    const s = summary[g.id], meta = s ? `♥${s.likes} ★${s.rn ? (s.rsum / s.rn).toFixed(1) : "-"} (${s.n})` : g.one_liner;
+    const mk = marks.indexOf(g.id);
+    return `<div class="cart${i === sel ? " sel" : ""}" data-i="${i}"><div class="ic">${esc(g.icon)}</div><div class="w"><div class="t">${esc(g.id)} ${esc(g.title)}</div><div class="m">${esc(meta)}</div></div>${mk >= 0 ? `<span class="mk">${"AB"[mk]}</span>` : ""}</div>`;
+  }).join("");
+  const N = CAT.length;
+  $("scr").innerHTML = `<h2>카트리지 <small>${N}개 · ${DB.remote ? "공유 DB" : "이 기기"}</small></h2>
+    <div class="list" id="list">${N ? items : '<div class="cart">아직 꽂힌 게임이 없음</div>'}</div>
+    <div class="hint">▲▼ 고르기 · A 플레이 · SELECT 비교 표시(2개)<br>START 비교 시작 · B 결과 보기</div>`;
+  const list = $("list"), el = list.querySelector(".sel");
+  if (el) { const top = el.offsetTop - list.offsetTop, h = list.clientHeight; if (top + el.offsetHeight > h) list.scrollTop = top - h + el.offsetHeight + 4; else if (top < list.scrollTop) list.scrollTop = top; }
+  list.querySelectorAll(".cart[data-i]").forEach(c => c.onclick = () => { const i = +c.dataset.i; if (i === sel) press("a"); else { sel = i; SND.nav(); renderMenu(); } });
+}
+function ltoast(msg) { const t = $("ltoast"); t.textContent = msg; t.classList.add("on"); clearTimeout(ltoast.h); ltoast.h = setTimeout(() => t.classList.remove("on"), 1800); }
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2400); }
+
+function press(k) {
+  if (view === "boot") return;
+  const btn = document.querySelector(`[data-k="${k}"]`); if (btn) { btn.classList.add("press"); setTimeout(() => btn.classList.remove("press"), 110); }
+  if (!CAT.length && k !== "b") { SND.back(); ltoast("꽂힌 게임이 없습니다"); return; }
+  if (k === "up" || k === "left") { sel = (sel - 1 + CAT.length) % CAT.length; SND.nav(); renderMenu(); }
+  else if (k === "down" || k === "right") { sel = (sel + 1) % CAT.length; SND.nav(); renderMenu(); }
+  else if (k === "a") { SND.ok(); play([CAT[sel].id]); }
+  else if (k === "select") {
+    const id = CAT[sel].id, j = marks.indexOf(id);
+    if (j >= 0) marks.splice(j, 1); else { if (marks.length >= 2) marks.shift(); marks.push(id); }
+    SND.mark(); renderMenu(); ltoast(marks.length === 2 ? "START를 누르면 둘을 비교합니다" : "하나 더 골라 SELECT");
+  }
+  else if (k === "start") {
+    if (marks.length === 2) { SND.ok(); play(marks.slice()); }
+    else if (CAT.length < 2) { SND.back(); ltoast("비교하려면 게임이 2개 이상 필요해요"); }
+    else { SND.back(); ltoast("SELECT로 비교할 게임 2개를 표시하세요"); }
+  }
+  else if (k === "b") { SND.back(); openResults(); }
+}
+document.querySelectorAll("[data-k]").forEach(b => b.addEventListener("pointerdown", e => { e.preventDefault(); press(b.dataset.k); }));
+addEventListener("keydown", e => {
+  if ($("sheet").classList.contains("on")) { if (e.key === "Escape") closeSheet(); return; }
+  if (view === "play" && !isDesk()) { if (e.key === "Escape") toMenu(); return; }
+  const m = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", Enter: "a", z: "a", x: "b", Shift: "select", " ": "start" }[e.key];
+  if (m && document.activeElement.tagName !== "IFRAME") { e.preventDefault(); press(m); }
+});
+
+// ── 플레이 슬롯 + 세션 측정 ──
+let slots = [], active = 0;
+function newSession() { return { t0: Date.now(), activeMs: 0, lastInput: Date.now(), levels: 0, fails: 0, starts: 0, events: 0 }; }
+function play(ids) {
+  view = "play"; document.body.classList.add("play");
+  slots = ids.map(id => ({ g: CAT.find(c => c.id === id), s: newSession(), voteAsked: false }));
+  active = 0; renderStage();
+}
+function renderStage() {
+  const two = slots.length === 2;
+  $("stage").innerHTML = slots.map((sl, i) => `
+    <div class="slot${!isDesk() && i !== active ? " off" : ""}" data-s="${i}">
+      ${two ? `<div class="tag">${"AB"[i]}</div>` : ""}
+      <div class="bar">
+        <button class="pill" data-act="menu">◀ ${isDesk() ? "닫기" : "메뉴"}</button>
+        <div class="tt">${esc(sl.g.title)}<small>${esc(sl.g.id)} · ${esc(sl.g.stage)} · 빌드 ${esc(sl.g.version)}</small></div>
+        <button class="pill${likes[sl.g.id] ? " on" : ""}" data-act="like">♥</button>
+        <button class="pill pri" data-act="fb">의견</button>
+      </div>
+      ${two ? `<div class="tabs">${slots.map((x, j) => `<button class="${j === active ? "on" : ""}" data-tab="${j}">${"AB"[j]} · ${esc(x.g.title)}</button>`).join("")}</div>` : ""}
+      <iframe src="${esc(sl.g.path)}" title="${esc(sl.g.title)}" allow="autoplay; fullscreen"></iframe>
+      <div class="stats" id="st${i}"></div>
+    </div>`).join("");
+  $("stage").querySelectorAll(".slot").forEach(el => {
+    const i = +el.dataset.s;
+    slots[i].frame = el.querySelector("iframe");
+    el.querySelector('[data-act="menu"]').onclick = () => toMenu();
+    el.querySelector('[data-act="like"]').onclick = e => toggleLike(i, e);
+    el.querySelector('[data-act="fb"]').onclick = () => openFeedback(i);
+    el.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { active = +b.dataset.tab; SND.nav(); renderStage(); });
+    el.addEventListener("pointerdown", () => { active = i; slots[i].s.lastInput = Date.now(); }, true);
+  });
+  tickStats();
+}
+function toMenu() {
+  if (slots.length === 2 && !slots.voted && slots.every(s => s.s.activeMs > 20000)) { openCompare(); return; }
+  if (slots.length && slots.some(s => s.s.activeMs > 15000 && !s.sent)) { const i = slots.findIndex(s => s.s.activeMs > 15000 && !s.sent); openFeedback(i, true); return; }
+  view = "menu"; document.body.classList.remove("play"); $("stage").innerHTML = ""; slots = []; SND.back(); renderMenu();
+}
+function toggleLike(i, e) {
+  const id = slots[i].g.id; likes[id] = !likes[id]; LS.set("likes", likes);
+  e.currentTarget.classList.toggle("on", likes[id]);
+  if (likes[id]) { SND.like(); burst(e.clientX, e.clientY, "♥"); toast("좋아요! 의견도 남겨 주시면 큰 도움이 돼요"); } else SND.back();
+}
+function burst(x, y, ch) {
+  for (let j = 0; j < 9; j++) {
+    const s = document.createElement("div"); s.className = "burst"; s.textContent = ch;
+    const a = Math.random() * Math.PI * 2, r = 50 + Math.random() * 60;
+    s.style.left = x - 10 + "px"; s.style.top = y - 14 + "px"; s.style.color = ["#ff4d7a", "#ffcc4d", "#fff"][j % 3];
+    s.style.setProperty("--dx", Math.cos(a) * r + "px"); s.style.setProperty("--dy", Math.sin(a) * r - 30 + "px");
+    document.body.appendChild(s); setTimeout(() => s.remove(), 850);
+  }
+}
+// 게임이 보내는 신호(postMessage): start / level_start / level_clear / fail / input
+addEventListener("message", e => {
+  const d = e.data; if (!d || d.type !== "nhc-game") return;
+  const sl = slots.find(s => s.frame && s.frame.contentWindow === e.source); if (!sl) return;
+  sl.s.lastInput = Date.now(); sl.s.events++;
+  if (d.ev === "level_clear") sl.s.levels++;
+  if (d.ev === "fail") sl.s.fails++;
+  if (d.ev === "level_start") sl.s.starts++;
+});
+setInterval(() => {
+  if (view !== "play" || document.visibilityState !== "visible") return;
+  slots.forEach((sl, i) => { const visible = isDesk() || i === active; if (visible && Date.now() - sl.s.lastInput < 20000) sl.s.activeMs += 1000; });
+  tickStats();
+  if (slots.length === 2 && !slots.voted && !slots.nudged && slots.every(s => s.s.activeMs > 30000)) { slots.nudged = true; toast("둘 다 해 보셨네요! '◀'를 누르면 어느 쪽이 나은지 물어볼게요"); }
+}, 1000);
+function fmt(ms) { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}분 ${String(s % 60).padStart(2, "0")}초`; }
+function tickStats() { slots.forEach((sl, i) => { const el = $("st" + i); if (el) el.innerHTML = `<span>플레이 ${fmt(sl.s.activeMs)}</span><span>클리어 ${sl.s.levels} · 실패 ${sl.s.fails}</span>`; }); }
+
+// ── 피드백 시트 ──
+function sheet(html) { $("sheetCard").innerHTML = html; $("sheet").classList.add("on"); }
+function closeSheet() { $("sheet").classList.remove("on"); }
+$("sheet").addEventListener("pointerdown", e => { if (e.target.id === "sheet") closeSheet(); });
+function openFeedback(i, leaving) {
+  const sl = slots[i], g = sl.g, f = { liked: !!likes[g.id], rating: 0, again: null, understood: null };
+  sheet(`<h3>${esc(g.title)} 어땠나요?</h3><p class="sub">${leaving ? "나가기 전에 10초만! " : ""}${esc(g.one_liner)}</p>
+    <div class="q">재미 점수</div><div class="stars" id="fStars">${[1, 2, 3, 4, 5].map(n => `<button data-n="${n}">★</button>`).join("")}</div>
+    <div class="q">시키지 않아도 한 판 더 하고 싶었나요?</div><div class="yn" data-f="again"><button data-v="1">네, 더 하고 싶어요</button><button data-v="0">아니요</button></div>
+    <div class="q">처음 설명 한 줄로 바로 이해됐나요?</div><div class="yn" data-f="understood"><button data-v="1">네</button><button data-v="0">헷갈렸어요</button></div>
+    <div class="q">좋았던 점 · 답답했던 점 · 바라는 점</div><textarea id="fCom" placeholder="예) 전화 걸 때 대사가 웃겼어요 / 차를 끌 때 손가락에 가려요"></textarea>
+    <div class="q">닉네임 (선택 · 실명은 적지 마세요)</div><input type="text" id="fNick" maxlength="20" value="${esc(LS.get("nick", ""))}">
+    <div class="auto">자동 첨부: 플레이 ${fmt(sl.s.activeMs)} · 클리어 ${sl.s.levels} · 실패 ${sl.s.fails} · ${isDesk() ? "desktop" : "mobile"}</div>
+    <div class="row"><button id="fCancel">${leaving ? "그냥 나가기" : "닫기"}</button><button class="pri" id="fSend">보내기</button></div>`);
+  const st = $("fStars");
+  st.querySelectorAll("button").forEach(b => b.onclick = () => { f.rating = +b.dataset.n; st.querySelectorAll("button").forEach(x => x.classList.toggle("on", +x.dataset.n <= f.rating)); beep(600 + f.rating * 120, .05); buzz(6); });
+  $("sheetCard").querySelectorAll(".yn").forEach(row => row.querySelectorAll("button").forEach(b => b.onclick = () => { f[row.dataset.f] = b.dataset.v === "1"; row.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); SND.nav(); }));
+  $("fCancel").onclick = () => { closeSheet(); if (leaving) { sl.sent = true; toMenu(); } };
+  $("fSend").onclick = async () => {
+    const nick = $("fNick").value.trim().slice(0, 20); LS.set("nick", nick);
+    const row = { game_id: g.id, version: g.version, tester: nick || null, anon_id: anon, liked: f.liked, rating: f.rating || null, again: f.again, understood: f.understood,
+      comment: $("fCom").value.trim().slice(0, 2000) || null, play_seconds: Math.round(sl.s.activeMs / 1000), levels_cleared: sl.s.levels, fails: sl.s.fails, device: isDesk() ? "desktop" : "mobile" };
+    const r = await DB.add("feedback", row); sl.sent = true; SND.like();
+    if (r.local) shareText(feedbackText(g, row), leaving);
+    else { closeSheet(); toast(r.ok ? "고마워요! 의견이 저장됐어요" : "저장 실패 — 이 기기에는 남겨 뒀어요"); refreshSummary(); if (leaving) toMenu(); }
+  };
+}
+const yn = v => v === true ? "예" : v === false ? "아니오" : "-";
+function feedbackText(g, r) {
+  return `[NHC POCKET 피드백] ${g.id} ${g.title} (빌드 ${g.version})
+닉네임: ${r.tester || "-"}
+좋아요: ${r.liked ? "♥" : "-"} / 별점: ${r.rating ? "★" + r.rating : "-"} / 한 판 더: ${yn(r.again)} / 바로 이해: ${yn(r.understood)}
+플레이: ${fmt(r.play_seconds * 1000)} · 클리어 ${r.levels_cleared} · 실패 ${r.fails} · ${r.device}
+의견: ${r.comment || "-"}`;
+}
+async function shareText(text, leaving) {
+  sheet(`<h3>고마워요! 🙌</h3><p class="sub">아래 내용을 만든 사람에게 보내 주세요. ${esc(CFG.contact || "")}</p><pre class="out" id="out">${esc(text)}</pre>
+    <div class="row"><button id="sCopy">복사</button>${navigator.share ? '<button class="pri" id="sShare">공유하기</button>' : ""}</div><div class="row"><button id="sDone">완료</button></div>`);
+  $("sCopy").onclick = async () => { try { await navigator.clipboard.writeText(text); toast("복사했어요 — 카톡에 붙여 넣어 주세요"); } catch (e) { const r = document.createRange(); r.selectNodeContents($("out")); getSelection().removeAllRanges(); getSelection().addRange(r); toast("글자를 길게 눌러 복사해 주세요"); } };
+  if ($("sShare")) $("sShare").onclick = () => navigator.share({ text }).catch(() => {});
+  $("sDone").onclick = () => { closeSheet(); if (leaving) toMenu(); };
+}
+function openCompare() {
+  const [A, B] = slots.map(s => s.g); let w = null;
+  sheet(`<h3>둘 중 어느 쪽이 더 "한 판 더"?</h3><p class="sub">A ${esc(A.title)} vs B ${esc(B.title)}</p>
+    <div class="yn" id="cv"><button data-v="${A.id}">A</button><button data-v="tie">비슷</button><button data-v="${B.id}">B</button></div>
+    <div class="q">이유 한 줄 (선택)</div><input type="text" id="cReason" maxlength="200">
+    <div class="row"><button id="cSkip">건너뛰기</button><button class="pri" id="cSend">보내기</button></div>`);
+  $("cv").querySelectorAll("button").forEach(b => b.onclick = () => { w = b.dataset.v; $("cv").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); SND.nav(); });
+  $("cSkip").onclick = () => { slots.voted = true; closeSheet(); toMenu(); };
+  $("cSend").onclick = async () => {
+    if (!w) { toast("A · 비슷 · B 중 하나를 골라 주세요"); return; }
+    const row = { anon_id: anon, tester: LS.get("nick", "") || null, game_a: A.id, game_b: B.id, winner: w, reason: $("cReason").value.trim() || null };
+    const r = await DB.add("compare_votes", row); slots.voted = true; SND.like();
+    if (r.local) shareText(`[NHC POCKET 비교] A ${A.id} ${A.title} vs B ${B.id} ${B.title}\n더 하고 싶은 쪽: ${w === "tie" ? "비슷" : w}\n이유: ${row.reason || "-"}`, true);
+    else { closeSheet(); toast("고마워요!"); toMenu(); }
+  };
+}
+
+// ── 결과 보기 (B) ──
+async function openResults() {
+  sheet(`<h3>결과</h3><p class="sub">불러오는 중…</p>`);
+  const fb = await DB.all("feedback"), votes = await DB.all("compare_votes");
+  const med = a => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const pct = (a, k) => { const v = a.filter(x => x[k] === true || x[k] === false); return v.length ? Math.round(100 * v.filter(x => x[k]).length / v.length) + "%" : "-"; };
+  const blocks = CAT.map(g => {
+    const a = fb.filter(f => f.game_id === g.id), testers = new Set(a.map(f => f.anon_id)).size, rs = a.filter(f => f.rating).map(f => f.rating);
+    const again = a.filter(f => f.again === true).length;
+    const verdict = testers >= 5 ? (again >= 3 ? "✅ 계속할 신호" : again <= 1 ? "🛑 그만둘 신호" : "⚖️ 애매") : `테스터 ${testers}/5`;
+    return `<div class="res"><h4><span>${esc(g.icon)} ${esc(g.id)} ${esc(g.title)}</span><span style="font-size:12.5px">${verdict}</span></h4>
+      <div class="nums"><div>응답<b>${a.length}</b></div><div>♥<b>${a.filter(f => f.liked).length}</b></div><div>★ 평균<b>${rs.length ? (rs.reduce((x, y) => x + y, 0) / rs.length).toFixed(1) : "-"}</b></div>
+      <div>한 판 더<b>${pct(a, "again")}</b></div><div>바로 이해<b>${pct(a, "understood")}</b></div><div>플레이 중앙값<b>${a.length ? Math.round(med(a.map(f => f.play_seconds || 0)) / 60 * 10) / 10 + "분" : "-"}</b></div></div>
+      ${a.filter(f => f.comment).length ? `<ul>${a.filter(f => f.comment).slice(0, 8).map(f => `<li>${esc(f.comment)} <span style="color:var(--sub)">— ${esc(f.tester || "익명")}</span></li>`).join("")}</ul>` : ""}</div>`;
+  }).join("");
+  const vs = votes.length ? `<div class="res"><h4>비교 투표 ${votes.length}건</h4><ul>${votes.slice(0, 10).map(v => `<li>${esc(v.game_a)} vs ${esc(v.game_b)} → <b>${esc(v.winner === "tie" ? "비슷" : v.winner)}</b>${v.reason ? " · " + esc(v.reason) : ""}</li>`).join("")}</ul></div>` : "";
+  sheet(`<h3>결과</h3><p class="sub">${DB.remote ? "모든 테스터의 응답 (공유 DB)" : "이 기기에 남은 응답만 보여요. 테스터들이 보낸 텍스트는 만든 사람이 따로 모읍니다."}</p>
+    ${CAT.length ? blocks : '<p class="empty">아직 게임이 없어요</p>'}${vs}
+    <div class="row"><button id="rExport">JSON 내보내기</button><button class="pri" id="rClose">닫기</button></div>`);
+  $("rClose").onclick = closeSheet;
+  $("rExport").onclick = () => { const b = new Blob([JSON.stringify({ exported: new Date().toISOString(), feedback: fb, compare_votes: votes }, null, 1)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "nhc-pocket-feedback.json"; a.click(); };
+}
+
+// ── 시작 ──
+addEventListener("resize", () => { if (view === "play") renderStage(); });
+renderMenu();
+const q = new URLSearchParams(location.search);
+const boot = $("boot"), skip = q.has("noboot");
+document.addEventListener("pointerdown", function first() { SND.boot(); document.removeEventListener("pointerdown", first); }, { once: true });
+setTimeout(() => { boot.style.opacity = 0; $("led").classList.add("on"); setTimeout(() => { boot.remove(); view = "menu"; refreshSummary(); if (q.has("play")) { const g = q.get("play").split(","); play(g.filter(id => CAT.some(c => c.id === id))); } }, 400); }, skip ? 0 : 1900);
+</script>
+</body>
+</html>

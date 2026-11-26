@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>게임 공장</title>
+<style>
+:root{
+  --font-sans: "Pretendard", "Pretendard Variable", "Apple SD Gothic Neo", "Noto Sans KR",
+               "Malgun Gothic", "맑은 고딕", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "D2Coding", Consolas, monospace;
+  --bg:#fdfcf6; --surface:#fffef9; --tx:#2b2a33; --sub:#6e6b7b; --line:#dfe6f2; --acc:#2f5d8a; --chip:#eef1f4;
+  --red:#e03131; --red-bg:#fbe9e5; --amb:#a8670c; --amb-bg:#fbf0dc; --blu:#2563a8; --blu-bg:#e3edf8;
+  --heat0:#f1f0ec; --heat1:#dbe6f1; --heat2:#b5cde4; --heat3:#7fa8cf; --heat4:#3f74a8;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#15151e; --surface:#1d1d2e; --tx:#dde0f0; --sub:#606080; --line:#252538; --acc:#7fb0e0; --chip:#252538;
+  --red:#e05555; --red-bg:#3a2320; --amb:#e5b45e; --amb-bg:#372c19; --blu:#86b6ea; --blu-bg:#1e2c3d;
+  --heat0:#232428; --heat1:#233447; --heat2:#2c4a6b; --heat3:#3d6c9a; --heat4:#5e98cf; } }
+:root[data-theme="dark"]{
+  --bg:#15151e; --surface:#1d1d2e; --tx:#dde0f0; --sub:#606080; --line:#252538; --acc:#7fb0e0; --chip:#252538;
+  --red:#e05555; --red-bg:#3a2320; --amb:#e5b45e; --amb-bg:#372c19; --blu:#86b6ea; --blu-bg:#1e2c3d;
+  --heat0:#232428; --heat1:#233447; --heat2:#2c4a6b; --heat3:#3d6c9a; --heat4:#5e98cf; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--font-sans);font-size:15px;
+  word-break:keep-all;overflow-wrap:anywhere;line-break:strict;letter-spacing:-0.01em;line-height:1.65;-webkit-font-smoothing:antialiased}
+.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+main{max-width:1180px;margin:0 auto;padding:28px 16px 70px}
+h1{font-size:26px;margin:0 0 6px}
+h2{font-size:20px;margin:44px 0 6px}
+h2 small{font-size:13px;color:var(--sub);font-weight:500;margin-left:6px}
+.lead{color:var(--sub);font-size:14px;margin:0 0 14px}
+h3{font-size:16px;margin:0 0 4px}
+.sub{color:var(--sub);font-size:13px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px}
+nav.toc a{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--tx);text-decoration:none}
+.howto{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:12px}
+.howto .card{font-size:13.5px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin:10px 0}
+.lv{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:1px 8px;font-size:12.5px;font-weight:600}
+.lv-레드{color:var(--red);background:var(--red-bg)} .lv-보통{color:var(--amb);background:var(--amb-bg)} .lv-낮음{color:var(--blu);background:var(--blu-bg)}
+.stats{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:12px}
+.stat b{display:block;font-size:24px} .stat span{color:var(--sub);font-size:12.5px}
+.trunks{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.trunk .who{font-size:12.5px;color:var(--sub);margin:2px 0 8px}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--chip);margin:6px 0 4px}
+.bar i{display:block;height:100%} .bar .r{background:var(--red)} .bar .a{background:var(--amb)} .bar .b{background:var(--blu)}
+.barlab{font-size:12px;color:var(--sub)}
+.trunk details{margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
+.trunk summary{cursor:pointer;font-size:13px;color:var(--acc)}
+.branch{margin:8px 0 4px;font-size:13px;font-weight:600}
+.warn{color:var(--red);font-size:12px;margin-left:4px;font-weight:600}
+.bd{font-weight:400;color:var(--sub);font-size:12.5px}
+.m{display:inline-block;border-radius:6px;padding:1px 7px;font-size:12.5px;margin:2px 4px 2px 0;cursor:pointer;border:1px solid transparent;font-weight:400}
+.m:hover{border-color:var(--acc)}
+.m.레드{color:var(--red);background:var(--red-bg)} .m.보통{color:var(--amb);background:var(--amb-bg)} .m.낮음{color:var(--blu);background:var(--blu-bg)}
+.flowhead{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.flowhead div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
+.flowhead b{display:block;font-size:14px}
+.lane{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.lane .ln{font-weight:700;font-size:15px}
+.lane .ld{font-size:13px;color:var(--sub);margin-top:6px}
+.steps{display:flex;flex-wrap:wrap;align-items:stretch;gap:6px;margin-top:8px}
+.step{border-radius:10px;padding:6px 10px;min-width:120px;max-width:230px;font-size:13px;border:1px solid var(--line)}
+.step .st{display:block;font-size:11.5px;font-weight:700;opacity:.85}
+.step.레드{background:var(--red-bg)} .step.보통{background:var(--amb-bg)} .step.낮음{background:var(--blu-bg)} .step.없음{background:var(--chip)}
+.arrow{align-self:center;color:var(--sub);font-size:18px}
+.ocean{width:100%;border-collapse:separate;border-spacing:6px;table-layout:fixed}
+.ocean th{font-size:12.5px;color:var(--sub);font-weight:600;text-align:center;padding:2px}
+.ocean th.row{text-align:right;width:130px}
+.ocean td{vertical-align:top;border-radius:10px;padding:8px;font-size:12px}
+.ocean td.레드{background:var(--red-bg)} .ocean td.보통{background:var(--amb-bg)} .ocean td.낮음{background:var(--blu-bg)}
+.ocean td .tag{display:block;font-weight:700;font-size:11.5px;margin-bottom:4px}
+.ocean .m{background:var(--surface)}
+.pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.pipe .col{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px}
+.pipe .col b{display:block;font-size:13.5px}
+.pipe .col .hint{font-size:11.5px;color:var(--sub);display:block;margin-bottom:6px}
+.topic{display:block;background:var(--chip);border-radius:6px;padding:3px 7px;margin:4px 0;font-size:12.5px}
+.filters{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));margin-bottom:10px}
+select,input{width:100%;font:inherit;font-size:14px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--tx)}
+label{font-size:12px;color:var(--sub)}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.chip{display:inline-block;background:var(--chip);border-radius:6px;padding:0 7px;font-size:12px;margin:2px 4px 2px 0}
+.kv{font-size:13px;margin:2px 0} .kv b{color:var(--sub);font-weight:600;margin-right:6px}
+.ex{font-size:12.5px;color:var(--sub);margin-top:6px;border-top:1px dashed var(--line);padding-top:6px}
+a{color:var(--acc)}
+.dots{letter-spacing:1px;color:var(--acc)}
+.tablewrap{overflow-x:auto}
+table.plain{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);font-size:13px}
+table.plain th,table.plain td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+table.plain th{font-size:12px;color:var(--sub)}
+.heat td.c{text-align:center;cursor:pointer;font-weight:600} .heat td.c.z{color:var(--sub);cursor:default;font-weight:400}
+button{font:inherit;font-size:13px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--tx);cursor:pointer}
+details.more>summary{cursor:pointer;color:var(--acc);font-size:13.5px;margin:8px 0}
+@media (max-width:720px){ .flowhead{grid-template-columns:1fr 1fr} .pipe{grid-template-columns:1fr 1fr} .ocean th.row{width:72px} }
+
+:root{ --grn:#2b7a4b; --grn-bg:#e2f2e8; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --grn:#6fcf97; --grn-bg:#1c3326; } }
+:root[data-theme="dark"]{ --grn:#6fcf97; --grn-bg:#1c3326; }
+section{margin-top:36px} section h2{margin:0 0 4px} .lead2{color:var(--sub);font-size:13.5px;margin:0 0 12px}
+.crumb{font-size:13px;color:var(--sub)} .crumb a{margin-right:6px}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;margin:14px 0}
+.flow span{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 10px}
+.flow span b{font-family:var(--font-mono);color:var(--acc);margin-left:6px}
+.flow i{color:var(--sub);font-style:normal}
+.rules{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.rules div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px}
+.rules b{display:block;font-size:14px;margin-bottom:2px}
+.lanes{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.lane{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;min-height:90px}
+.lane h3{margin:0 0 8px;font-size:14px;color:var(--sub)}
+.gcard{border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:8px;padding:8px 10px;font-size:13px;margin-top:6px;background:var(--bg)}
+.gcard b{font-size:14.5px} .gcard .id{font-family:var(--font-mono);color:var(--sub);margin-right:6px}
+.gcard .dl{color:var(--red);font-weight:700}
+.none{color:var(--sub);font-size:13px}
+.itable{width:100%;border-collapse:collapse;font-size:13.5px}
+.itable th,.itable td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+.itable th{font-size:12px;color:var(--sub);font-weight:700}
+.itable td.n{font-family:var(--font-mono);text-align:center;white-space:nowrap}
+.itable td.t{font-family:var(--font-mono);font-weight:700;text-align:center}
+.itable tr.pass td.t{color:var(--grn)} .itable tr.fail{opacity:.62}
+.itable .ol{display:block;margin-top:2px}
+.itable details summary{cursor:pointer;color:var(--acc);font-size:12.5px}
+.itable details p{margin:6px 0 0;font-size:12.5px;color:var(--sub)}
+.chip{display:inline-block;background:var(--chip);border-radius:6px;padding:0 7px;font-size:12px;margin-right:4px}
+.passline td{border-bottom:2px dashed var(--grn)!important;padding:0!important}
+.grave{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.grave div{border:1px dashed var(--line);border-radius:8px;padding:8px 12px;font-size:13px}
+@media (max-width:640px){ .itable thead{display:none} .itable tr{display:block;border-bottom:1px solid var(--line);padding:6px 0} .itable td{display:inline-block;border:0;padding:2px 4px} .itable td.idea{display:block} }
+</style>
+</head>
+<body>
+<main>
+<p class="crumb"><a href="../../agents/business/ideas.html">← 아이디어 파이프라인(business)</a><a href="../../agents/business/start.html">오늘의 판</a><a href="arcade/index.html">🎮 오락실</a><a href="README.md">규칙 원문</a><a href="CLAUDE.md">프로젝트 안내</a></p>
+<h1>게임 공장</h1>
+<p class="sub" style="color:var(--sub)">작은 게임을 만들고, 사람에게 해 보게 하고, 숫자로 남길지 버릴지 정합니다. 실험 E01 · 기준일 2026-11-25 · 생성 2026-11-26 13:28</p>
+<div class="flow"><span>아이디어<b>9</b></span> <i>→</i> <span>프로토<b>1</b></span> <i>→</i> <span>플레이테스트<b>0</b></span> <i>→</i> <span>유지<b>0</b></span> <i>·</i> <span>폐기<b>0</b></span></div>
+
+<section><h2>지금 진행 중</h2>
+<p class="lead2">한 번에 하나만 만듭니다. 플레이 링크는 게임 폴더의 index.html을 바로 엽니다.</p>
+<div class="lanes"><div class="lane"><h3>프로토</h3><div class="gcard"><span class="id">G001</span><b>이중주차 탈출</b><div>새벽 2시, 내 차 앞을 막은 차 12대. 중립에 둔 차는 밀고, 아닌 차는 전화해서 깨워라.</div><div>기한 2026-12-02</div><div><a href="G001_double-parking/game/index.html">▶ 플레이</a> · <a href="G001_double-parking/brief.md">기획</a> · <a href="G001_double-parking/playtest.md">테스트</a> · <a href="G001_double-parking/result.md">결과</a></div></div></div><div class="lane"><h3>플레이테스트</h3><div class=none>비어 있음</div></div><div class="lane"><h3>유지</h3><div class=none>비어 있음</div></div></div></section>
+
+<section><h2>아이디어 심사</h2>
+<p class="lead2">점수 순. 초록 점선 위(합 18점 이상)만 프로토로 갈 수 있습니다. 점수: Claude 첫 판단(사용자가 다시 매길 것). 칸 이름에 마우스를 올리면 질문이 보입니다.</p>
+<table class="itable"><thead><tr><th>ID</th><th>아이디어</th><th title="한 문장만 듣고 해 보고 싶나">훅</th><th title="10초 영상으로 재미가 보이나">클립</th><th title="바로 한 판 더 하고 싶나">반복</th><th title="7일 안에 핵심 재미까지 되나">범위</th><th title="같은 게임이 넘치지 않나">새로움</th><th>합</th></tr></thead><tbody><tr class="pass"><td class="n">G002</td><td class="idea"><b>인형뽑기 군단</b> <span class="chip">엄청난 중독성</span><span class="chip">웃긴 샌드박스</span><span class="ol">집게로 뽑은 인형이 그대로 내 부대가 된다. 못 뽑으면 맨몸으로 싸운다.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> 뽑기 손맛(물리) + 로그라이크 성장 + 오토배틀. 실패도 웃긴 클립이 된다. 슬롯바운드처럼 &#x27;도박 손맛 × 전략&#x27;이 지금 스팀에서 통하는 흐름</p><p><b>위험</b> 집게 물리 + 전투 두 개를 만들어야 해 범위가 큼. 1주 프로토는 &#x27;뽑기 → 3마리 자동 전투 1판&#x27;까지만. 뽑기 로그라이크가 빠르게 늘고 있음</p><p><b>참고 장르</b> 슬롯·주사위 로그라이크 흐름(발라트로 이후, 슬롯바운드) / 오토배틀러</p></details></td><td class="n">5</td><td class="n">5</td><td class="n">5</td><td class="n">3</td><td class="n">3</td><td class="t">21</td></tr><tr class="pass"><td class="n">G003</td><td class="idea"><b>폭락 러너</b> <span class="chip">하이 콘셉트</span><span class="chip">엄청난 중독성</span><span class="ol">주식 차트가 곧 지형이다. 폭락은 낭떠러지, 급등은 벽. 레버리지를 올릴수록 빨라진다.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> 누구나 아는 캔들 차트를 지형으로 바꾼 한 문장. 한 판 30초, 바로 재시작. 개미·코인 밈과 붙어 쇼츠 소재가 많음. 2D 러너라 범위가 작음</p><p><b>위험</b> 실제 돈·투자 권유로 보이면 안 됨(가상 차트만). 러너는 흔해서 &#x27;레버리지 = 속도·위험&#x27; 장치가 재밌어야 산다</p><p><b>참고 장르</b> 끝없는 러너 장르</p></details></td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="t">21</td></tr><tr class="pass"><td class="n">G004</td><td class="idea"><b>고양이 타자수</b> <span class="chip">하이 콘셉트</span><span class="chip">웃긴 샌드박스</span><span class="ol">고양이가 키보드 위를 걸어간 길이 그대로 입력된다. 간식을 놓아 상사에게 보낼 메일을 완성하라.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> 고양이 + 키보드는 이미 모두가 겪은 장면. 엉뚱한 오타 메일이 그대로 웃음 클립이 됨. 비슷한 게임이 거의 없음</p><p><b>위험</b> 단어 퍼즐은 언어별로 다시 만들어야 함(한글·영문). 반복성은 &#x27;오늘의 메일&#x27; 같은 매일 문제로 보완</p><p><b>참고 장르</b> 경로 유도 퍼즐 장르</p></details></td><td class="n">5</td><td class="n">4</td><td class="n">3</td><td class="n">4</td><td class="n">5</td><td class="t">21</td></tr><tr class="pass"><td class="n">G005</td><td class="idea"><b>버그가 무기</b> <span class="chip">엄청난 중독성</span><span class="chip">웃긴 샌드박스</span><span class="ol">판이 진행될수록 게임이 망가진다. 벽 뚫기, 무한 점프 — 그 버그가 네 무기다.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> &#x27;버그 = 업그레이드&#x27;라는 뒤집기. 화면이 깨지는 연출이 클립으로 강함. AI 바이브코딩 이야기와도 맞물림</p><p><b>위험</b> 의도된 버그를 재밌게 설계하기가 생각보다 어려움. 범위가 쉽게 커짐</p><p><b>참고 장르</b> 메타 게임 / 로그라이트 성장</p></details></td><td class="n">4</td><td class="n">5</td><td class="n">4</td><td class="n">3</td><td class="n">4</td><td class="t">20</td></tr><tr class="pass"><td class="n">G006</td><td class="idea"><b>맛집 새치기</b> <span class="chip">하이 콘셉트</span><span class="chip">웃긴 샌드박스</span><span class="ol">줄 선 지 3시간째. 들키지 않고 한 칸씩 앞으로 가라.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> 누구나 공감하는 상황 + 들킬 듯 말 듯한 긴장. NPC 반응이 웃음 포인트</p><p><b>위험</b> NPC 의심 시스템이 재미의 전부라 튜닝이 오래 걸림</p><p><b>참고 장르</b> 잠입(스텔스) 장르</p></details></td><td class="n">4</td><td class="n">4</td><td class="n">3</td><td class="n">4</td><td class="n">4</td><td class="t">19</td></tr><tr class="pass"><td class="n">G007</td><td class="idea"><b>만원 엘리베이터</b> <span class="chip">엄청난 중독성</span><span class="chip">웃긴 샌드박스</span><span class="ol">정원 초과 경보가 울리기 직전까지, 사람을 최대한 꽉꽉 태워라.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> 짧은 판, 물리로 찌그러지는 사람들이 웃김</p><p><b>위험</b> 물리 쌓기 게임은 이미 많음</p><p><b>참고 장르</b> 물리 쌓기 장르</p></details></td><td class="n">3</td><td class="n">4</td><td class="n">4</td><td class="n">4</td><td class="n">3</td><td class="t">18</td></tr><tr class="passline"><td colspan="8"></td></tr><tr class="fail"><td class="n">G010</td><td class="idea"><b>잉크 방벽</b> <span class="chip">엄청난 중독성</span><span class="ol">선을 그리면 벽이 된다. 잉크가 곧 체력이다.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> 조작이 직관적이고 모바일에도 맞음</p><p><b>위험</b> 그리기 게임은 흔하고 한 문장이 약함</p><p><b>참고 장르</b> 그리기 디펜스 장르</p></details></td><td class="n">3</td><td class="n">3</td><td class="n">4</td><td class="n">4</td><td class="n">2</td><td class="t">16</td></tr><tr class="fail"><td class="n">G008</td><td class="idea"><b>편의점 야간 이상현상</b> <span class="chip">하이 콘셉트</span><span class="ol">새벽 편의점 알바. 손님 중 하나는 사람이 아니다.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> 한국 편의점은 해외에서 인기 있는 소재</p><p><b>위험</b> 이상현상 찾기 장르는 8번 출구 이후 비슷한 게임이 넘침 → 새로움 낮음. 공포 연출은 그래픽 품질 의존</p><p><b>참고 장르</b> 이상현상 찾기 장르(8번 출구 이후)</p></details></td><td class="n">4</td><td class="n">4</td><td class="n">2</td><td class="n">3</td><td class="n">2</td><td class="t">15</td></tr><tr class="fail"><td class="n">G009</td><td class="idea"><b>칩튠 던전</b> <span class="chip">엄청난 중독성</span><span class="ol">음악이 곧 지도. 칩튠 박자에 맞춰 던전이 생긴다.</span><details><summary>왜 · 위험 · 참고</summary><p><b>왜</b> 8비트 음악 시험(코드 합성)과 부품을 같이 쓸 수 있음</p><p><b>위험</b> 리듬 로그라이크는 강한 선행작이 있음. 리듬 판정 튜닝이 어려움</p><p><b>참고 장르</b> 리듬 로그라이크 장르</p></details></td><td class="n">3</td><td class="n">3</td><td class="n">4</td><td class="n">3</td><td class="n">2</td><td class="t">15</td></tr></tbody></table></section>
+
+<section><h2>폐기된 게임</h2>
+<p class="lead2">버린 이유와 레슨. 같은 실수를 다시 하지 않기 위한 기록입니다.</p>
+<div class="none">아직 없음</div></section>
+
+<section><h2>규칙</h2><div class="rules"><div><b>동시 진행 1개</b>프로토 + 플레이테스트 합쳐 1개. 하나를 끝내야 다음으로</div><div><b>7일 기한</b>기한을 넘기면 폐기 후보. 연장은 1회 3일</div><div><b>심사 18/25</b>훅·클립·반복·범위·새로움 각 5점</div><div><b>판정</b>5명 중 3명이 시키지 않았는데 한 판 더 → 유지. 애매하면 폐기</div><div><b>폐기는 지우지 않음</b>폴더·ID 유지, 이유와 살릴 부품을 남김</div><div><b>원작 복제 금지</b>장르·메커닉 참고만. 이름·캐릭터·그림 복제 금지</div></div></section>
+
+</main>
+</body>
+</html>
