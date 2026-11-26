@@ -22,19 +22,19 @@ window.CATALOG = [
   "path": "../G002_claw-army/game/index.html",
   "color": "#ff7ab6",
   "icon": "🧸",
-  "version": "2026-11-26 16:32"
+  "version": "2026-11-26 17:09"
  },
  {
   "id": "G003",
   "title": "폭락 러너",
-  "one_liner": "주식 차트가 곧 지형이다. 폭락은 낭떠러지, 급등은 벽. 레버리지를 올릴수록 빨라진다.",
+  "one_liner": "주식 차트가 곧 지형인 러너. 개미가 단계마다 목표 수익을 내고 익절하면 동학개미→슈퍼개미→큰손→고래로 성장, 세력의 떨구기도 버틴다. 상한가·물타기·손절매 아이템, 곰·떨어지는 칼날·블랙스완 방해물.",
   "type": "하이 콘셉트",
   "stage": "프로토",
   "deadline": "2026-12-03",
   "path": "../G003_crash-runner/game/index.html",
   "color": "#3cc98a",
   "icon": "📉",
-  "version": "2026-11-26 14:58"
+  "version": "2026-11-26 17:19"
  },
  {
   "id": "G004",
@@ -58,7 +58,7 @@ window.CATALOG = [
   "path": "../G006_queue-cutter/game/index.html",
   "color": "#ffb020",
   "icon": "🍜",
-  "version": "2026-11-26 16:27"
+  "version": "2026-11-26 16:50"
  },
  {
   "id": "G011",
@@ -70,7 +70,7 @@ window.CATALOG = [
   "path": "../G011_commute-dodge/game/index.html",
   "color": "#2fc4c4",
   "icon": "🚇",
-  "version": "2026-11-26 16:32"
+  "version": "2026-11-26 17:18"
  },
  {
   "id": "G012",
