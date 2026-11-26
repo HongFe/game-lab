@@ -92,7 +92,7 @@ window.CATALOG = [
   "color": "#2fc4c4",
   "icon": "🚇",
   "version": "2026-11-26 19:09",
-  "note": "대형 겹침 0(생성 시 기하 검사), 노선별 난도 계단, selftes…",
+  "note": "세로 탄막 슈팅, '잠시만요!' 비폭력 발사, 사물 보스 10종, 박자…",
   "rating": null,
   "hot": false
  },
