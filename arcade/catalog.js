@@ -44,7 +44,7 @@ window.CATALOG = [
   "color": "#3cc98a",
   "icon": "📉",
   "version": "2026-11-26 19:10",
-  "note": "첫 판 카드 3장 이하, 휴대폰 시야 줌아웃, 단계별 ★ 재조정, 연속…",
+  "note": "다음 단계 미리보기·성장 상점, 몹·아이템마다 판단 역할(콤보·진짜/가…",
   "rating": null,
   "hot": true
  },
@@ -75,7 +75,7 @@ window.CATALOG = [
   "path": "../G006_queue-cutter/game/index.html",
   "color": "#ffb020",
   "icon": "🍜",
-  "version": "2026-11-26 18:53",
+  "version": "2026-11-26 19:22",
   "note": "아이템 5종, 가게별 규칙(사장님·커플·소나기·앱 알림·새 손님), 점…",
   "rating": null,
   "hot": false
