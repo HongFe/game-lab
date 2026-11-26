@@ -310,7 +310,9 @@ function burst(x, y, ch) {
 addEventListener("message", e => {
   const d = e.data; if (!d || d.type !== "nhc-game") return;
   const sl = slots.find(s => s.frame && s.frame.contentWindow === e.source); if (!sl) return;
-  sl.s.lastInput = Date.now(); sl.s.events++;
+  // 플레이 시간은 사람이 움직였다는 신호(input·level·fail)로만 센다. 게임이 저절로 보내는 신호(news 등)는 세지 않는다
+  if (["input", "level_start", "level_clear", "fail"].includes(d.ev)) sl.s.lastInput = Date.now();
+  sl.s.events++;
   if (d.ev === "level_clear") sl.s.levels++;
   if (d.ev === "fail") sl.s.fails++;
   if (d.ev === "level_start") sl.s.starts++;
