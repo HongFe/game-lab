@@ -32,6 +32,11 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 #hold.danger.on{box-shadow:0 2px 0 #8f1d15}
 @keyframes dz{to{filter:brightness(1.18)}}
 #hold.sus{background:linear-gradient(#ffe08a,#ffc44d)}
+#itemb{position:absolute;right:16px;bottom:calc(100px + env(safe-area-inset-bottom));width:68px;height:68px;border-radius:50%;border:3px dashed rgba(255,255,255,.25);background:rgba(15,20,30,.75);color:var(--tx);z-index:3;touch-action:none;padding:0;font:900 30px sans-serif;display:none;cursor:pointer}
+#itemb.on{display:block}
+#itemb.has{border:3px solid #fff;background:radial-gradient(#5b7bd6,#2c3f7a);box-shadow:0 0 0 4px rgba(255,176,32,.5),0 6px 14px rgba(0,0,0,.4);animation:ib .7s ease-in-out infinite alternate}
+#itemb small{position:absolute;left:50%;bottom:-18px;transform:translateX(-50%);white-space:nowrap;font:800 12px -apple-system,sans-serif;color:var(--tx);text-shadow:0 1px 2px #000}
+@keyframes ib{to{transform:scale(1.07)}}
 #hold:disabled{filter:grayscale(.8) brightness(.7)}
 /* 튜토리얼 코치 */
 #coach{position:absolute;left:12px;right:12px;top:calc(76px + env(safe-area-inset-top));z-index:3;display:none;background:#fff8ee;color:#2a1c06;border-radius:16px;padding:10px 12px 10px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
@@ -63,6 +68,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
 .list button{margin:0;padding:9px 6px;font-size:13px;background:#3b4862;color:var(--tx)}
 .list button.done{background:#3c5a4a} .list button:disabled{opacity:.35}
 .list small{display:block;font-size:12px;color:var(--acc)}
+.box .fi{font-size:40px;line-height:1.1;margin-top:6px}
+.box .feat{background:#1f2a3d;border-radius:12px;padding:6px 10px;margin-top:8px}
+.box .feat p{margin:2px 0}
+.box button.daily{background:#3a3020;border:1px solid #6b5520;color:#ffe3a8;font:800 13px -apple-system,sans-serif;text-align:left;padding:10px 12px}
+.dex{font-size:22px;letter-spacing:2px;margin-top:8px}
+.dex .no{filter:grayscale(1) brightness(.4)}
+.next{background:#1f2a3d;border-radius:12px;padding:8px 10px;margin-top:8px;font-size:13px;color:var(--sub);text-align:left}
+.score{font:900 26px ui-monospace,Menlo,monospace;color:#fff8ee}
 </style>
 </head>
 <body>
@@ -75,6 +88,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
   <div id="coach"><div class="top"><div class="dots" id="dots">연습 1/4</div><button id="skip">건너뛰기</button></div><div class="msg" id="cmsg"></div></div>
   <div id="arrow">👇</div>
   <button id="hold"><span id="holdT">🤫 살금살금</span><small id="holdS">누르고 있기 · ❗ 뜨면 손 떼기</small><span class="bar" id="bar"></span></button>
+  <button id="itemb" aria-label="아이템 쓰기"><span id="itemE"></span><small id="itemN">빈 손</small></button>
   <div class="ov" id="ov"><div class="box" id="box"></div></div>
 </div>
 <script>
@@ -85,22 +99,34 @@ const TYPES = {
   kid: { e: "🧒", hair: "#6b3f1d", skin: "#ffd6b0", body: "#ff8a5b", fwd: [1.3, 2.6], tele: [.35, .45], look: [.9, 1.3], name: "아이" },
   granny: { e: "👵", hair: "#d9d6d0", skin: "#efc6a4", body: "#8e6aa8", fwd: [2.2, 4.0], tele: [.9, 1.2], look: [2.0, 2.8], name: "할머니" },
   uncle: { e: "🕶", hair: "#1c1c1c", skin: "#d9a77c", body: "#3b3b3b", fwd: [1.6, 2.8], tele: [.45, .6], look: [1.6, 2.4], name: "아저씨" },
+  phone: { e: "📲", hair: "#4a3a5a", skin: "#f0c8a8", body: "#3f8f8a", fwd: [999, 999], tele: [.6, .8], look: [.8, 1.2], name: "폰 삼매경", never: true },
+  sens: { e: "💢", hair: "#7a2f2f", skin: "#f4c4a0", body: "#c0506a", fwd: [.9, 1.8], tele: [.55, .7], look: [.6, .9], name: "예민한 사람" },
 };
-const FACES = { office: "😑", kid: "🤨", granny: "🧐", uncle: "😠" };
+const FACES = { office: "😑", kid: "🤨", granny: "🧐", uncle: "😠", phone: "😶", sens: "😤" };
 const ANGRY = ["😠", "😤", "🤨", "😡", "🙄", "😒"];
+// 아이템 (줄 옆에 떨어져 있다가 7초 뒤 사라짐 · 그 사람을 앞지르면 주움 · 연속 5명 새치기 보상) — 한 번에 1개만 들 수 있다
+const ITEMS = {
+  call: { e: "📱", name: "통화하는 척", desc: "8초 안에 들키면 1번 무효" },
+  hat: { e: "🧢", name: "변장 모자", desc: "2초 동안 아무도 못 알아봄" },
+  candy: { e: "🍬", name: "사탕 나눠주기", desc: "바로 앞사람이 길을 비켜 줌" },
+  vest: { e: "🦺", name: "배달 조끼", desc: "즉시 2칸 전진 · 그 순간 누가 보고 있으면 들킴" },
+  shout: { e: "🔊", name: "저기 연예인!", desc: "2초 동안 줄 전체가 딴 데 봄 (사장님도)" },
+};
+const ITEM_KEYS = Object.keys(ITEMS);
+// 가게마다 고유 기믹: boss = 사장님 감시 간격(초), couple = 커플 수, rain = 소나기 간격, app = 웨이팅 앱 알림(앞사람 이탈) 간격, it = 아이템 등장 간격
+// 난이도 손잡이: dg = 두 번 보기(?) 확률, tm = ❗ 예고 길이 배수. 목표 = 반응 0.25초 봇 95%→40%, 0.4초 봇 85%→20% (시드 200, 아이템 사용 봇)
 const SHOPS = [
-  { name: "분식집", food: "🍢", n: 8, cut: 2, every: 3.4, mix: { office: 5, kid: 2 }, tm: .85 },
-  { name: "떡볶이", food: "🌶️", n: 9, cut: 3, every: 3.3, mix: { office: 4, kid: 3, granny: 1 }, dg: .45 },
-  { name: "국밥집", food: "🍲", n: 10, cut: 3, every: 3.2, mix: { office: 3, kid: 2, granny: 3 }, dg: .5 },
-  { name: "칼국수", food: "🍜", n: 11, cut: 3, every: 3.2, mix: { office: 3, kid: 3, granny: 2, uncle: 1 }, dg: .5 },
-  { name: "마라탕", food: "🥘", n: 12, cut: 4, every: 3.1, mix: { office: 2, kid: 3, granny: 2, uncle: 2 }, dg: .5, tm: .95 },
-  { name: "돈가스", food: "🍛", n: 12, cut: 5, every: 3.1, mix: { office: 2, kid: 3, granny: 2, uncle: 3 }, dg: .5, tm: .95 },
-  { name: "베이글", food: "🥯", n: 13, cut: 4, every: 3.0, mix: { office: 2, kid: 4, granny: 1, uncle: 3 }, dg: .55, tm: .95 },
-  { name: "평양냉면", food: "🥢", n: 14, cut: 6, every: 3.2, mix: { office: 1, kid: 3, granny: 3, uncle: 3 }, dg: .5, tm: .75 },
-  { name: "소금빵", food: "🥐", n: 14, cut: 5, every: 4.3, mix: { office: 1, kid: 4, granny: 2, uncle: 4 }, dg: .6, tm: .9 },
-  { name: "오마카세", food: "🍣", n: 15, cut: 6, every: 4.3, mix: { office: 1, kid: 3, granny: 3, uncle: 5 }, dg: .6, tm: .85 },
+  { name: "분식집", food: "🍢", n: 8, cut: 2, every: 3.4, mix: { office: 4, kid: 2, phone: 2 }, tm: .85, it: 7, desc: "📲 폰 삼매경 손님은 절대 안 돌아봐요. 줄 옆 아이템을 주워 보세요", ch: { k: "combo", v: 4, t: "연속 4명 새치기" } },
+  { name: "떡볶이", food: "🌶️", n: 9, cut: 3, every: 3.3, mix: { office: 4, kid: 3, granny: 1 }, dg: 0.5, tm: 1, it: 12, desc: "👵 할머니 등장 · 🤨 두 번 보기 손님", ch: { k: "clean", t: "경고 없이 입장" } },
+  { name: "국밥집", food: "🍲", n: 10, cut: 3, every: 3.2, mix: { office: 3, kid: 2, granny: 3, phone: 1 }, dg: 0.7, tm: 0.9, it: 9, boss: 11, desc: "👨‍🍳 사장님이 가끔 나와서 줄 전체를 훑어봐요", ch: { k: "items", v: 2, t: "아이템 2번 쓰기" } },
+  { name: "칼국수", food: "🍜", n: 11, cut: 3, every: 3.2, mix: { office: 3, kid: 3, granny: 2, uncle: 1 }, dg: 0.5, tm: 1, it: 12, couple: 2, desc: "🕶 아저씨 · 💑 커플은 둘이 같이 돌아봐요", ch: { k: "bowls", v: 3, t: "그릇 3개 남기고 입장" } },
+  { name: "마라탕", food: "🥘", n: 12, cut: 4, every: 3.1, mix: { office: 2, kid: 3, granny: 1, uncle: 2, sens: 2 }, dg: 0.8, tm: 0.9, it: 12, rain: 13, desc: "💢 예민한 사람 · ☔ 소나기 오면 다들 우산 보느라 못 봐요", ch: { k: "combo", v: 6, t: "연속 6명 새치기" } },
+  { name: "돈가스", food: "🍛", n: 12, cut: 4, every: 3.1, mix: { office: 2, kid: 3, granny: 2, uncle: 3, phone: 1 }, dg: 0.6, tm: 0.9, it: 12, boss: 10, couple: 2, desc: "👨‍🍳 사장님 + 💑 커플", ch: { k: "noitem", t: "아이템 없이 입장" } },
+  { name: "베이글", food: "🥯", n: 13, cut: 4, every: 3.0, mix: { office: 2, kid: 3, granny: 1, uncle: 3, sens: 2 }, dg: 0.7, tm: 0.8, it: 12, app: 9, desc: "📲 웨이팅 앱 알림이 오면 앞사람이 줄을 떠나요", ch: { k: "clean", t: "경고 없이 입장" } },
+  { name: "평양냉면", food: "🥢", n: 14, cut: 5, every: 3.2, mix: { office: 1, kid: 3, granny: 3, uncle: 3, sens: 1 }, dg: 0.6, tm: 0.6, it: 12, boss: 8, desc: "👨‍🍳 사장님이 자주 나와요 · ❗가 짧아요", ch: { k: "combo", v: 6, t: "연속 6명 새치기" } },
+  { name: "소금빵", food: "🥐", n: 14, cut: 5, every: 4.3, mix: { office: 1, kid: 4, granny: 2, uncle: 3, sens: 2 }, dg: 0.8, tm: 0.7, it: 12, couple: 3, rain: 12, desc: "💑 커플 셋 + ☔ 소나기", ch: { k: "bowls", v: 3, t: "그릇 3개 남기고 입장" } },
+  { name: "오마카세", food: "🍣", n: 15, cut: 6, every: 4.3, mix: { office: 1, kid: 3, granny: 3, uncle: 4, sens: 2 }, dg: 0.8, tm: 0.5, it: 12, boss: 10, couple: 2, app: 12, rain: 15, desc: "전부 다 나와요. 최종 보스 맛집", ch: { k: "clean", t: "경고 없이 입장" } },
 ];
-// 난이도 곡선 (2026-11-26 재조정): dg = 두 번 보기(?) 확률, tm = ❗ 예고 길이 배수. 목표 = 반응 0.25초 봇 95%→40%, 0.4초 봇 85%→20% (시드 200)
 const TUT_SHOP = { name: "연습 김밥", food: "🍙" };
 // 가게별 속도(every)는 반응형 봇 최소 통과값 + 사람 반응 여유 (2026-11-26 조정)
 const DT = 1 / 60, PASS_TIME = .7, WATCH = 2, CAUGHT_PUSH = 2, TELE_MIN = .2, SUS_TELE = .2;   // 두 번 보기: '?'가 예고, 다시 볼 때 ❗는 0.2초
@@ -131,6 +157,12 @@ const SFX = {
   heart() { beep(70, .08, "sine", .12); beep(60, .08, "sine", .1, .14); },
   enter() { beep(vary(392), .08, "triangle", .04); },
   good() { [660, 880, 1175].forEach((f, i) => beep(f, .1, "sine", .05, i * .07)); },
+  item() { [880, 1175, 1568].forEach((f, i) => beep(vary(f), .08, "triangle", .05, i * .06)); },
+  use() { whoosh(.18, .1, 900, 3000); beep(660, .12, "square", .04, 0, 1320); },
+  drop() { beep(1568, .05, "sine", .035); beep(2093, .07, "sine", .03, .06); },
+  boss() { [0, .14, .28].forEach(w => beep(330, .1, "square", .05, w, 300)); },
+  rain() { whoosh(.9, .08, 3000, 1500); },
+  app() { beep(988, .07, "sine", .05); beep(1319, .09, "sine", .05, .09); },
   win() { [523, 659, 784, 1046, 1319].forEach((f, i) => beep(f, .12, "square", .045, i * .08)); },
   lose() { [392, 330, 262, 196].forEach((f, i) => beep(f, .2, "triangle", .06, i * .15)); },
 };
@@ -140,34 +172,119 @@ addEventListener("pointerdown", () => { const t = Date.now(); if (t - lastInputE
 
 // ───────── 로직 (봇과 실제 플레이 공통, 고정 틱) ─────────
 const between = (R, [a, b]) => a + R() * (b - a);
-function newLevel(li, seed) {
+const BOSS_TELE = 1.0, BOSS_LOOK = 1.6, QUIET_RAIN = 2.5, QUIET_SHOUT = 2, HAT_SEC = 2, ITEM_LIFE = 7, COMBO_GIFT = 6;
+// 가게 기믹·아이템용 상태 (기믹 난수는 L.E — 손님 고개 난수 L.R와 분리)
+function initExtras(L, seed, noItems) {
+  const S = L.shop, E = rng((seed * 7 + 13) >>> 0);
+  Object.assign(L, { E, item: null, ef: { call: 0, hat: 0 }, quiet: 0, quietWhy: "", boss: { st: "off", t: 0 }, bossT: S.boss ? S.boss * .6 : 0, rainT: S.rain ? S.rain * .7 : 0, appT: S.app ? S.app * .6 : 0,
+    itemT: S.it && !noItems ? Math.min(3, S.it) : 0, noItems: !!noItems, combo: 0, maxCombo: 0, score: 0, itemsUsed: 0, stats: { boss: 0, rain: 0, app: 0, couple: 0, items: 0, blocked: 0 } });
+  if (S.couple) {   // 이웃한 두 사람을 커플로 (폰 삼매경 제외)
+    let made = 0, tries = 0;
+    while (made < S.couple && tries++ < 40) {
+      const i = Math.floor(E() * (L.line.length - 2)), a = L.line[i], b = L.line[i + 1];
+      if (!a || !b || a.me || b.me || a.pair != null || b.pair != null || TYPES[a.type].never || TYPES[b.type].never) continue;
+      a.pair = b.id; b.pair = a.id; made++;
+    }
+  }
+  return L;
+}
+function newLevel(li, seed, noItems) {
   const S = SHOPS[li], R = rng(seed), pool = [];
   Object.entries(S.mix).forEach(([k, n]) => { for (let i = 0; i < n; i++) pool.push(k); });
   const line = [];
   for (let i = 0; i < S.n; i++) { const type = pool[Math.floor(R() * pool.length)]; line.push({ id: i, type, st: "fwd", t: 0, dur: between(R, TYPES[type].fwd) * (.3 + R() * .9), me: false }); }
   line.push({ id: 99, me: true });
-  return { li, shop: S, R, line, bowls: S.n + 1 - S.cut, adv: S.every, advT: S.every, strikes: 0, prog: 0, cool: 0, time: 0, over: null, passed: 0, glare: 0, caughtN: 0 };
+  return initExtras({ li, shop: S, R, line, bowls: S.n + 1 - S.cut, adv: S.every, advT: S.every, strikes: 0, prog: 0, cool: 0, time: 0, over: null, passed: 0, glare: 0, caughtN: 0 }, seed, noItems);
 }
 const meIdx = L => L.line.findIndex(p => p.me);
 function watchers(L) { const p = meIdx(L); return L.line.slice(Math.max(0, p - (L.shop.w || WATCH)), p).filter(x => !x.me); }
 // 이대로 기다리면 못 먹는 사람 수: 내 앞 p명이 다 들어가도 그릇이 1개 이상 남아야 한다
 const needPass = L => Math.max(0, meIdx(L) - L.bowls + 1);
+// 지금 위험한가 (봇·화면 공통): 지켜보는 사람의 ❗/돌아봄, 사장님 ❗/감시
+const danger = L => watchers(L).some(n => n.st !== "fwd") || (L.boss && L.boss.st !== "off");
+function quietAll(L, sec, why) { L.quiet = Math.max(L.quiet, sec); L.quietWhy = why; for (const n of L.line) if (!n.me && n.st !== "fwd") { n.st = "fwd"; n.t = 0; n.sus = false; n.dur = Math.max(n.dur, 1); } if (L.boss) { L.boss.st = "off"; L.bossT = Math.max(L.bossT, 2); } }
+function caughtMe(L, ev) {   // 들킴 처리 (통화하는 척이면 1번 무효)
+  const p = meIdx(L);
+  if (L.ef.call > 0) { L.ef.call = 0; L.cool = .6; L.prog = 0; L.stats.blocked++; ev && ev("blocked"); return false; }
+  if (!L.noStrike) L.strikes++; L.caughtN++; L.prog = 0; L.cool = 1.1; L.glare = 1.1; L.combo = 0;
+  while (L.line.length - 1 - p < CAUGHT_PUSH) {   // 뒤에 사람이 모자라면 새 손님이 줄 끝에 온다 (항상 두 칸 뒤로)
+    const ks = L.shop.mix ? Object.keys(L.shop.mix) : ["office"], type = ks[(L.newcomer = (L.newcomer || 0) + 1) % ks.length];
+    L.line.push({ id: 500 + L.newcomer, type, st: "fwd", t: 0, dur: TYPES[type].fwd[0] > 99 ? 999 : TYPES[type].fwd[0], me: false });
+  }
+  const me = L.line.splice(p, 1)[0]; L.line.splice(p + CAUGHT_PUSH, 0, me);
+  ev && ev("caught"); if (L.strikes >= 3) { L.over = "kicked"; ev && ev("kicked"); }
+  return true;
+}
+function passOne(L, ev, how) {   // 바로 앞사람 앞으로 (아이템 줍기·콤보)
+  const p = meIdx(L); if (p <= 0) return; const n = L.line[p - 1];
+  const me = L.line.splice(p, 1)[0]; L.line.splice(p - 1, 0, me);
+  L.prog = 0; L.passed++; L.combo++; L.maxCombo = Math.max(L.maxCombo, L.combo); L.score += 100 + 25 * Math.min(L.combo - 1, 8);
+  ev && ev("pass", how);
+  if (n.item && !L.item) { L.item = n.item.k; n.item = null; L.stats.items++; ev && ev("pickup", L.item); }
+  if (L.combo % COMBO_GIFT === 0 && !L.item && !L.noItems && L.E) { L.item = ITEM_KEYS[Math.floor(L.E() * ITEM_KEYS.length)]; L.stats.items++; ev && ev("gift", L.item); }
+}
+function useItem(L, ev) {
+  if (!L.item || L.over || L.cool > 0) return false;
+  const k = L.item, p = meIdx(L);
+  if ((k === "candy" || k === "vest") && p <= 0) return false;
+  L.item = null; L.itemsUsed++; ev && ev("use", k);
+  if (k === "call") L.ef.call = 8;
+  else if (k === "hat") L.ef.hat = HAT_SEC;
+  else if (k === "shout") quietAll(L, QUIET_SHOUT, "shout");
+  else if (k === "candy") passOne(L, ev, "candy");
+  else if (k === "vest") {
+    for (let s = 0; s < 2 && meIdx(L) > 0; s++) passOne(L, ev, "vest");
+    // 그 순간 바로 앞 2명이나 사장님이 보고 있었으면 들킴 (변장 중이면 괜찮음)
+    if (L.ef.hat <= 0 && (watchers(L).some(n => n.st === "look") || L.boss.st === "look")) caughtMe(L, ev);
+    L.wid = watchers(L).map(n => n.id).join(",");   // 조끼로 생긴 새 감시자에게는 유예를 주지 않는다 (판단은 쓰기 전에)
+  }
+  return true;
+}
 function stepLevel(L, hold, ev) {
   if (L.over) return;
+  const S = L.shop;
   L.time += DT; L.cool = Math.max(0, L.cool - DT); L.glare = Math.max(0, L.glare - DT);
-  // 손님 고개 돌리기 (noTurn: 연습 단계 — 앞보기에서 스스로 돌아보지 않음)
+  if (L.ef) { L.ef.call = Math.max(0, L.ef.call - DT); L.ef.hat = Math.max(0, L.ef.hat - DT); }
+  if (L.quiet > 0) {
+    L.quiet = Math.max(0, L.quiet - DT);
+    // 비가 그치면 다들 두리번 — 모두 '?' (곧 짧은 ❗로 다시 봄). 안전 구간 뒤에 위험 구간
+    if (L.quiet <= 0 && L.quietWhy === "rain" && L.E) { for (const n of L.line) if (!n.me && !TYPES[n.type].never) { n.sus = true; n.st = "fwd"; n.t = 0; n.dur = .4 + L.E() * 1.2; } ev && ev("rainend"); }
+  }
+  // 손님 고개 돌리기 (noTurn: 연습 단계 — 앞보기에서 스스로 돌아보지 않음 / quiet: 소나기·연예인 — 다들 딴 데 봄)
   for (const n of L.line) {
     if (n.me) continue; n.t += DT; if (n.grace > 0) n.grace -= DT;
-    if (n.st === "fwd" && L.noTurn) { n.t = 0; continue; }
+    if (n.item && (n.item.t -= DT) <= 0) n.item = null;
+    if (n.st === "fwd" && (L.noTurn || L.quiet > 0)) { n.t = 0; continue; }
     if (n.t >= n.dur) {
-      const T = TYPES[n.type], S = L.shop; n.t = 0;
-      // 가게 난이도 손잡이(읽을 수 있는 것만): tm = ❗ 예고 길이 배수, fk = 헛기침(❗만 뜨고 안 돌아봄) 확률, dg = 두 번 보기(돌아본 뒤 머리 위 ?가 0.5~1초 → 짧은 ❗로 다시 봄) 확률
-      if (n.st === "fwd") { const quick = n.sus; n.st = "tele"; n.sus = false; n.dur = quick ? SUS_TELE : Math.max(TELE_MIN, between(L.R, T.tele) * (S.tm || 1)); n.fake = S.fk ? L.R() < S.fk : false; if (watchers(L).includes(n)) ev && ev("tele", n); }
+      const T = TYPES[n.type]; n.t = 0;
+      // 가게 난이도 손잡이(읽을 수 있는 것만): tm = ❗ 예고 길이 배수, fk = 헛기침 확률, dg = 두 번 보기(돌아본 뒤 머리 옆 ?가 0.5~1초 → 짧은 ❗로 다시 봄) 확률
+      if (n.st === "fwd") {
+        if (T.never) { n.dur = 999; continue; }
+        const quick = n.sus; n.st = "tele"; n.sus = false; n.dur = quick ? SUS_TELE : Math.max(TELE_MIN, between(L.R, T.tele) * (S.tm || 1)); n.fake = S.fk ? L.R() < S.fk : false; if (watchers(L).includes(n)) ev && ev("tele", n);
+        if (n.pair != null) { const m = L.line.find(x => x.id === n.pair); if (m && m.st === "fwd") { m.st = "tele"; m.t = 0; m.dur = n.dur; m.sus = false; m.fake = n.fake; L.stats.couple++; if (watchers(L).includes(m)) ev && ev("tele", m); } }
+      }
       else if (n.st === "tele") {
         if (n.fake) { n.st = "fwd"; n.fake = false; n.dur = between(L.R, T.fwd) * .5; ev && ev("fake", n); }
         else { n.st = "look"; n.dur = between(L.R, T.look); ev && ev("look", n); }
       }
       else { n.st = "fwd"; if (S.dg && L.R() < S.dg) { n.sus = true; n.dur = .5 + L.R() * .5; } else n.dur = between(L.R, T.fwd); }
+    }
+  }
+  // 가게 기믹 (연습에는 없음)
+  if (L.E) {
+    if (S.boss && L.quiet <= 0) {
+      const B = L.boss;
+      if (B.st === "off") { if ((L.bossT -= DT) <= 0) { B.st = "tele"; B.t = BOSS_TELE; L.stats.boss++; ev && ev("bosstele"); } }
+      else if ((B.t -= DT) <= 0) { if (B.st === "tele") { B.st = "look"; B.t = BOSS_LOOK; ev && ev("bosslook"); } else { B.st = "off"; L.bossT = S.boss * (.8 + L.E() * .4); } }
+    }
+    if (S.rain && (L.rainT -= DT) <= 0) { L.rainT = S.rain * (.8 + L.E() * .4); quietAll(L, QUIET_RAIN, "rain"); L.stats.rain++; ev && ev("rain"); }
+    if (S.app && (L.appT -= DT) <= 0) {
+      L.appT = S.app * (.8 + L.E() * .4); const p = meIdx(L);
+      if (p >= 3) { const i = Math.floor(L.E() * (p - 2)), n = L.line[i]; if (n && !n.me && n.pair == null) { L.line.splice(i, 1); L.stats.app++; ev && ev("app", n); } }
+    }
+    if (S.it && !L.noItems && (L.itemT -= DT) <= 0) {
+      L.itemT = S.it * (.8 + L.E() * .4); const p = meIdx(L), k = ITEM_KEYS[Math.floor(L.E() * ITEM_KEYS.length)];
+      if (p >= 1) { const n = L.line[Math.max(0, p - 1 - Math.floor(L.E() * Math.min(3, p)))]; if (n && !n.me && !n.item) { n.item = { k, t: ITEM_LIFE }; ev && ev("drop", n); } }
     }
   }
   // 줄이 줄어듦
@@ -186,29 +303,41 @@ function stepLevel(L, hold, ev) {
   if (wid !== L.wid) { const old = (L.wid || "").split(","); ws.forEach(n => { if (!old.includes(String(n.id))) n.grace = GRACE; }); L.wid = wid; }
   const moving = hold && p > 0 && L.cool <= 0;
   if (moving) {
-    if (ws.some(n => n.st === "look" && !(n.grace > 0))) {   // 들킴
-      if (!L.noStrike) L.strikes++; L.caughtN++; L.prog = 0; L.cool = 1.1; L.glare = 1.1;
-      while (L.line.length - 1 - p < CAUGHT_PUSH) {   // 뒤에 사람이 모자라면 새 손님이 줄 끝에 온다 (항상 두 칸 뒤로)
-        const ks = L.shop.mix ? Object.keys(L.shop.mix) : ["office"], type = ks[(L.newcomer = (L.newcomer || 0) + 1) % ks.length];
-        L.line.push({ id: 500 + L.newcomer, type, st: "fwd", t: 0, dur: TYPES[type].fwd[0], me: false });
-      }
-      const me = L.line.splice(p, 1)[0]; L.line.splice(p + CAUGHT_PUSH, 0, me);
-      ev && ev("caught"); if (L.strikes >= 3) { L.over = "kicked"; ev && ev("kicked"); } return;
-    }
+    const seen = ws.some(n => n.st === "look" && !(n.grace > 0)) || (L.boss && L.boss.st === "look");
+    if (seen && !(L.ef && L.ef.hat > 0)) { caughtMe(L, ev); return; }   // 들킴 (변장 모자면 못 알아봄)
     L.prog += DT / PASS_TIME; ev && ev("sneak");
     if (L.noPass && L.prog >= 1) L.prog = .99;   // 연습: ❗~돌아보기 동안은 지나가지 않음
-    if (L.prog >= 1) { L.prog = 0; const me = L.line.splice(p, 1)[0]; L.line.splice(p - 1, 0, me); L.passed++; ev && ev("pass"); }
+    if (L.prog >= 1) passOne(L, ev);
   }
 }
-// 반응형 봇: 지켜보는 사람 중 누구라도 ❗(예고)거나 돌아보고 있으면 멈춘다 — 사람이 화면을 보고 할 수 있는 최선과 같다
-function botHold(L) { return meIdx(L) > 0 && L.cool <= 0 && !watchers(L).some(n => n.st !== "fwd"); }
+// 반응형 봇: 위험(지켜보는 사람 ❗/돌아봄, 사장님)이면 멈춘다 — 사람이 화면을 보고 할 수 있는 최선과 같다. 변장 중엔 그냥 간다
+function botHold(L) { return meIdx(L) > 0 && L.cool <= 0 && ((L.ef && L.ef.hat > 0) || !danger(L)); }
+// 봇의 아이템 쓰기 (단순한 규칙: 사람이 바로 떠올릴 만한 수준)
+function botItem(L) {
+  const k = L.item, p = meIdx(L); if (!k || L.cool > 0) return false;
+  if (k === "call" || k === "candy") return p > 0;
+  if (k === "hat" || k === "shout") return p > 0 && danger(L);
+  if (k === "vest") return p > 0 && !L.line.slice(Math.max(0, p - 4), p).some(n => n.st !== "fwd") && L.boss.st === "off";
+  return false;
+}
+// 반응 rt초 봇(사람 근사): 위험이 생기고 rt초 뒤에야 손을 뗀다. 아이템은 botItem 규칙으로 쓴다
+function reactRun(li, seed, rt, noItems) {
+  const T = newLevel(li, seed, noItems); let k = 0, d = 0, noWarn = 0, caught = 0;
+  while (!T.over && k++ < 60 * 300) {
+    const dz = meIdx(T) > 0 && danger(T); d = dz ? d + DT : 0;
+    if (!noItems && botItem(T)) useItem(T);
+    const c0 = T.caughtN; stepLevel(T, meIdx(T) > 0 && T.cool <= 0 && (T.ef.hat > 0 || !dz || d < rt));
+    if (T.caughtN > c0) { caught++; if (d <= DT * 1.5) noWarn++; }
+  }
+  return { win: T.over === "win", noWarn, caught, T };
+}
 
 // ───────── 튜토리얼 (직접 겪기: 누르기 → ❗ 손 떼기 → 들키면 뒤로 → 짧은 실전) ─────────
 const TUT_STEPS = 4;
 function tutLine(types) { const line = types.map((type, i) => ({ id: 200 + i, type, st: "fwd", t: 0, dur: 99, me: false })); line.push({ id: 99, me: true }); return line; }
 function newTut() {
-  return { li: -1, shop: TUT_SHOP, R: rng(4242), line: tutLine(["office", "granny", "office", "kid", "office", "office"]), bowls: 9, adv: 99, advT: 99, strikes: 0, prog: 0, cool: 0, time: 0, over: null, passed: 0, glare: 0, caughtN: 0,
-    noTurn: true, noAdv: true, noStrike: true, tut: { s: 0, ph: "wait", t: 0, okT: 0, seen: false, c0: 0, n: null, msg: "", good: false, done: false } };
+  return initExtras({ li: -1, shop: TUT_SHOP, R: rng(4242), line: tutLine(["office", "granny", "office", "kid", "office", "office"]), bowls: 9, adv: 99, advT: 99, strikes: 0, prog: 0, cool: 0, time: 0, over: null, passed: 0, glare: 0, caughtN: 0,
+    noTurn: true, noAdv: true, noStrike: true, tut: { s: 0, ph: "wait", t: 0, okT: 0, seen: false, c0: 0, n: null, msg: "", good: false, done: false } }, 4242, true);
 }
 function tutRun(L) {   // 4단계: 짧은 실전 (그릇 4 · 내 앞 5 → 2명 앞지르기)
   const R = rng(777 + L.caughtN), types = ["office", "kid", "office", "office", "kid"];
@@ -275,9 +404,22 @@ const CAUGHT_TXT = ["새치기 하지 마세요!", "저기요?!", "줄 서세요
 function onEv(k, n) {
   if (k === "tele") { SFX.tele(); if (n) n.popT = 0; }
   else if (k === "look") { if (n && L && watchers(L).includes(n)) { SFX.look(); n.popT = 0; if (JUICE) fx.pops.push({ id: n.id, t: 0, txt: "휙!" }); } }
-  else if (k === "enter") { SFX.enter(); }
+  else if (k === "enter") { SFX.enter(); if (L && !L.tut && L.bowls <= 2 && L.bowls > 0 && L.lastCall !== L.bowls) { L.lastCall = L.bowls; banner(`🔥 그릇 ${L.bowls}개 남았다!`, "#d93a30", 1.6); SFX.heart(); } }
   else if (k === "sneak") { if (Math.random() < .12) SFX.step(); }
-  else if (k === "pass") { fx.combo++; SFX.pass(fx.combo); buzz(8); puff(W / 2, H * .62, 8, "#fff8"); bumpGoal(); }
+  else if (k === "pass") { fx.combo++; SFX.pass(L.combo || fx.combo); buzz(8); puff(W / 2, H * .62, 8, "#fff8"); bumpGoal(); if (L.combo >= 2 && JUICE) fx.pops.push({ id: 99, t: 0, txt: `콤보 x${L.combo}!`, col: "#ffcc5c", dy: -60 }); }
+  else if (k === "pickup" || k === "gift") { SFX.item(); buzz(15); const I = ITEMS[n]; banner(`${I.e} ${I.name} ${k === "gift" ? "보상! (연속 새치기)" : "주웠다!"} — ${I.desc}`, "#4f7bd6", 3.2); puff(W - 50, H - 140, 12, "#ffcc5c"); }
+  else if (k === "use") {
+    SFX.use(); const I = ITEMS[n], say = { call: "여보세요? 네~ 네~", hat: "(아무도 못 알아봄)", candy: "사탕 드실래요? 🍬", vest: "배달이요~! 🦺", shout: "저기 연예인이다!!" }[n];
+    banner(`${I.e} ${I.name}!`, "#4f7bd6", 1.6); fx.pops.push({ id: 99, t: 0, txt: say, col: "#fff", dy: -70 });
+    if (n === "shout" && L) { fx.shake = 6; L.line.forEach((x, i) => { if (!x.me && Math.abs(i - meIdx(L)) < 6 && i % 2) fx.pops.push({ id: x.id, t: -.1 * (i % 3), txt: "어디어디?", col: "#ffcc5c", dy: -40 }); }); }
+  }
+  else if (k === "blocked") { SFX.phew(); fx.flash = .15; banner("📱 “아 제가 지금 통화 중이라…” — 들킴 1번 무효!", "#3f8f8a", 2.2); }
+  else if (k === "drop") { SFX.drop(); }
+  else if (k === "bosstele") { SFX.boss(); banner("👨‍🍳 사장님이 나온다! 곧 줄을 훑어봐요 — 멈춰!", "#d93a30", 1.6); }
+  else if (k === "bosslook") { SFX.look(); fx.shake = 5; }
+  else if (k === "rain") { SFX.rain(); banner("☔ 소나기! 다들 우산 보느라 못 봐요 — 지금이야!", "#2f6fb0", 2.4); }
+  else if (k === "rainend") { SFX.tele(); banner("🌤 비 그침 — 다들 두리번 (?) 조심!", "#b07a20", 1.8); }
+  else if (k === "app") { SFX.app(); banner("📲 웨이팅 앱 알림 — 앞에 한 분이 줄을 떠났어요!", "#3c8a5a", 2.2); puff(W / 2, H * .35, 14, "#4fd18b"); }
   else if (k === "caught") {
     SFX.caught(); fx.combo = 0; fx.shake = 16; fx.allLook = 1.7; fx.flash = .35; if (JUICE) fx.stop = .09;
     // 줄 전체가 돌아보고 여기저기서 한마디
@@ -295,19 +437,35 @@ function onEv(k, n) {
 }
 function puff(x, y, n, col) { if (!JUICE) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = 40 + Math.random() * 80; fx.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .5, max: .5, r: 2 + Math.random() * 3, col }); } }
 function bumpGoal() { if (!JUICE) return; const g = $("goal"); g.classList.remove("bump"); void g.offsetWidth; g.classList.add("bump"); }
-function resetFx() { fx.bubbles = []; fx.parts = []; fx.pops = []; fx.allLook = 0; fx.combo = 0; fx.flash = 0; }
-const HABIT = { office: "휴대폰 보느라 거의 안 돌아봐요", kid: "자주 돌아봐요. ❗가 아주 짧아요", granny: "❗는 길게 뜨지만, 한번 보면 오래 봐요", uncle: "자주, 오래 봐요. 제일 무서운 손님" };
-function newGuests(n) { const before = new Set(); SHOPS.slice(0, n).forEach(S => { Object.keys(S.mix).forEach(k => before.add(k)); if (S.dg) before.add("dg"); }); if (n === 0) return []; const now = Object.keys(SHOPS[n].mix); if (SHOPS[n].dg) now.push("dg"); return now.filter(k => !before.has(k) && !(save.met || {})[k]); }
+function resetFx() { fx.bubbles = []; fx.parts = []; fx.pops = []; fx.allLook = 0; fx.combo = 0; fx.flash = 0; fx.banner = null; }
+function banner(txt, col, sec = 2) { fx.banner = { txt, col, t: 0, sec }; }
+const HABIT = { office: "휴대폰 보느라 거의 안 돌아봐요", kid: "자주 돌아봐요. ❗가 아주 짧아요", granny: "❗는 길게 뜨지만, 한번 보면 오래 봐요", uncle: "자주, 오래 봐요. 제일 무서운 손님", phone: "폰만 봐요. 절대 안 돌아봐요 — 마음 놓고 지나가요", sens: "툭하면 돌아봐요. 대신 금방 다시 앞을 봐요" };
+const FEAT = {
+  items: ["🎁", "아이템", `줄 옆에 떨어진 아이템은 <b>그 사람을 앞지르면</b> 주워요(7초 뒤 사라짐). 연속 ${COMBO_GIFT}명 새치기해도 하나! 오른쪽 동그란 버튼으로 써요.<br>${ITEM_KEYS.map(k => `${ITEMS[k].e} ${ITEMS[k].name}`).join(" · ")}`],
+  dg: ["🤨", "두 번 보기", "돌아본 뒤 머리 옆에 <b style=\"color:#ffb020\">?</b>가 뜨면 곧 <b>아주 짧은 ❗</b>로 다시 봐요. <b>?가 사라질 때까지 기다리기!</b>"],
+  boss: ["👨‍🍳", "사장님 감시", "가게 문에 <b>❗</b>가 뜨면 1초 뒤 사장님이 <b>줄 전체</b>를 훑어봐요. 그때 움직이면 들켜요"],
+  couple: ["💞", "커플", "한 명이 돌아보면 <b>둘이 같이</b> 돌아봐요"],
+  rain: ["☔", "소나기", "비가 오면 다들 우산 보느라 <b>2.5초 못 봐요</b> — 기회! 그친 뒤엔 다들 두리번(?)"],
+  app: ["📲", "웨이팅 앱 알림", "가끔 앞사람이 알림 받고 <b>줄을 떠나요</b>"],
+};
+const featsOf = S => [...Object.keys(S.mix), ...["dg", "boss", "couple", "rain", "app"].filter(k => S[k]), ...(S.it ? ["items"] : [])];
+function newGuests(n) { const before = new Set(["office", "kid"]); SHOPS.slice(0, n).forEach(S => featsOf(S).forEach(k => before.add(k))); return featsOf(SHOPS[n]).filter(k => !before.has(k) && !(save.met || {})[k]); }
+const featHtml = k => { const [e, name, txt] = TYPES[k] ? [TYPES[k].e, TYPES[k].name, HABIT[k]] : FEAT[k]; return `<div class="feat"><div class="fi">${e}</div><p><b style="color:#fff8ee;font-size:16px">${name}</b><br>${txt}</p></div>`; };
+// 오늘의 맛집: 날짜로 고르는 해금된 가게 하나 · 깨면 도장(연속 일수)
+const dayKey = (d = new Date()) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+function dailyIdx() { const k = dayKey(); let h = 7; for (const c of k) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h % Math.max(1, Math.min(save.unlocked, SHOPS.length)); }
+function streak() { let n = 0; const d = new Date(); for (;;) { if (!(save.daily || {})[dayKey(d)]) break; n++; d.setDate(d.getDate() - 1); } return n; }
+function chDone(S, L) { const c = S.ch; if (!c) return false; return c.k === "combo" ? L.maxCombo >= c.v : c.k === "clean" ? L.strikes === 0 : c.k === "items" ? L.itemsUsed >= c.v : c.k === "bowls" ? L.bowls >= c.v : c.k === "noitem" ? L.itemsUsed === 0 : false; }
 function start(n, seed, seen) {
   const ng = auto || seen ? [] : newGuests(n);
-  if (ng.length) {   // 새 손님 첫 등장: 습관 안내 카드
+  if (ng.length) {   // 새 손님·새 규칙 첫 등장: 안내 카드
     mode = "menu"; L = null; resetHud(); coach(false);
-    const DG = `<div class="food">🤨</div><p><b style="color:#fff8ee;font-size:17px">두 번 보기</b><br>돌아본 뒤 머리 옆에 <b style="color:#ffb020">?</b>가 뜨면<br>곧 <b>아주 짧은 ❗</b>로 다시 봐요. <b>?가 사라질 때까지 기다리기!</b></p>`;
-    $("box").innerHTML = `<h2>${ng.some(k => k !== "dg") ? "새 손님 등장!" : "조심!"}</h2>${ng.map(k => k === "dg" ? DG : `<div class="food">${TYPES[k].e}</div><p><b style="color:#fff8ee;font-size:17px">${TYPES[k].name}</b><br>${HABIT[k]}</p>`).join("")}<p>${SHOPS[n].food} ${SHOPS[n].name} 줄에 섞여 있어요.</p><button id="go">줄 서기</button>`;
+    $("box").innerHTML = `<h2>${SHOPS[n].food} ${SHOPS[n].name} — 새로 나와요!</h2>${ng.map(featHtml).join("")}<button id="go">줄 서기</button>`;
     $("ov").classList.add("on"); save.met = Object.assign({}, save.met); ng.forEach(k => save.met[k] = 1); store.set(save); $("go").onclick = () => start(n, seed, true); return;
   }
   li = n; L = newLevel(n, seed ?? (Date.now() % 1e6)); mode = "play"; holding = false; camY = posY(meIdx(L)); resetFx();
   coach(false); $("ov").classList.remove("on"); emit("level_start", { level: n + 1 });
+  banner(`${SHOPS[n].food} ${SHOPS[n].name} · ${SHOPS[n].ch ? "🏅 " + SHOPS[n].ch.t : ""}`, "#3b4862", 2.2);
 }
 function startTut() {
   li = -1; L = newTut(); mode = "play"; holding = false; camY = posY(meIdx(L)); resetFx();
@@ -323,30 +481,47 @@ function endTut(skipped) {
 }
 function coach(on) { $("coach").classList.toggle("on", on); if (!on) $("arrow").classList.remove("on"); }
 function finish(win, why) {
-  mode = "done"; holding = false; $("hold").classList.remove("on");
-  const S = SHOPS[li];
+  mode = "done"; holding = false; $("hold").classList.remove("on"); $("itemb").classList.remove("on");
+  const S = SHOPS[li], nx = SHOPS[li + 1];
+  const nextHtml = nx ? `<div class="next">다음 가게 <b style="color:#fff8ee">${nx.food} ${nx.name}</b><br>${nx.desc}</div>` : `<div class="next">🎉 모든 맛집 정복! 별 3개·🏅 도전 과제를 모아 보세요</div>`;
   if (win) {
-    const st = 3 - L.strikes; if (!auto) { save.stars[li] = Math.max(save.stars[li] || 0, st); save.unlocked = Math.max(save.unlocked, li + 2); store.set(save); }
-    SFX.win(); emit("level_clear", { level: li + 1, strikes: L.strikes, passed: L.passed });
+    const st = 3 - L.strikes, score = L.score + L.bowls * 100 + st * 150, ch = chDone(S, L), today = li === dailyIdx() && !(save.daily || {})[dayKey()];
+    const best = (save.best || {})[li] || 0, first = !(save.dex || {})[li];
+    if (!auto) {
+      save.stars[li] = Math.max(save.stars[li] || 0, st); save.unlocked = Math.max(save.unlocked, li + 2);
+      save.best = Object.assign({}, save.best, { [li]: Math.max(best, score) }); save.dex = Object.assign({}, save.dex, { [li]: ((save.dex || {})[li] || 0) + 1 });
+      if (ch) save.ch = Object.assign({}, save.ch, { [li]: 1 }); if (today) save.daily = Object.assign({}, save.daily, { [dayKey()]: 1 });
+      store.set(save);
+    }
+    SFX.win(); emit("level_clear", { level: li + 1, strikes: L.strikes, passed: L.passed, score });
     setTimeout(() => { $("box").innerHTML = `<h2>입장 성공!</h2><div class="food">${S.food}</div><div class="stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</div>
-      <p>${S.name} · ${L.passed}명 앞질러 · 경고 ${L.strikes}</p><button id="nx">${li + 1 < SHOPS.length ? "다음 가게" : "가게 목록"}</button><button class="sec" id="rt">다시</button>`;
-      $("ov").classList.add("on"); $("nx").onclick = () => li + 1 < SHOPS.length ? start(li + 1) : menu(); $("rt").onclick = () => start(li); }, 700);
+      <div class="score">${score}점</div><p>${score > best ? "🆕 최고 점수!" : `최고 ${best}점`} · 최대 콤보 ${L.maxCombo} · 아이템 ${L.itemsUsed}번</p>
+      <p>${ch ? "🏅 도전 과제 성공: " : "🏅 도전 과제: "}${S.ch.t}${ch ? " ✔" : ""}</p>
+      ${first ? `<p style="color:#ffcc5c">📖 맛집 도감에 ${S.food} ${S.name} 등록! (${Object.keys(save.dex || {}).length}/${SHOPS.length})</p>` : ""}
+      ${today ? `<p style="color:#ffcc5c">📅 오늘의 맛집 도장 꽝! (연속 ${streak()}일)</p>` : ""}
+      ${nextHtml}<button id="nx">${nx ? `${nx.food} 다음 가게` : "가게 목록"}</button><button class="sec" id="rt">다시 (점수·🏅 도전)</button>`;
+      $("ov").classList.add("on"); $("nx").onclick = () => nx ? start(li + 1) : menu(); $("rt").onclick = () => start(li); }, 700);
   } else {
     SFX.lose(); emit("fail", { level: li + 1, why });
-    setTimeout(() => { $("box").innerHTML = `<h2>${why === "kicked" ? "쫓겨났다… 🚪" : "재료 소진 😭"}</h2><p>${why === "kicked" ? "경고 3번. 줄 서는 분들이 가만있지 않았어요." : `“오늘 ${S.name} 재료 다 떨어졌습니다~” 앞에 ${meIdx(L)}명이 남아 있었어요.<br>❗ 없을 때 더 과감하게 눌러 보세요.`}</p>
-      <button id="rt">다시 줄 서기</button><button class="sec" id="mn">가게 목록</button>`; $("ov").classList.add("on"); $("rt").onclick = () => start(li); $("mn").onclick = menu; }, 500);
+    const tip = why === "kicked" ? (S.boss ? "사장님 ❗가 뜨면 1초 안에 멈춰요." : "?가 떠 있으면 곧 다시 봐요. 사라질 때까지 기다리기!") : "❗ 없을 때 더 과감하게! 아이템도 써 보세요.";
+    setTimeout(() => { $("box").innerHTML = `<h2>${why === "kicked" ? "쫓겨났다… 🚪" : "재료 소진 😭"}</h2><p>${why === "kicked" ? "경고 3번. 줄 서는 분들이 가만있지 않았어요." : `“오늘 ${S.name} 재료 다 떨어졌습니다~” 앞에 ${meIdx(L)}명이 남아 있었어요.`}</p><p>💡 ${tip}</p>
+      <button id="rt">바로 다시 줄 서기</button><button class="sec" id="mn">가게 목록</button>`; $("ov").classList.add("on"); $("rt").onclick = () => start(li); $("mn").onclick = menu; }, 500);
   }
 }
 function resetHud() {
   $("bowl").textContent = "-"; $("ahead").textContent = "-"; $("warn").textContent = "○○○"; const need = $("need"); need.className = "g2"; need.textContent = "줄을 골라 주세요"; lastNeed = -9;
-  const h = $("hold"); h.classList.remove("on", "danger", "sus"); h.disabled = true; $("holdT").textContent = "🤫 살금살금"; $("holdS").textContent = "누르고 있기 · ❗ 뜨면 손 떼기"; $("bar").style.width = "0";
+  $("itemb").classList.remove("on"); const h = $("hold"); h.classList.remove("on", "danger", "sus"); h.disabled = true; $("holdT").textContent = "🤫 살금살금"; $("holdS").textContent = "누르고 있기 · ❗ 뜨면 손 떼기"; $("bar").style.width = "0";
 }
 function menu() {
   mode = "menu"; coach(false); L = null; holding = false; resetFx(); resetHud();
-  $("box").innerHTML = `<h1>🍜 맛집 새치기</h1><p>그릇은 얼마 안 남았다. 앞사람이 <b>안 볼 때만</b> 살금살금 앞으로!</p><ul><li><b>꾹 누르면</b> 앞사람을 살금살금 지나가요</li><li>앞사람에게 <b>❗</b> → 곧 돌아봐요 → <b>손 떼기</b></li><li>들키면 두 칸 뒤로 + 경고. 3번이면 쫓겨나요</li></ul>
-    <div class="list">${SHOPS.map((s, i) => `<button ${i + 1 > save.unlocked ? "disabled" : ""} class="${save.stars[i] ? "done" : ""}" data-i="${i}">${s.food} ${s.name}<small>${save.stars[i] ? "★".repeat(save.stars[i]) : i + 1 > save.unlocked ? "🔒" : "도전"}</small></button>`).join("")}</div>
+  const di = dailyIdx(), dd = SHOPS[di], done = (save.daily || {})[dayKey()], nl = save.unlocked < SHOPS.length ? SHOPS[save.unlocked] : null;
+  $("box").innerHTML = `<h1>🍜 맛집 새치기</h1><p>그릇은 얼마 안 남았다. 앞사람이 <b>안 볼 때만</b> 꾹 눌러 앞으로!</p>
+    <button class="daily" id="dly">📅 오늘의 맛집: <b>${dd.food} ${dd.name}</b> ${done ? "— 도장 완료 ✔" : "— 깨면 도장!"}${streak() ? ` · 연속 ${streak()}일` : ""}</button>
+    <div class="list">${SHOPS.map((s, i) => { const lock = i + 1 > save.unlocked; return `<button ${lock ? "disabled" : ""} class="${save.stars[i] ? "done" : ""}" data-i="${i}">${lock ? (i === save.unlocked ? "❔ 다음 맛집" : "🔒 ???") : `${s.food} ${s.name}`}<small>${lock ? (i === save.unlocked ? s.name : "") : save.stars[i] ? `${"★".repeat(save.stars[i])}${(save.ch || {})[i] ? " 🏅" : ""} ${(save.best || {})[i] || ""}` : "도전"}</small></button>`; }).join("")}</div>
+    ${nl ? `<div class="next">다음 해금 <b style="color:#fff8ee">${nl.food} ${nl.name}</b> — ${nl.desc}</div>` : ""}
+    <div class="dex" title="맛집 도감">${SHOPS.map((s, i) => `<span class="${(save.dex || {})[i] ? "" : "no"}">${s.food}</span>`).join("")}</div><p style="margin:0">📖 맛집 도감 ${Object.keys(save.dex || {}).length}/${SHOPS.length} · 🏅 ${Object.keys(save.ch || {}).length}/${SHOPS.length}</p>
     <button class="sec" id="tutb">📖 연습(튜토리얼) 다시 보기</button>`;
-  $("ov").classList.add("on"); $("box").querySelectorAll("[data-i]").forEach(b => b.onclick = () => start(+b.dataset.i)); $("tutb").onclick = startTut;
+  $("ov").classList.add("on"); $("box").querySelectorAll("[data-i]").forEach(b => b.onclick = () => start(+b.dataset.i)); $("tutb").onclick = startTut; $("dly").onclick = () => start(di);
 }
 $("skip").onclick = e => { e.stopPropagation(); endTut(true); };
 $("skip").addEventListener("pointerdown", e => e.stopPropagation());
@@ -355,8 +530,10 @@ $("skip").addEventListener("pointerdown", e => e.stopPropagation());
 const down = e => { actx(); if (mode !== "play" || auto) return; if (e.target.closest && (e.target.closest(".box") || e.target.closest("#coach"))) return; e.preventDefault(); holding = true; $("hold").classList.add("on"); };
 const up = () => { if (holding && L) { const ws = watchers(L); const soon = ws.some(n => n.st === "tele" && n.dur - n.t < .3); if (soon && L.prog > 0) { fx.phew = 1; SFX.phew(); SFX.heart(); } } holding = false; $("hold").classList.remove("on"); };
 $("hold").addEventListener("pointerdown", down); cv.addEventListener("pointerdown", down);
+function tapItem(e) { if (e) { e.preventDefault(); e.stopPropagation(); } actx(); if (mode !== "play" || !L || L.tut || auto) return; if (!L.item) { banner("빈 손 — 줄 옆 아이템을 앞질러서 주워요", "#3b4862", 1.6); return; } if (!useItem(L, onEv)) banner("지금은 못 써요", "#3b4862", 1); }
+$("itemb").addEventListener("pointerdown", tapItem);
 addEventListener("pointerup", up); addEventListener("pointercancel", up);
-addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); if (!holding) down(e); } }); addEventListener("keyup", e => { if (e.code === "Space") up(); });
+addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); if (!holding) down(e); } if (e.code === "KeyE" || e.code === "ArrowUp") tapItem(e); }); addEventListener("keyup", e => { if (e.code === "Space") up(); });
 
 // ───────── 그리기 ─────────
 function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
@@ -422,7 +599,7 @@ function drawPerson(x, y, n, t, sneak, isW, dt) {
         ctx.restore();
       } else { ctx.globalAlpha = .55; ctx.fillStyle = "#8a93a6"; ctx.beginPath(); ctx.arc(22, -24, 7, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.font = "900 10px -apple-system"; ctx.fillText("!", 22, -23); ctx.globalAlpha = 1; }
     }
-    if (n.sus && n.st === "fwd") {   // 두 번 보기 예고: '?' — 곧 짧은 ❗로 다시 돌아본다
+    if (n.sus && n.st === "fwd" && !(L && L.quiet > 0)) {   // 두 번 보기 예고: '?' — 곧 짧은 ❗로 다시 돌아본다
       if (isW) { const k = 1 + Math.sin(t * 12) * .08; ctx.save(); ctx.translate(30, -24); ctx.scale(k, k); ctx.fillStyle = "rgba(255,176,32,.3)"; ctx.beginPath(); ctx.arc(0, 0, 19, 0, 7); ctx.fill(); ctx.fillStyle = "#ffb020"; ctx.beginPath(); ctx.arc(0, 0, 14, 0, 7); ctx.fill(); ctx.fillStyle = "#3a2300"; ctx.font = "900 19px -apple-system"; ctx.fillText("?", 0, 1); ctx.restore(); }
       else { ctx.globalAlpha = .55; ctx.fillStyle = "#8a93a6"; ctx.beginPath(); ctx.arc(22, -24, 7, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.font = "900 10px -apple-system"; ctx.fillText("?", 22, -23); ctx.globalAlpha = 1; }
     }
@@ -465,14 +642,37 @@ function draw(t, dt) {
   for (let i = L.line.length - 1; i >= 0; i--) {
     const n = L.line[i], [x, yy] = pos.get(n.id); if (n.me || yy < -60 || yy > H + 60) continue;
     drawPerson(x, yy, n, t, false, ws.includes(n), dt);
+    if (n.pair != null && L.line[i + 1] && L.line[i + 1].id === n.pair) { const q = pos.get(n.pair); ctx.font = "16px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("💞", (x + q[0]) / 2 - 26, (yy + q[1]) / 2 + 4); }
+    if (L.quiet > 0) { ctx.font = "26px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(L.quietWhy === "rain" ? "☂️" : "🤩", x, yy - 34 + Math.sin(t * 6 + i) * 2); }
+    if (n.item) {   // 줄 옆에 떨어진 아이템 (그 사람을 앞지르면 주움 · 남은 시간 링)
+      const ix = x - 40, iy = yy + 10, left = n.item.t / ITEM_LIFE, blink = n.item.t < 2 && Math.sin(t * 20) < 0;
+      ctx.save(); ctx.translate(ix, iy); const k = JUICE ? 1 + Math.sin(t * 5) * .06 : 1; ctx.scale(k, k);
+      ctx.fillStyle = "rgba(255,204,92,.25)"; ctx.beginPath(); ctx.arc(0, 0, 19, 0, 7); ctx.fill();
+      ctx.strokeStyle = "#ffcc5c"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, 17, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2); ctx.stroke();
+      if (!blink) { ctx.font = "20px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(ITEMS[n.item.k].e, 0, 1); }
+      ctx.restore();
+    }
   }
   drawPerson(mx, my, L.line[p], t, holding && L.prog > 0, false, dt);   // 나는 맨 위에 (앞지르는 동안 가려지지 않게)
+  if (L.ef && L.ef.hat > 0) { ctx.font = "26px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🧢", mx, my - 34); ctx.strokeStyle = "rgba(79,209,139,.8)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(mx, my, 30, -Math.PI / 2, -Math.PI / 2 + L.ef.hat / HAT_SEC * Math.PI * 2); ctx.stroke(); }
+  if (L.ef && L.ef.call > 0) { ctx.font = "20px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("📱", mx + 20, my - 18); ctx.strokeStyle = "rgba(79,180,209,.8)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(mx, my, 34, -Math.PI / 2, -Math.PI / 2 + L.ef.call / 8 * Math.PI * 2); ctx.stroke(); }
+  if (L.combo >= 2 && !L.tut) { ctx.font = "900 13px -apple-system"; ctx.fillStyle = "#ffcc5c"; ctx.textAlign = "center"; ctx.fillText(`🔥x${L.combo}`, mx + 34, my + 22); }
+  // 사장님 감시: 가게 문에서 (가게가 화면 밖이면 화면 위쪽에)
+  if (L.boss && L.boss.st !== "off") {
+    const bx = cx, by = Math.max(shopY - 37, 165), B = L.boss;
+    if (B.st === "look") { drawLaser(bx, by + 18, mx, my - 6, t, true); }
+    ctx.save(); ctx.translate(bx, by); const pk = B.st === "tele" ? 1 + .1 * Math.sin(t * 25) : 1.15; ctx.scale(pk, pk);
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0, 0, 20, 0, 7); ctx.fill();
+    ctx.font = "28px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(B.st === "look" ? "😠" : "👨‍🍳", 0, 1);
+    if (B.st === "tele") { const left = B.t / BOSS_TELE; ctx.fillStyle = "#ff3b30"; ctx.beginPath(); ctx.arc(30, -14, 14, 0, 7); ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(30, -14, 17, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2); ctx.stroke(); ctx.fillStyle = "#fff"; ctx.font = "900 20px -apple-system"; ctx.fillText("!", 30, -13); }
+    ctx.restore();
+  }
   // 레이저 시야선 (지켜보는 사람이 돌아봤을 때)
   ws.forEach(n => { if (n.st === "look" && (n.vt ?? 1) > .5) { const [x, yy] = pos.get(n.id); drawLaser(x, yy, mx, my - 6, t, true); } });
   if (fx.allLook > 0 && JUICE) L.line.forEach(n => { if (!n.me && !ws.includes(n)) { const q = pos.get(n.id); if (q[1] > -60 && q[1] < H + 60 && Math.abs(q[1] - my) < SP * 5) drawLaser(q[0], q[1], mx, my - 6, t, false); } });
   // 휙! 표시
-  fx.pops = fx.pops.filter(o => (o.t += dt) < .5);
-  fx.pops.forEach(o => { const q = pos.get(o.id); if (!q) return; ctx.globalAlpha = 1 - o.t / .5; ctx.fillStyle = "#fff"; ctx.font = "italic 900 16px -apple-system"; ctx.textAlign = "center"; ctx.fillText(o.txt, q[0] - 30, q[1] - 36 - o.t * 30); ctx.globalAlpha = 1; });
+  fx.pops = fx.pops.filter(o => (o.t += dt) < (o.col ? 1 : .5));
+  fx.pops.forEach(o => { if (o.t < 0) return; const q = pos.get(o.id); if (!q) return; const life = o.col ? 1 : .5; ctx.globalAlpha = Math.max(0, 1 - o.t / life); ctx.fillStyle = o.col || "#fff"; ctx.font = "italic 900 16px -apple-system"; ctx.textAlign = "center"; ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = 4; const px = o.col ? Math.max(70, Math.min(W - 70, q[0])) : q[0] - 30, py = q[1] + (o.dy ?? -36) - o.t * 30; ctx.strokeText(o.txt, px, py); ctx.fillText(o.txt, px, py); ctx.globalAlpha = 1; });
   // 말풍선 (여러 명)
   fx.bubbles = fx.bubbles.filter(b => (b.t += dt) < 1.9);
   fx.bubbles.forEach((b, i) => {
@@ -495,7 +695,13 @@ function draw(t, dt) {
   if (fx.allLook > 0) { fx.allLook -= dt; ctx.fillStyle = "#fff"; ctx.font = "900 34px -apple-system"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.globalAlpha = Math.min(1, fx.allLook * 2); ctx.strokeStyle = "#8f1d15"; ctx.lineWidth = 6; const gy = Math.min(H - 120, my + 74); ctx.strokeText("들켰다!", W / 2, gy); ctx.fillText("들켰다!", W / 2, gy); ctx.globalAlpha = 1; }
   // 휴… / 긴장 테두리
   if (fx.phew > 0 && JUICE) { ctx.globalAlpha = fx.phew; ctx.fillStyle = "#fff"; ctx.font = "900 30px -apple-system"; ctx.textAlign = "center"; ctx.fillText("휴…", W / 2, H * .45); ctx.globalAlpha = 1; fx.phew -= dt * 1.2; }
-  const danger = ws.some(n => n.st === "tele"); if (danger && JUICE) { ctx.strokeStyle = `rgba(255,90,79,${.35 + .25 * Math.sin(t * 20)})`; ctx.lineWidth = 10; ctx.strokeRect(0, 0, W, H); }
+  if (L.quiet > 0 && L.quietWhy === "rain" && JUICE) { ctx.strokeStyle = "rgba(170,200,255,.35)"; ctx.lineWidth = 1.5; ctx.beginPath(); for (let r = 0; r < 60; r++) { const rx = (r * 97 + t * 40) % W, ry = (r * 53 + t * 700) % H; ctx.moveTo(rx, ry); ctx.lineTo(rx - 4, ry + 14); } ctx.stroke(); }
+  if (fx.banner) {
+    const b = fx.banner; b.t += dt; if (b.t > b.sec) fx.banner = null;
+    else { const a = Math.min(1, b.t * 6, (b.sec - b.t) * 3), k = JUICE ? 1 + .12 * Math.max(0, 1 - b.t / .15) : 1; ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2, 96); ctx.scale(k, k); ctx.font = "900 14px -apple-system"; const tw = Math.min(W - 20, ctx.measureText(b.txt).width + 24); ctx.fillStyle = b.col; rr(-tw / 2, -16, tw, 32, 14); ctx.fill(); ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.txt, 0, 1, tw - 16); ctx.restore(); }
+  }
+  if (!L.tut && L.score > 0) { ctx.font = "900 13px ui-monospace,Menlo,monospace"; ctx.fillStyle = "rgba(255,248,238,.8)"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(`점수 ${L.score}`, 14, H - 110); }
+  const danger = ws.some(n => n.st === "tele") || (L.boss && L.boss.st === "tele"); if (danger && JUICE) { ctx.strokeStyle = `rgba(255,90,79,${.35 + .25 * Math.sin(t * 20)})`; ctx.lineWidth = 10; ctx.strokeRect(0, 0, W, H); }
 }
 let lastNeed = -1;
 function hud() {
@@ -507,11 +713,15 @@ function hud() {
   else if (k * 2 + (p === 0) !== lastNeed) { need.className = "g2" + (k === 0 ? " ok" : ""); need.innerHTML = k === 0 ? (p === 0 ? "🚪 맨 앞! 곧 들어가요" : "✓ 이대로 기다리면 먹어요!") : `→ 최소 <b>${k}</b>명 앞질러야 먹음`; lastNeed = k * 2 + (p === 0); }
   $("bar").style.width = Math.round(L.prog * 100) + "%"; $("hold").disabled = mode !== "play" || L.cool > 0;
   $("bowl").style.color = L.bowls <= p ? "#ff5a4f" : "";
-  const ws = watchers(L), dz = mode === "play" && ws.some(n => n.st !== "fwd") && p > 0;
-  const sus = !dz && mode === "play" && p > 0 && ws.some(n => n.sus && n.st === "fwd");
+  const ws = watchers(L), hat = L.ef && L.ef.hat > 0, dz = mode === "play" && p > 0 && !hat && danger(L), boss = L.boss && L.boss.st !== "off";
+  const sus = !dz && !hat && mode === "play" && p > 0 && ws.some(n => n.sus && n.st === "fwd");
   $("hold").classList.toggle("danger", dz); $("hold").classList.toggle("sus", sus);
-  const ht = dz ? (ws.some(n => n.st === "look") ? "👀 보고 있어요! 가만히" : "✋ 손 떼요! 돌아봐요") : L.cool > 0 ? "😳 들켰다…" : sus ? "🤨 의심 중… 곧 또 봐요" : "🤫 살금살금";
-  if ($("holdT").textContent !== ht) { $("holdT").textContent = ht; $("holdS").textContent = dz ? "누르고 있으면 들켜요" : sus ? "? 사라질 때까지 기다리면 안전" : "누르고 있기 · ❗ 뜨면 손 떼기"; }
+  const ht = hat ? "🧢 변장 중! 마음껏 가요" : dz ? (boss ? (L.boss.st === "look" ? "👨‍🍳 사장님이 봐요! 가만히" : "👨‍🍳 사장님 나온다! 손 떼요") : ws.some(n => n.st === "look") ? "👀 보고 있어요! 가만히" : "✋ 손 떼요! 돌아봐요") : L.cool > 0 ? "😳 들켰다…" : L.quiet > 0 ? (L.quietWhy === "rain" ? "☔ 지금이야! 다들 못 봐요" : "🤩 지금이야! 다들 딴 데 봐요") : sus ? "🤨 의심 중… 곧 또 봐요" : "🤫 살금살금";
+  if ($("holdT").textContent !== ht) { $("holdT").textContent = ht; $("holdS").textContent = hat ? "2초 동안 들키지 않아요" : dz ? "누르고 있으면 들켜요" : L.quiet > 0 ? "꾹 눌러서 쭉쭉" : sus ? "? 사라질 때까지 기다리면 안전" : "누르고 있기 · ❗ 뜨면 손 떼기"; }
+  // 아이템 버튼
+  const ib = $("itemb"), showI = !L.tut && mode === "play"; ib.classList.toggle("on", showI); ib.classList.toggle("has", !!L.item);
+  const ie = L.item ? ITEMS[L.item].e : "", inm = L.item ? ITEMS[L.item].name : "빈 손";
+  if ($("itemE").textContent !== ie) { $("itemE").textContent = ie; $("itemN").textContent = inm; }
   if (L.tut) {
     const U = L.tut;
     if (U.changed) { U.changed = false; $("cmsg").innerHTML = U.msg; $("cmsg").className = "msg" + (U.good ? " good" : ""); const c = $("coach"); if (JUICE) { c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse"); } }
@@ -525,6 +735,7 @@ function loop(tm) {
     if (fx.stop > 0) fx.stop -= dt; else acc += dt;
     while (acc >= DT && mode === "play") {
       acc -= DT; const h = auto ? (L.tut ? tutBot(L) : botHold(L)) : holding;
+      if (auto && !L.tut && botItem(L)) useItem(L, onEv);
       if (L.tut && L.tut.okT > 0) { L.tut.okT -= DT; if (L.tut.okT <= 0) L.tut.changed = true; continue; }   // 칭찬 중엔 세상도 잠깐 멈춤
       stepLevel(L, h, onEv);
       if (L.tut) { tutTick(L, h, onEv); if (L.tut.done) { endTut(false); break; } }
@@ -550,17 +761,25 @@ function runTutHeadless(maxSec = 180) {
 }
 if (q.has("selftest")) {
   const rows = []; let ok = 0, total = 0;
-  SHOPS.forEach((S, i) => { let win = 0, minB = 99; for (let s = 1; s <= 5; s++) { const T = newLevel(i, s * 101 + i); let k = 0; while (!T.over && k++ < 60 * 300) stepLevel(T, botHold(T)); if (T.over === "win") { win++; minB = Math.min(minB, T.bowls); } } total++; const pass = win === 5; if (pass) ok++; rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${S.name}\t봇 성공 ${win}/5\t남은 그릇 최소 ${minB === 99 ? "-" : minB}`); });
-  // 반응 0.25초 봇(사람 근사): 위험(❗/돌아봄)이 생기고 0.25초 뒤에야 손을 뗀다. 가게마다 시드 200개
-  const reactRate = (i, grace, rt = .25) => { const g0 = GRACE; GRACE = grace; let win = 0, caught = 0, noWarn = 0; for (let s = 1; s <= 200; s++) { const T = newLevel(i, s * 7919 + i); let k = 0, d = 0; while (!T.over && k++ < 60 * 300) { const ws = watchers(T), danger = meIdx(T) > 0 && ws.some(n => n.st !== "fwd"); d = danger ? d + DT : 0; const c0 = T.caughtN; stepLevel(T, meIdx(T) > 0 && T.cool <= 0 && (!danger || d < rt)); if (T.caughtN > c0) { caught++; if (d <= DT * 1.5) noWarn++; } } if (T.over === "win") win++; } GRACE = g0; return { rate: win / 2, caught, noWarn }; };
-  // 난이도 곡선 검사: 반응 0.25초·0.4초 봇 성공률이 목표 ±10%p 안 (2026-11-26 재조정)
+  // 1) 완벽 반응 봇(아이템 규칙 포함)이 가게마다 시드 5개 모두 입장
+  SHOPS.forEach((S, i) => { let win = 0, minB = 99; for (let s = 1; s <= 5; s++) { const T = newLevel(i, s * 101 + i); let k = 0; while (!T.over && k++ < 60 * 300) { if (botItem(T)) useItem(T); stepLevel(T, botHold(T)); } if (T.over === "win") { win++; minB = Math.min(minB, T.bowls); } } total++; const pass = win === 5; if (pass) ok++; rows.push(`${i + 1}\t${pass ? "OK" : "FAIL"}\t${S.name}\t봇 성공 ${win}/5\t남은 그릇 최소 ${minB === 99 ? "-" : minB}`); });
+  // 2) 난이도 곡선: 반응 0.25초·0.4초 봇(사람 근사, 아이템 사용) 성공률이 목표 ±10%p 안 · 예고 없는 들킴 0 (시드 200)
   const TGT = { 25: [95, 89, 83, 77, 71, 65, 59, 53, 47, 40], 40: [85, 78, 71, 64, 56, 49, 42, 35, 28, 20] };
-  [[25, .25], [40, .4]].forEach(([key, rt]) => {
-    const rr = SHOPS.map((S, i) => reactRate(i, GRACE, rt)), inBand = rr.every((r, i) => Math.abs(r.rate - TGT[key][i]) <= 10);
+  const curve = (rt, noItems) => SHOPS.map((S, i) => { let win = 0, caught = 0, noWarn = 0; const st = { boss: 0, rain: 0, app: 0, couple: 0, items: 0, blocked: 0 }; for (let s = 1; s <= 200; s++) { const r = reactRun(i, s * 7919 + i, rt, noItems); if (r.win) win++; caught += r.caught; noWarn += r.noWarn; for (const k in st) st[k] += r.T.stats[k]; } return { rate: win / 2, caught, noWarn, st }; });
+  const cv25 = curve(.25), cv40 = curve(.4), cvNo = curve(.25, true);
+  [[25, .25, cv25], [40, .4, cv40]].forEach(([key, rt, rr]) => {
+    const inBand = rr.every((r, i) => Math.abs(r.rate - TGT[key][i]) <= 10) && rr.every(r => r.noWarn === 0);
     total++; if (inBand) ok++;
     rows.push(`C${key}\t${inBand ? "OK" : "FAIL"}\t반응${rt}초\t${rr.map((r, i) => `${i + 1}:${r.rate}`).join(" ")}  (목표 ${TGT[key].join("·")} ±10)`);
-    rows.push(`  \t예고 없는 들킴(반응 0초)/전체 들킴: ${rr.map((r, i) => `${i + 1}:${r.noWarn}/${r.caught}`).join(" ")}`);
+    rows.push(`  \t예고 없는 들킴/전체 들킴: ${rr.map((r, i) => `${i + 1}:${r.noWarn}/${r.caught}`).join(" ")}`);
   });
+  // 3) 아이템이 난이도를 무너뜨리지 않음: 아이템 있을 때 - 없을 때 ≤ 30%p (가게마다)
+  const up = cv25.map((r, i) => r.rate - cvNo[i].rate), upOk = up.every(u => u <= 30); total++; if (upOk) ok++;
+  rows.push(`I\t${upOk ? "OK" : "FAIL"}\t아이템 영향\t0.25초 봇 아이템 없이: ${cvNo.map((r, i) => `${i + 1}:${r.rate}`).join(" ")} · 차이 최대 ${Math.max(...up).toFixed(1)}%p (30 이하)`);
+  // 4) 가게 기믹이 실제로 일어남 (200판 합계)
+  const gm = SHOPS.map((S, i) => { const st = cv25[i].st, need = [S.boss && st.boss === 0, S.rain && st.rain === 0, S.app && st.app === 0, S.couple && st.couple === 0, S.it && st.items === 0].some(Boolean); return { bad: need, st }; });
+  const gmOk = gm.every(g => !g.bad); total++; if (gmOk) ok++;
+  rows.push(`G\t${gmOk ? "OK" : "FAIL"}\t기믹 발생\t${gm.map((g, i) => `${i + 1}:${["boss", "rain", "app", "couple", "items"].filter(k => SHOPS[i][k === "items" ? "it" : k]).map(k => k[0] + g.st[k]).join(",")}`).join(" ")}`);
   const tr = runTutHeadless(); total++; const tp = tr.done && tr.sec <= 60; if (tp) ok++;
   rows.push(`T\t${tp ? "OK" : "FAIL"}\t연습\t끝까지 ${tr.done ? "완료" : "미완"}\t${tr.sec.toFixed(1)}초 (60초 이내) · 들킴 ${tr.caught}`);
   document.body.insertAdjacentHTML("beforeend", `<pre id="selftest" style="position:fixed;inset:0;background:#000;color:#0f0;z-index:9;margin:0;padding:10px">${rows.join("\n")}</pre>`);
@@ -568,7 +787,7 @@ if (q.has("selftest")) {
 } else if (q.has("autoplay")) { auto = true; const a = q.get("autoplay"); if (a === "tut") startTut(); else start((Number(a) || 1) - 1, 7); }
 else if (q.has("tut") || !save.tut) startTut();
 else menu();
-window.__g006 = { newLevel, stepLevel, botHold, newTut, tutTick, tutBot, runTutHeadless, needPass };
+window.__g006 = { newLevel, stepLevel, botHold, botItem, useItem, reactRun, newTut, tutTick, tutBot, runTutHeadless, needPass };
 requestAnimationFrame(t => { lastT = t; loop(t); });
 </script>
 </body>
