@@ -43,6 +43,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .top{display:flex;align-items:center;gap:8px;padding:8px 10px 6px;border-bottom:2px solid var(--lcd0)}
 .logo{font:900 14px/1 var(--mono);flex:1}
 .me{border:1.5px solid var(--lcd0);background:transparent;color:var(--lcd0);border-radius:4px;padding:3px 7px;font:800 12px var(--mono)}
+.me.coin{display:inline-flex;align-items:center;gap:3px;margin-right:6px;font-variant-numeric:tabular-nums}
+.cost{font:800 11px/1 var(--mono);flex:none;border:1.5px solid currentColor;border-radius:3px;padding:2px 4px;display:inline-flex;align-items:center;gap:2px}
+.go:disabled{opacity:.45}
+.go2{display:block;width:100%;margin-top:4px;border:1.5px solid var(--lcd0);border-radius:3px;background:transparent;color:var(--lcd0);padding:6px;font:900 13px var(--mono)}
+.go2:disabled{opacity:.45}
 .news{margin:6px 8px 0;padding:5px 8px;border-radius:3px;background:var(--lcd0);color:var(--lcd3);font:800 12.5px var(--mono)}
 .sec{font:900 11.5px/1 var(--mono);color:var(--lcd0);padding:7px 4px 3px;letter-spacing:.5px}
 .rk{font:900 15px/1 var(--mono);color:var(--lcd0);width:16px;text-align:center;flex:none}
@@ -347,7 +352,7 @@ UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=d
     <div class="menu">
       <div class="bezel"><span class="led"></span><div class="cap">PROTOTYPE ARCADE</div>
         <div class="lcd">
-          <div class="top"><div class="logo">카트리지 <span id="cnt"></span></div><button class="me" id="meBtn">내 기록</button></div>
+          <div class="top"><div class="logo">카트리지 <span id="cnt"></span></div><button class="me coin" id="coinBtn" aria-label="코인 · 광고 보고 충전"><svg class="ui-icon sm"><use href="#i-coins"/></svg><b id="coinN">0</b></button><button class="me" id="meBtn">내 기록</button></div>
           <div id="newsBar"></div>
                     <div class="list" id="list"></div>
           <div class="detail" id="detail"></div>
@@ -365,6 +370,8 @@ UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=d
 <div class="sheet" id="sheet"><div class="card" id="sheetCard"></div></div>
 <div class="big-toast" id="toast"></div>
 
+<script src="../_shared/coin-system.js"></script>
+<script src="../_shared/rewarded-ad.js"></script>
 <script src="config.js"></script>
 <script src="catalog.js"></script>
 <script>
@@ -464,7 +471,7 @@ function renderMenu() {
     const r = ratingOf(g), b = badgeOf(g), p = popOf(g);
     return `<div class="gm${g.id === sel ? " sel" : ""}" data-id="${esc(g.id)}">
       ${rank ? `<div class="rk">${rank}</div>` : ""}<div class="ic" style="background:${esc(g.color)}33">${esc(g.icon)}</div>
-      <div class="w"><div class="t">${esc(g.title)}${BD[b] || ""}</div><div class="m">${esc(g.one_liner)}</div></div>
+      <div class="w"><div class="t">${esc(g.title)}${BD[b] || ""}${g.coin_cost ? `<span class="cost">${UI.icon("coins","sm")}${g.coin_cost}</span>` : ""}</div><div class="m">${esc(g.one_liner)}</div></div>
       ${p ? `<div class="pop">👥${p.users}<br>🔁${p.back}</div>` : r ? `<div class="rt">★${r.avg.toFixed(1)}<small>${r.n}명</small></div>` : ""}</div>`;
   };
   $("list").innerHTML = L.length ? (G.best.length ? `<div class="sec">🏆 BEST</div>` + G.best.map((g, i) => row(g, i + 1)).join("") + `<div class="sec">🆕 새 게임</div>` : "") + G.rest.map(g => row(g, 0)).join("") : '<p class="empty">아직 꽂힌 게임이 없어요</p>';
@@ -472,11 +479,40 @@ function renderMenu() {
   const g = CAT.find(x => x.id === sel);
   $("detail").innerHTML = g ? `<h3>${esc(g.icon)} ${esc(g.title)}</h3><p>${esc(g.one_liner)}</p>
     ${g.note ? `<div class="upd">${badgeOf(g) === "up" ? "NEW▶ " : "최근 "}${esc(g.note)}</div>` : ""}
-    <button class="go" id="goBtn">▶ 플레이 (A)</button>` : "";
-  if (g) $("goBtn").onclick = () => start(g.id);
-  $("meBtn").textContent = LS.get("nick", "") || anon; $("cnt").textContent = CAT.length;
+    ${goButtons(g)}` : "";
+  if (g) { $("goBtn").onclick = () => start(g.id); const ch = $("adBtn"); if (ch) ch.onclick = chargeCoins; }
+  $("meBtn").textContent = LS.get("nick", "") || anon; $("cnt").textContent = CAT.length; const cn = $("coinN"); if (cn) cn.textContent = coins();
 }
-function start(id) { SND.ok(); const g = CAT.find(x => x.id === id); seen[id] = g.version; LS.set("seen", seen); play([id]); }
+// ── 코인 (보상형 광고로 충전, 코인 게임은 시작할 때 차감) — _shared/coin-system.js · rewarded-ad.js ──
+const coins = () => (window.CoinSystem ? CoinSystem.getCoins() : 0);
+const costOf = g => (g && g.coin_cost) || 0;
+function goButtons(g) {
+  const c = costOf(g), have = coins(), st = window.RewardedAd ? RewardedAd.status() : { canShow: false, label: "광고 없음" };
+  if (!c) return `<button class="go" id="goBtn">▶ 플레이 (A)</button>`;
+  if (have >= c) return `<button class="go" id="goBtn">▶ 플레이 · ${c}코인 (A)</button>`;
+  return `<button class="go" id="goBtn" disabled>코인 부족 (광고 보고 충전)</button><button class="go2" id="adBtn"${st.canShow ? "" : " disabled"}>${st.canShow ? "광고 보고 +5코인" : esc(st.label)}</button>`;
+}
+function renderCoins() { const n = $("coinN"); if (n) n.textContent = coins(); if (view === "menu") { const g = CAT.find(x => x.id === sel); const d = $("goBtn"); if (g && d && costOf(g)) renderMenu(); } }
+function chargeCoins() {
+  if (!window.RewardedAd) return;
+  const st = RewardedAd.status(); if (!st.canShow) { toast(st.label); return; }
+  RewardedAd.show({ coins: 5, onComplete: c => { SND.like(); toast(`+${c}코인`); renderCoins(); renderMenu(); },
+    onSkipped: i => { toast(i.reason === "limit" ? "오늘 광고 한도 초과" : i.reason === "cooldown" ? RewardedAd.status().label : "끝까지 봐야 코인을 받아요"); renderMenu(); } });
+}
+function payFor(ids) {   // 코인 게임이면 차감. 모자라면 false
+  const need = ids.reduce((a, id) => a + costOf(CAT.find(x => x.id === id)), 0);
+  if (!need) return true;
+  if (!window.CoinSystem || !CoinSystem.spendCoins(need)) { toast("코인 부족 (광고 보고 충전)"); SND.back(); return false; }
+  renderCoins(); return true;
+}
+addEventListener("gl-coins", renderCoins);
+addEventListener("storage", e => { if (e.key === "gl_coins") renderCoins(); });
+$("coinBtn").onclick = () => { SND.nav(); chargeCoins(); };
+setInterval(() => {   // 쿨다운 남은 초를 1초마다 갱신
+  const b = $("adBtn"); if (view !== "menu" || !b || !window.RewardedAd) return;
+  const st = RewardedAd.status(); b.disabled = !st.canShow; b.textContent = st.canShow ? "광고 보고 +5코인" : st.label;
+}, 1000);
+function start(id) { const g = CAT.find(x => x.id === id); if (!payFor([id])) { renderMenu(); return; } SND.ok(); seen[id] = g.version; LS.set("seen", seen); play([id]); }
 $("meBtn").onclick = $("bBtn").onclick = () => { SND.back(); openMine(); };
 $("aBtn").onclick = () => { if (sel) start(sel); };
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2400); }
@@ -719,7 +755,7 @@ addEventListener("resize", () => { if (view === "play") renderStage(); });
 renderMenu(); refreshSummary();
 const q = new URLSearchParams(location.search);
 if (firstVisit && !q.has("play")) welcome();
-if (q.has("play")) { const g = q.get("play").split(",").filter(id => CAT.some(c => c.id === id)); if (g.length) { g.forEach(id => { seen[id] = CAT.find(c => c.id === id).version; }); LS.set("seen", seen); play(g); } }
+if (q.has("play")) { const g = q.get("play").split(",").filter(id => CAT.some(c => c.id === id)); if (g.length && payFor(g)) { g.forEach(id => { seen[id] = CAT.find(c => c.id === id).version; }); LS.set("seen", seen); play(g); } }
 </script>
 </body>
 </html>

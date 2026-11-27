@@ -61,6 +61,7 @@ def main():
             "note": last_note(folder),
             "rating": {k: r[k] for k in ("avg", "n") if k in r} or None, "hot": bool(r.get("hot")),
             "pop": {k: r[k] for k in ("users", "back") if k in r} or None,
+            "coin_cost": int(g.get("coin_cost") or 0),   # 0 = 무료, 10 = 코인 필요(오락실에서 시작할 때 차감)
         })
     out = ROOT / "arcade" / "catalog.js"
     out.parent.mkdir(exist_ok=True)

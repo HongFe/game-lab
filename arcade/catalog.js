@@ -15,7 +15,8 @@ window.CATALOG = [
   "note": "공용 UI 키트 v1.5를 7개 게임·오락실에 적용",
   "rating": null,
   "hot": true,
-  "pop": null
+  "pop": null,
+  "coin_cost": 0
  },
  {
   "id": "G003",
@@ -28,11 +29,12 @@ window.CATALOG = [
   "path": "../G003_crash-runner/game/index.html",
   "color": "#3cc98a",
   "icon": "📉",
-  "version": "2026-11-27 11:51",
+  "version": "2026-11-27 13:27",
   "note": "공용 UI 키트 v1.5를 7개 게임·오락실에 적용",
   "rating": null,
   "hot": true,
-  "pop": null
+  "pop": null,
+  "coin_cost": 0
  },
  {
   "id": "G012",
@@ -49,7 +51,8 @@ window.CATALOG = [
   "note": "공용 UI 키트 v1.5를 7개 게임·오락실에 적용",
   "rating": null,
   "hot": false,
-  "pop": null
+  "pop": null,
+  "coin_cost": 0
  },
  {
   "id": "G021",
@@ -66,7 +69,8 @@ window.CATALOG = [
   "note": "공용 UI 키트 v1.5를 7개 게임·오락실에 적용",
   "rating": null,
   "hot": false,
-  "pop": null
+  "pop": null,
+  "coin_cost": 0
  },
  {
   "id": "G022",
@@ -83,6 +87,7 @@ window.CATALOG = [
   "note": "공용 UI 키트 v1.5를 7개 게임·오락실에 적용",
   "rating": null,
   "hot": false,
-  "pop": null
+  "pop": null,
+  "coin_cost": 0
  }
 ];
