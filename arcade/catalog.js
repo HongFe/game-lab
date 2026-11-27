@@ -113,8 +113,8 @@ window.CATALOG = [
   "path": "../G021_toy-parking/game/index.html",
   "color": "#ffd23f",
   "icon": "🚙",
-  "version": "2026-11-27 10:53",
-  "note": "색 차를 같은 색 칸에 정리하는 아이 공간 퍼즐 30레벨, G001 엔…",
+  "version": "2026-11-27 11:11",
+  "note": "수정 후 재검수",
   "rating": null,
   "hot": false,
   "pop": null
@@ -130,8 +130,8 @@ window.CATALOG = [
   "path": "../G022_train-sort/game/index.html",
   "color": "#ff8a3d",
   "icon": "🚂",
-  "version": "2026-11-27 10:56",
-  "note": "기차 칸을 옆 선로로 비켜 가며 순서대로 역에 보내는 아이 순서 계획…",
+  "version": "2026-11-27 11:11",
+  "note": "이어 하기, 16레벨 완화, 새 칸 보상 1순위·큰 그림, 자동 힌트…",
   "rating": null,
   "hot": false,
   "pop": null
