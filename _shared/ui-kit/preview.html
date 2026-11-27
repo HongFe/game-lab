@@ -1,0 +1,145 @@
+<!doctype html><html lang=ko><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>UI kit</title><style>body{margin:0;background:var(--ui-bg)}</style></head><body>
+<!-- nhc-ui-kit:start -->
+<style id="nhc-ui-kit">
+/* NHC game-lab UI kit v1 (2026-11-27) — 게임 '밖' UI(시작·레벨·HUD·결과·안내·버튼·토스트) 공용 스타일
+   기준: research/2026-11-27_게임UI_정돈_기준.md 의 15규칙. 모든 클래스는 ui- 로 시작해 게임 자체 스타일과 섞이지 않는다
+   게임별로 바꿀 것은 :root 의 --ui-accent / --ui-on-accent 두 개뿐. 밝은 화면 게임은 <html class="ui-light"> */
+:root{
+  /* 간격 4의 배수 7단계 */
+  --ui-s1:4px;--ui-s2:8px;--ui-s3:12px;--ui-s4:16px;--ui-s5:24px;--ui-s6:32px;--ui-s7:48px;
+  /* 글자 5단계 · 굵기 2개 */
+  --ui-t1:12px;--ui-t2:14px;--ui-t3:16px;--ui-t4:20px;--ui-t5:30px;
+  /* 반경 3단계 */
+  --ui-r1:8px;--ui-r2:12px;--ui-r3:20px;
+  /* 색 역할 (어두운 화면 기본) */
+  --ui-bg:#0f1218;--ui-surface:#1a1f29;--ui-surface2:#242a36;--ui-line:rgba(255,255,255,.08);
+  --ui-text:#f2f4f8;--ui-muted:#9aa3b2;--ui-accent:#ffc83d;--ui-on-accent:#1a1406;
+  --ui-good:#34c77b;--ui-bad:#ff5a5f;
+  --ui-shadow1:0 1px 2px rgba(0,0,0,.25),0 4px 12px rgba(0,0,0,.18);
+  --ui-shadow2:0 8px 32px rgba(0,0,0,.35);
+  --ui-in:cubic-bezier(0,0,.2,1);--ui-out:cubic-bezier(.4,0,1,1);
+  --ui-font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
+  --ui-touch:48px;
+}
+.ui-light{
+  --ui-bg:#f4f6f9;--ui-surface:#ffffff;--ui-surface2:#eef1f5;--ui-line:rgba(15,20,30,.08);
+  --ui-text:#161a22;--ui-muted:#5f6878;
+  --ui-shadow1:0 1px 2px rgba(15,20,30,.08),0 4px 12px rgba(15,20,30,.08);
+  --ui-shadow2:0 12px 32px rgba(15,20,30,.16);
+}
+.ui-kid{--ui-touch:56px}
+
+/* 기본 스타일 지우기 (ui- 요소 안에서만) */
+.ui-screen,.ui-card,.ui-hud,.ui-toast,.ui-sheet{font-family:var(--ui-font);color:var(--ui-text);word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+.ui-screen *,.ui-hud *,.ui-sheet *{box-sizing:border-box}
+.ui-screen ul,.ui-sheet ul{list-style:none;margin:0;padding:0}
+.ui-num{font-variant-numeric:tabular-nums}
+
+/* 아이콘: <svg class="ui-icon"><use href="#i-play"/></svg> 또는 UI.icon("play") */
+.ui-icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+.ui-icon.lg{width:24px;height:24px}.ui-icon.xl{width:32px;height:32px}.ui-icon.sm{width:16px;height:16px;vertical-align:-3px}
+.ui-icon.fill{fill:currentColor}
+
+/* 화면(시작·결과·일시정지): 가운데 한 줄 기둥 */
+.ui-screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--ui-s5);padding-top:max(var(--ui-s5),env(safe-area-inset-top));padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));background:var(--ui-bg);overflow:auto}
+.ui-screen.dim{background:color-mix(in srgb,var(--ui-bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ui-col{width:100%;max-width:360px;display:flex;flex-direction:column;gap:var(--ui-s4)}
+.ui-center{text-align:center;align-items:center}
+.ui-hero{font-size:56px;line-height:1;width:72px;height:72px;display:grid;place-items:center;border-radius:var(--ui-r3);background:var(--ui-surface)}
+.ui-title{font-size:var(--ui-t5);font-weight:700;line-height:1.25;letter-spacing:-.02em;margin:0}
+.ui-h{font-size:var(--ui-t4);font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0}
+.ui-sub{font-size:var(--ui-t2);line-height:1.5;color:var(--ui-muted);margin:0}
+.ui-cap{font-size:var(--ui-t1);line-height:1.5;color:var(--ui-muted);margin:0}
+.ui-row{display:flex;gap:var(--ui-s2);align-items:center}
+.ui-row>.ui-btn{flex:1}
+.ui-spacer{flex:1}
+
+/* 버튼: 주 버튼은 화면에 하나 */
+.ui-btn{appearance:none;border:0;margin:0;font:700 var(--ui-t3)/1 var(--ui-font);color:var(--ui-text);background:var(--ui-surface2);min-height:var(--ui-touch);padding:0 var(--ui-s5);border-radius:var(--ui-r2);display:inline-flex;align-items:center;justify-content:center;gap:var(--ui-s2);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform 90ms var(--ui-in),filter 90ms var(--ui-in)}
+.ui-btn:active{transform:scale(.96)}
+.ui-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
+.ui-btn.primary{background:var(--ui-accent);color:var(--ui-on-accent);box-shadow:var(--ui-shadow1);min-height:calc(var(--ui-touch) + 8px);font-size:var(--ui-t4)}
+.ui-btn.ghost{background:transparent;color:var(--ui-muted)}
+.ui-btn.icon{width:var(--ui-touch);padding:0;flex:none}
+.ui-btn.round{border-radius:50%}
+.ui-btn:disabled,.ui-btn.off{opacity:.38;pointer-events:none}
+.ui-btn .ui-badge{margin-left:2px}
+.ui-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ui-bad);color:#fff;font:700 var(--ui-t1)/1 var(--ui-font);font-variant-numeric:tabular-nums}
+
+/* 카드 · 수치 */
+.ui-card{background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s4);box-shadow:var(--ui-shadow1)}
+.ui-card.flat{box-shadow:none;background:var(--ui-surface2)}
+.ui-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:var(--ui-s2)}
+.ui-stat{background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3);display:flex;flex-direction:column;gap:var(--ui-s1);min-width:0}
+.ui-stat b{font-size:var(--ui-t4);font-weight:700;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ui-stat span{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25;display:flex;align-items:center;gap:var(--ui-s1)}
+.ui-big{font-size:48px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* 레벨 선택 격자 */
+.ui-levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:var(--ui-s2)}
+.ui-level{appearance:none;border:0;margin:0;aspect-ratio:1;border-radius:var(--ui-r2);background:var(--ui-surface2);color:var(--ui-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ui-s1);font:700 var(--ui-t4)/1 var(--ui-font);font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;transition:transform 90ms var(--ui-in)}
+.ui-level:active{transform:scale(.94)}
+.ui-level.cur{background:var(--ui-accent);color:var(--ui-on-accent)}
+.ui-level.lock{color:var(--ui-muted);background:transparent;box-shadow:inset 0 0 0 1px var(--ui-line);pointer-events:none}
+.ui-level .ui-stars .ui-icon{width:10px;height:10px}
+
+/* 별 */
+.ui-stars{display:inline-flex;gap:2px;color:var(--ui-accent)}
+.ui-stars .off{color:var(--ui-line);opacity:1}
+.ui-light .ui-stars .off{color:rgba(15,20,30,.15)}
+.ui-stars.big .ui-icon{width:40px;height:40px}
+.ui-stars.big{gap:var(--ui-s2)}
+
+/* HUD: 위쪽 칩 줄 */
+.ui-hud{position:absolute;left:0;right:0;top:0;z-index:20;display:flex;gap:var(--ui-s2);align-items:center;padding:var(--ui-s3);padding-top:max(var(--ui-s3),env(safe-area-inset-top));pointer-events:none}
+.ui-hud>*{pointer-events:auto}
+.ui-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--ui-s3);border-radius:999px;background:color-mix(in srgb,var(--ui-surface) 86%,transparent);box-shadow:var(--ui-shadow1);font:700 var(--ui-t2)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ui-text)}
+.ui-chip .ui-icon{width:16px;height:16px;color:var(--ui-muted)}
+.ui-chip.accent .ui-icon{color:var(--ui-accent)}
+.ui-meter{height:6px;border-radius:999px;background:var(--ui-surface2);overflow:hidden}
+.ui-meter>i{display:block;height:100%;background:var(--ui-accent);border-radius:inherit;transition:width 200ms var(--ui-in)}
+
+/* 안내 카드(한 번에 하나) · 토스트 · 시트 */
+.ui-tip{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s3) var(--ui-s4);box-shadow:var(--ui-shadow2);font-size:var(--ui-t3);line-height:1.5;color:var(--ui-text);font-family:var(--ui-font)}
+.ui-tip .ui-icon{color:var(--ui-accent)}
+.ui-toast{position:fixed;left:50%;bottom:max(var(--ui-s6),env(safe-area-inset-bottom));z-index:80;transform:translate(-50%,8px);opacity:0;pointer-events:none;background:var(--ui-text);color:var(--ui-bg);padding:var(--ui-s3) var(--ui-s4);border-radius:var(--ui-r1);font:700 var(--ui-t2)/1.25 var(--ui-font);white-space:nowrap;transition:opacity 180ms var(--ui-in),transform 180ms var(--ui-in)}
+.ui-toast.on{opacity:1;transform:translate(-50%,0)}
+.ui-sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--ui-surface);border-radius:var(--ui-r3) var(--ui-r3) 0 0;padding:var(--ui-s5);padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));box-shadow:var(--ui-shadow2);transform:translateY(100%);transition:transform 195ms var(--ui-out)}
+.ui-sheet.on{transform:none;transition:transform 225ms var(--ui-in)}
+.ui-list{display:flex;flex-direction:column;gap:var(--ui-s2)}
+.ui-list li{display:flex;align-items:center;gap:var(--ui-s3);font-size:var(--ui-t2);line-height:1.5}
+.ui-list li .ui-icon{color:var(--ui-muted)}
+.ui-em{width:28px;height:28px;display:inline-grid;place-items:center;font-size:20px;line-height:1;flex:none}
+
+/* 등장 모션 */
+.ui-enter{animation:ui-enter 225ms var(--ui-in) both}
+.ui-enter-2{animation:ui-enter 225ms var(--ui-in) 60ms both}
+.ui-enter-3{animation:ui-enter 225ms var(--ui-in) 120ms both}
+.ui-pop{animation:ui-pop 300ms var(--ui-in) both}
+@keyframes ui-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ui-pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.ui-enter,.ui-enter-2,.ui-enter-3,.ui-pop{animation:ui-fade 150ms linear both}.ui-btn,.ui-level{transition:none}}
+@keyframes ui-fade{from{opacity:0}to{opacity:1}}
+</style>
+<!-- Lucide icons (lucide-static 0.460.0) — ISC License. Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></symbol><symbol id="i-book-open" viewBox="0 0 24 24"><path d="M12 7v14" /> <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" /></symbol><symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6" /> <path d="M18.09 10.37A6 6 0 1 1 10.34 18" /> <path d="M7 6h1v4" /> <path d="m16.71 13.88.7.71-2.82 2.82" /></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></symbol><symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12" /> <line x1="4" x2="20" y1="6" y2="6" /> <line x1="4" x2="20" y1="18" y2="18" /></symbol><symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1" /> <rect x="6" y="4" width="4" height="16" rx="1" /></symbol><symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" /></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" /></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" /> <circle cx="6" cy="12" r="3" /> <circle cx="18" cy="19" r="3" /> <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /> <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" /> <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /> <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" /> <path d="M2 7h20" /> <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" /></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" /></symbol><symbol id="i-trending-down" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7" /> <polyline points="16 17 22 17 22 11" /></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /> <polyline points="16 7 22 7 22 13" /></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /> <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /> <path d="M4 22h16" /> <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /> <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /> <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></symbol><symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <path d="M16 3.13a4 4 0 0 1 0 7.75" /></symbol><symbol id="i-volume-2" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <path d="M16 9a5 5 0 0 1 0 6" /> <path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></symbol><symbol id="i-volume-x" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <line x1="22" x2="16" y1="9" y2="15" /> <line x1="16" x2="22" y1="9" y2="15" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></symbol></svg>
+<script>window.UI=window.UI||{};
+UI.icon=function(n,c){return '<svg class="ui-icon'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';};
+UI.stars=function(n,max,c){max=max||3;var s='<span class="ui-stars'+(c?' '+c:'')+'" aria-label="별 '+n+'/'+max+'">';for(var i=0;i<max;i++)s+='<svg class="ui-icon fill'+(i<n?'':' off')+'" aria-hidden="true"><use href="#i-star"/></svg>';return s+'</span>';};
+UI.toast=function(m,ms){var t=document.getElementById('ui-toast');if(!t){t=document.createElement('div');t.id='ui-toast';t.className='ui-toast';t.setAttribute('role','status');document.body.appendChild(t);}t.textContent=m;t.classList.add('on');clearTimeout(UI._tt);UI._tt=setTimeout(function(){t.classList.remove('on');},ms||2000);};</script>
+<!-- nhc-ui-kit:end -->
+<div class="ui-screen" style="position:static;min-height:100vh">
+<div class="ui-col">
+ <p class="ui-cap">NHC UI KIT · 부품 전시</p>
+ <div class="ui-col ui-center"><div class="ui-hero">📉</div><h1 class="ui-title">폭락 러너</h1><p class="ui-sub">개미에서 고래까지, 차트를 달린다</p></div>
+ <button class="ui-btn primary"><svg class="ui-icon lg"><use href="#i-play"/></svg>1단계 시작</button>
+ <div class="ui-row"><button class="ui-btn"><svg class="ui-icon"><use href="#i-store"/></svg>상점</button><button class="ui-btn"><svg class="ui-icon"><use href="#i-book-open"/></svg>도감 <span class="ui-badge">3</span></button></div>
+ <div class="ui-stats"><div class="ui-stat"><span><svg class="ui-icon sm"><use href="#i-coins"/></svg>자산</span><b>1,000,000</b></div><div class="ui-stat"><span><svg class="ui-icon sm"><use href="#i-trophy"/></svg>최고</span><b>3단계</b></div><div class="ui-stat"><span><svg class="ui-icon sm"><use href="#i-star"/></svg>별</span><b>7/18</b></div></div>
+ <div class="ui-levels" id="lv"></div>
+ <div class="ui-card ui-col ui-center"><p class="ui-cap">결과</p><div id="st"></div><div class="ui-big">+212%</div><p class="ui-sub">최고 기록 갱신</p><div class="ui-row" style="width:100%"><button class="ui-btn icon"><svg class="ui-icon"><use href="#i-rotate-ccw"/></svg></button><button class="ui-btn primary" style="flex:1">다음 단계<svg class="ui-icon"><use href="#i-arrow-right"/></svg></button></div></div>
+ <div class="ui-tip"><svg class="ui-icon lg"><use href="#i-lightbulb"/></svg>빨간 칸을 밟으면 수익</div>
+ <div class="ui-row"><span class="ui-chip accent"><svg class="ui-icon"><use href="#i-coins"/></svg>300만</span><span class="ui-chip"><svg class="ui-icon"><use href="#i-clock"/></svg>0:42</span><span class="ui-spacer"></span><button class="ui-btn icon round"><svg class="ui-icon"><use href="#i-pause"/></svg></button></div>
+ <div class="ui-meter"><i style="width:62%"></i></div>
+ <button class="ui-btn ghost" onclick="document.documentElement.classList.toggle('ui-light')">밝게/어둡게</button>
+</div></div>
+<script>document.getElementById('lv').innerHTML=[1,2,3,4,5,6,7,8].map(function(n){return '<button class="ui-level'+(n==3?' cur':'')+(n>4?' lock':'')+'">'+(n>4?UI.icon('lock'):n)+(n<4?UI.stars(n==1?3:2):'')+'</button>'}).join('');document.getElementById('st').innerHTML=UI.stars(2,3,'big');</script></body></html>
