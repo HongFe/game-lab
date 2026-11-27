@@ -37,24 +37,6 @@ window.CATALOG = [
   "coin_cost": 0
  },
  {
-  "id": "G012",
-  "title": "집 갈아타기",
-  "one_liner": "지방 월세에서 한강뷰 펜트하우스까지, 갈림길 지도를 골라 간다. 지방 상급지·수도권·재개발·청약·경매·갭투자 — 금리·대출 규제·폭락기 같은 실제 사건에 막히고 돌아간다.",
-  "type": "엄청난 중독성",
-  "stage": "프로토",
-  "deadline": "2026-12-03",
-  "created": "2026-11-26",
-  "path": "../G012_house-upgrade/game/index.html",
-  "color": "#4d9dff",
-  "icon": "🏠",
-  "version": "2026-11-27 11:51",
-  "note": "공용 UI 키트 v1.5를 7개 게임·오락실에 적용",
-  "rating": null,
-  "hot": false,
-  "pop": null,
-  "coin_cost": 0
- },
- {
   "id": "G021",
   "title": "꼬마 주차요원",
   "one_liner": "장난감 차를 앞뒤로 밀어 길을 열고, 모든 차를 같은 색 주차칸에 넣어라. 적은 수로 넣을수록 별이 많다.",
