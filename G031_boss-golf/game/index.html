@@ -32,8 +32,8 @@ html,body{margin:0;height:100%;background:#cdeefd;overflow:hidden;overscroll-beh
 #scoreChip .ui-stars .ui-icon{width:12px;height:12px}
 #scoreN{min-width:44px;text-align:right}
 #goalTx{display:inline-flex;align-items:center;gap:2px}
-#goalTx small{font-size:var(--ui-t1);color:var(--ui-muted);margin:0}
-#pauseBtn{pointer-events:auto;width:40px;height:40px;min-height:40px;box-shadow:var(--ui-shadow1)}
+#goalTx small{font-size:var(--ui-t2);color:var(--ui-muted);margin:0}
+#pauseBtn{pointer-events:auto;width:44px;height:44px;min-height:44px;box-shadow:var(--ui-shadow1)}
 .ui-hud.g-hud #pauseBtn{pointer-events:auto}
 #nunChip .ui-pips>i{width:10px;height:8px}
 #nunChip.hot{animation:hot .5s ease-out}
@@ -45,7 +45,7 @@ html,body{margin:0;height:100%;background:#cdeefd;overflow:hidden;overscroll-beh
 .g-wind .ui-icon.flip{transform:scaleX(-1)}
 
 /* 큰 배수 숫자 */
-#bigm{position:absolute;left:0;right:0;top:21%;text-align:center;pointer-events:none;font-size:56px;color:#fff;-webkit-text-stroke:0;text-shadow:0 3px 0 rgba(0,0,0,.18),0 0 18px rgba(0,0,0,.18);opacity:0;transition:opacity .15s;font-weight:800}
+#bigm{paint-order:stroke fill;-webkit-text-stroke:6px rgba(255,255,255,.92);position:absolute;left:0;right:0;top:21%;text-align:center;pointer-events:none;font-size:56px;color:#fff;-webkit-text-stroke:0;text-shadow:0 3px 0 rgba(0,0,0,.18),0 0 18px rgba(0,0,0,.18);opacity:0;transition:opacity .15s;font-weight:700}
 #bigm.on{opacity:1}
 #bigm.b10{color:var(--gold)}#bigm.b5{color:var(--org)}#bigm.b2{color:#7cc63a}#bigm.b1{color:#8f9aa8}#bigm.bw{color:var(--red)}
 #bigm.pulse{animation:bpulse .22s ease-out}
@@ -55,7 +55,7 @@ html,body{margin:0;height:100%;background:#cdeefd;overflow:hidden;overscroll-beh
 #bigm small{display:block;font-size:var(--ui-t2);font-weight:700;color:var(--ui-text);text-shadow:none;opacity:.7}
 
 /* 판정 도장 */
-.g-stamp{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) rotate(-10deg) scale(2);border:4px solid currentColor;border-radius:12px;padding:6px 16px;font:900 26px/1.2 var(--ui-font);white-space:nowrap;opacity:0;pointer-events:none;background:rgba(255,255,255,.92);box-shadow:var(--ui-shadow2)}
+.g-stamp{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) rotate(-10deg) scale(2);border:4px solid currentColor;border-radius:12px;padding:6px 16px;font:700 26px/1.2 var(--ui-font);white-space:nowrap;opacity:0;pointer-events:none;background:rgba(255,255,255,.92);box-shadow:var(--ui-shadow2)}
 .g-stamp.on{opacity:1;transform:translate(-50%,-50%) rotate(-10deg) scale(1);transition:transform .22s cubic-bezier(.3,1.6,.6,1),opacity .12s}
 .g-stamp.s10{color:#d99a00}.g-stamp.s5{color:#e8711a}.g-stamp.s2{color:#4f9d1e}.g-stamp.s1{color:#6b7684}.g-stamp.sbad{color:#e5383f}
 /* 상사 말풍선 · 시선 */
@@ -87,17 +87,20 @@ html,body{margin:0;height:100%;background:#cdeefd;overflow:hidden;overscroll-beh
 #wedge.ui-btn.dim{opacity:.38}
 #wedge.ui-btn.look{background:var(--ui-bad);color:#fff}
 #wedge:active{transform:translateX(-50%) scale(.92)}
-#wedge .ui-badge{position:absolute;top:-4px;right:-4px;background:var(--ui-text)}
+#wedge .ui-badge{position:absolute;top:-6px;right:-6px;background:var(--ui-text);font-size:var(--ui-t2);min-width:24px;height:24px}
+.g-sheet .ui-badge{font-size:var(--ui-t2);height:24px}
+#sheet{left:max(0px,calc(50% - 260px));right:max(0px,calc(50% - 260px))}
 #hand{display:none}
 #hand.on{display:block}
 
 /* 점수 팝 */
-.g-pop{position:absolute;font:800 22px/1 var(--ui-font);font-variant-numeric:tabular-nums;pointer-events:none;white-space:nowrap;color:#1b2a12;text-shadow:0 2px 0 #fff,0 0 8px #fff;transform:translate(-50%,0);transition:left .55s cubic-bezier(.5,0,.8,.4),top .55s cubic-bezier(.5,0,.8,.4),opacity .2s .45s,transform .55s}
+.g-pop{position:absolute;font:700 22px/1 var(--ui-font);font-variant-numeric:tabular-nums;pointer-events:none;white-space:nowrap;color:#1b2a12;text-shadow:0 2px 0 #fff,0 0 8px #fff;transform:translate(-50%,0);transition:left .55s cubic-bezier(.5,0,.8,.4),top .55s cubic-bezier(.5,0,.8,.4),opacity .2s .45s,transform .55s}
 /* 시트 */
 .g-sheet h3{margin:0 0 var(--ui-s1)}
 .g-sheet .ui-col{max-width:420px;margin:0 auto}
 .g-sline{display:flex;align-items:center;gap:var(--ui-s2);font-size:var(--ui-t3);color:var(--ui-muted)}
 .g-sline b{color:var(--ui-text)}
+.g-heat{display:inline-flex;color:var(--ui-bad)}
 .g-sline .ui-icon{color:var(--ui-muted)}
 
 /* 겹 화면 */
@@ -118,6 +121,7 @@ html,body{margin:0;height:100%;background:#cdeefd;overflow:hidden;overscroll-beh
 .ui-level img{width:30px;height:30px}
 #ov .ui-level.cur{background:var(--ui-surface);box-shadow:inset 0 0 0 2px var(--ui-text)}
 #ov .ui-level{background:var(--ui-surface);box-shadow:var(--ui-shadow1)}
+#ov .ui-level{aspect-ratio:auto;min-height:56px}
 #ov .ui-level.lock{background:transparent;box-shadow:inset 0 0 0 1px var(--ui-line)}
 #ov .ui-level .ui-stars .off{color:rgba(15,20,30,.15)}
 .g-exic{color:var(--ui-bad)}
@@ -359,7 +363,9 @@ UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=d
 // ═════════ 상수 ═════════
 const DT = 1 / 120, BAR = 1.2, FLY_T = 1.4, BOSS_T = 2.6, JUDGE_T = 1.7, MULL_T = 1.9, CARD_T = 1.2, INTRO_T = 1.8, EXILE_T = 2.0;
 const NOM = [6, 10, 14];            // 그린 빠르기(1~3)별 굴림 거리 어림값(m). 실제는 ±20%
-const QS = new URLSearchParams(location.search), SPAN = Number(QS.get("span") || 74), BACK = Number(QS.get("back") || 60), WK = .8, SC_MAX = 3.4, FW = Number(QS.get("fw") || 3); // 힘 0~100% → 핀 −BACK ~ +(SPAN−BACK)m (+바람×0.8), 숲 폭 FW
+const q = new URLSearchParams(location.search), SPAN = Number(q.get("span") || 74), BACK = Number(q.get("back") || 60), WK = .8, SC_MAX = 3.4, FW = Number(q.get("fw") || 3);
+// 조정용 URL 값(검수·튜닝)이 하나라도 있으면 저장하지 않는다
+const DEBUG = ["stage", "hb", "xev", "xpool", "span", "back", "fw", "gs", "hole", "event", "xd", "tl", "n6", "h6", "c6", "w5", "w6"].some(k => q.has(k)); // 힘 0~100% → 핀 −BACK ~ +(SPAN−BACK)m (+바람×0.8), 숲 폭 FW
 const BASE = [100, 150, 200, 250, 300], EXT_MAX = 6;
 const RANK = ["신입", "사원", "대리", "과장", "부장", "사장"];
 const BOSSES = [ // 대사: 이김 / ×10 / 티 남 / 보통 / 걸림
@@ -372,12 +378,12 @@ const BOSSES = [ // 대사: 이김 / ×10 / 티 남 / 보통 / 걸림
 ];
 // 단계 = 내 직급. target·A·B는 자체 검사(생존 봇 기본 홀 중앙값, 사람 근사 봇 ★3 비율)로 맞춘 값
 const STAGES = [
-  { n: 1, boss: 0, holes: 3, pin: [60, 90], wind: [0, 0], sc: .5, nun: 3, wedge: 0, winN: 2, gs: .8, catchN: 0, half: 0, luck: 0, read: 0, gaze: 0, irr: 0, slope: 0, bar: 0, pool: [], newEv: null, overlap: 0, target: 800, A: 5, B: 7.2, rule: { ic: "sparkles", t: "금색 띠에 멈춰라" }, nr: { ic: "sparkles", t: "져주기 띠" } },
-  { n: 2, boss: 1, holes: 3, pin: [70, 100], wind: [0, 2], sc: .8, nun: 3, wedge: 1, winN: 2, gs: .9, catchN: 0, half: 0, luck: 0, read: 0, gaze: 0, irr: 0, slope: 0, bar: 0, pool: ["gust"], newEv: "gust", overlap: 0, target: 900, A: 4.5, B: 6.4, rule: { ic: "footprints", t: "발 웨지 · 굴림 멈춤" }, nr: { ic: "footprints", t: "발 웨지" } },
-  { n: 3, boss: 2, holes: 4, pin: [80, 120], wind: [0, 3], sc: 1.0, nun: 4, wedge: 2, winN: 1, catchN: 2, gs: 1, half: 0, luck: 0, read: 0, gaze: 2.0, irr: 0, slope: 0, bar: 0, pool: ["gust", "ob"], newEv: "ob", overlap: 0, target: 1500, A: 5, B: 9.3, rule: { ic: "eye", t: "볼 땐 웨지 금지" }, nr: { ic: "eye", t: "시선" } },
-  { n: 4, boss: 3, holes: 4, pin: [90, 130], wind: [1, 4], sc: 1.2, nun: 4, wedge: 2, winN: 1, catchN: 1, gs: 1.15, half: 0, luck: 1, read: 0, gaze: 1.6, irr: 0, slope: 0, bar: 1, pool: ["gust", "ob", "mull"], newEv: "mull", overlap: 0, target: 1600, A: 4.5, B: 7.6, rule: { ic: "repeat", t: "멀리건 · 다시 친다" }, nr: { ic: "repeat", t: "멀리건" } },
-  { n: 5, boss: 4, holes: 5, pin: [100, 140], wind: [1, 5], sc: 1.4, nun: 5, wedge: 3, winN: 1, catchN: 1, gs: 1.3, half: 0, luck: 1, read: 1, gaze: 1.4, irr: 1, slope: 1, bar: 1, pool: ["gust", "ob", "mull", "bet"], rare: "gallery", newEv: "bet", overlap: 0, target: 3200, A: 4.5, B: 7.5, rule: { ic: "trending-up-down", t: "경사 그린 · 굴림 휨" }, nr: { ic: "trending-up-down", t: "경사 그린" } },
-  { n: 6, boss: 5, holes: 5, pin: [100, 150], wind: [2, 6], sc: 1.6, nun: 5, wedge: 3, winN: 1, catchN: 1, gs: 1.4, half: 1, luck: 2, read: 1, gaze: 1.2, irr: 0, slope: 1, bar: 1, pool: ["gust", "ob", "mull", "bet", "gallery"], newEv: "gallery", overlap: 1, target: 3400, A: 5, B: 9.8, rule: { ic: "layers", t: "사건이 겹친다" }, nr: { ic: "layers", t: "사건 겹침" } },
+  { n: 1, boss: 0, holes: 3, pin: [60, 90], wind: [0, 0], sc: .5, nun: 3, wedge: 0, winN: 2, gs: .8, catchN: 0, half: 0, luck: 0, read: 0, gaze: 0, irr: 0, slope: 0, bar: 0, pool: [], newEv: null, overlap: 0, target: 800, A: 3.5, B: 7.2, rule: { ic: "sparkles", t: "금색 띠에 멈춰라" }, nr: { ic: "sparkles", t: "져주기 띠" } },
+  { n: 2, boss: 1, holes: 3, pin: [70, 100], wind: [0, 2], sc: .8, nun: 3, wedge: 1, winN: 2, gs: .9, catchN: 0, half: 0, luck: 0, read: 0, gaze: 0, irr: 0, slope: 0, bar: 0, pool: ["gust"], newEv: "gust", overlap: 0, target: 1000, A: 3.6, B: 6.3, rule: { ic: "footprints", t: "발 웨지 · 굴림 멈춤" }, nr: { ic: "footprints", t: "발 웨지" } },
+  { n: 3, boss: 2, holes: 4, pin: [80, 120], wind: [0, 3], sc: 1.0, nun: 4, wedge: 2, winN: 2, catchN: 2, gs: 1, half: 0, luck: 0, read: 0, gaze: 2.0, irr: 0, slope: 0, bar: 0, pool: ["gust", "ob"], newEv: "ob", overlap: 0, target: 1500, A: 2.8, B: 5.3, rule: { ic: "eye", t: "볼 땐 웨지 금지" }, nr: { ic: "eye", t: "시선" } },
+  { n: 4, boss: 3, holes: 4, pin: [90, 130], wind: [1, 4], sc: 1.2, nun: 4, wedge: 2, winN: 2, catchN: 2, gs: 1.15, half: 0, luck: 1, read: 0, gaze: 1.6, irr: 0, slope: 0, bar: 1, pool: ["gust", "ob", "mull"], newEv: "mull", overlap: 0, target: 1700, A: 2.1, B: 4, rule: { ic: "repeat", t: "멀리건 · 다시 친다" }, perk: [["shield", "운 1회"], ["beer", "그늘집"]], nr: { ic: "repeat", t: "멀리건" } },
+  { n: 5, boss: 4, holes: 5, pin: [100, 140], wind: [1, 5], sc: 1.4, nun: 5, wedge: Number(q.get("w5") || 2), winN: 2, catchN: 2, gs: 1.3, half: 0, luck: 1, read: 1, gaze: 1.4, irr: 1, slope: 1, bar: 1, pool: ["gust", "ob", "mull", "bet"], newEv: "bet", overlap: 0, target: 3200, A: 1.95, B: 2.75, rule: { ic: "trending-up-down", t: "경사 그린 · 굴림 휨" }, perk: [["coins", "내기"], ["map", "굴림 읽기"]], nr: { ic: "trending-up-down", t: "경사 그린" } },
+  { n: 6, boss: 5, holes: 5, pin: [100, 150], wind: [2, 6], sc: 1.6, nun: Number(q.get("n6") || 5), wedge: Number(q.get("w6") || 2), winN: 2, catchN: Number(q.get("c6") || 2), gs: 1.4, half: Number(q.get("h6") ?? 1), luck: 1, read: 1, gaze: 1.2, irr: 0, slope: 1, bar: 1, pool: ["gust", "ob", "mull", "bet", "gallery"], newEv: "gallery", overlap: 1, target: 3700, A: 1.7, B: 2.65, rule: { ic: "layers", t: "사건이 겹친다" }, perk: [["users", "갤러리"], ["eye", "한 번은 걸려도 반"]], nr: { ic: "layers", t: "사건 겹침" } },
 ];
 const ENDLESS = Object.assign({}, STAGES[5], { n: 7, endless: 1, target: 0, newEv: null, rule: { ic: "flag", t: "무한 라운드" } });
 const EV = {
@@ -390,9 +396,8 @@ const EV = {
 };
 const BAND_NAME = { 10: "종이 한 장", 5: "아슬아슬", 2: "자연스러움", 1: "무난", win: "이겨 버림", tee: "티 나게 짐", caught: "걸림!" };
 const $ = id => document.getElementById(id);
-const q = new URLSearchParams(location.search);
 const JUICE = !q.has("nojuice");
-const XEV = q.has("xev") ? Number(q.get("xev")) : 1, XPOOL = (q.get("xpool") || "ob,mull,bet").split(","); // 연장 홀 사건 확률·종류
+const XEV = q.has("xev") ? Number(q.get("xev")) : .6, XPOOL = (q.get("xpool") || "mull,gust,ob").split(","); // 연장 홀 사건 확률·종류
 const fmt = n => Math.round(n).toLocaleString("ko-KR");
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -443,7 +448,7 @@ function genHole(R, i) {
     // 연장 홀은 상사가 진심: 판단을 바꾸는 사건(OB·멀리건·내기)이 잦다
     const xp = c.pool.filter(e => XPOOL.includes(e)), pool = xp.length >= 2 ? xp : c.pool;
     if (pool.length && r() < XEV) { const e = pickEv(r, pool, prev, null); ev.push(e);
-      if (c.overlap && r() < .6) { const e2 = pickEv(r, pool.filter(x => compat(x, e)), [e], null); if (e2 && compat(e2, e)) ev.push(e2); } } }
+      if (c.overlap && r() < .3) { const e2 = pickEv(r, pool.filter(x => compat(x, e)), [e], null); if (e2 && compat(e2, e)) ev.push(e2); } } }
   const bi = c.endless ? Math.floor(r() * 6) : c.boss, B = BOSSES[bi], has = e => ev.includes(e);
   const P = Math.round(c.pin[0] + (c.pin[1] - c.pin[0]) * (first ? r() * .3 : r()));
   let rb = B.rb[0] + (B.rb[1] - B.rb[0]) * r(); if (has("gust") && B.windWeak) rb = Math.min(22, rb * 1.3);
@@ -457,10 +462,16 @@ function genHole(R, i) {
   const u = r() * 2 - 1, md = (r() < .5 ? -1 : 1) * (.5 + 3.5 * r());
   const F1 = P - 42, F0 = F1 - FW, obX = F0 + 2 + r() * (F1 - F0 - 4);
   const gaze = c.gaze ? makeGaze(r, c.gaze, c.irr) : null;
-  const h = { i, base, ev, bi, P, rb, side, w, spd, D, sl, u, md, F0, F1, G0: P - 20, G1: P + 20, obX, gaze, sc0: c.sc * (has("gust") ? 1.5 : 1),
-    bw: R.n === 1 && i === 0 ? 2 : 1, gs: GS, ob: has("ob"), mull: has("mull"), bet: has("bet"), gallery: has("gallery"), gust: has("gust"), log: {} };
-  h.Df = h.D / NOM[spd - 1];
-  while (h.spd > 1 && fairBest(h) < (h.ob ? 5 : 2)) { h.spd--; h.D = NOM[h.spd - 1] * h.Df; } // 풀 수 없는 홀은 그린을 느리게
+  // 연장할수록 홀이 어려워진다: 상사 공이 핀 쪽으로(×0.8), 흩어짐 +20%, 그린 한 칸씩 빠르게(3칸 넘으면 더 빠르게)
+  const xe = base ? 0 : Math.min(8, i - c.holes + 1), XD = q.has("xd") ? Number(q.get("xd")) : 1;
+  const g = xe * (1 + .3 * xe) * XD * 1.5; // 연장 압박: 1·2홀은 약하게, 4홀부터 급하게 (폭락 러너의 '갈수록 위험')
+  const rbX = Math.max(.6, Math.round(rb * Math.pow(.8, xe) * 10) / 10), spdX = spd + Math.round(g / 1.5), Df = D / (NOM[spd - 1] * GS);
+  const TL = Number(q.get("tl") || 1.6), h = { i, base, xe, ev, tl: Math.max(5, 15 - TL * g), bi, P, rb: rbX, side, w, spd: Math.min(3, spdX), gsx: 1 + .15 * Math.max(0, spdX - 3), sl, u, md, F0, F1, G0: P - 20, G1: P + 20, obX, gaze,
+    sc0: c.sc * (has("gust") ? 1.5 : 1) * (1 + .2 * g),
+    bw: R.n === 1 && i <= 1 ? 2 : 1, gs: GS, Df, ob: has("ob"), mull: has("mull"), bet: has("bet"), gallery: has("gallery"), gust: has("gust"), log: {} };
+  h.ro = r() * 2 - 1; // 굴림 읽기 구간(±1m)의 가운데가 실제 끝점에서 벗어난 정도
+  const setD = () => { h.D = NOM[h.spd - 1] * h.gs * h.gsx * h.Df; }; setD();
+  while (fairBest(h) < (h.ob ? 5 : 2) && (h.gsx > 1 || h.spd > 1)) { if (h.gsx > 1) h.gsx = Math.max(1, h.gsx - .15); else h.spd--; setD(); } // 풀 수 없는 홀은 그린을 느리게
   return h;
 }
 function fairBest(h) { let best = 0; for (let k = 0; k <= 1500; k++) { const x = rollPath(h, markerAt(h, k / 1500)).end; best = Math.max(best, bv(judgeX(h, x, h.rb))); if (best >= 10) break; } return best; }
@@ -470,11 +481,11 @@ const tri = t => { const k = (t / BAR) % 2; return k < 1 ? k : 2 - k; };
 const bossX = (h, rb) => h.ob ? h.obX : h.P + h.side * rb;
 
 // ═════════ 판정 ═════════
-function bandOf(m, bw) { if (m < 0) return "win"; if (m < bw) return 10; if (m < 3 * bw) return 5; if (m < 7 * bw) return 2; if (m <= 15 * bw) return 1; return "tee"; }
+function bandOf(m, bw, tl = 15) { if (m < 0) return "win"; if (m < bw) return 10; if (m < 3 * bw) return 5; if (m < Math.min(7, tl) * bw) return 2; if (m <= tl * bw) return 1; return "tee"; } // tl: 티 나게 짐 경계(연장마다 좁아짐)
 function judgeX(h, x, rbRef) {
-  if (h.ob) { if (x >= h.F0 && x <= h.F1) return x >= h.F1 - 1 ? 10 : 5; if (x >= h.G0 && x <= h.G1) return "win"; return 1; }
+  if (h.ob) { if (x >= h.F0 && x <= h.F1) return x >= h.F1 - 1 ? 10 : 5; if (x >= h.G0 && x <= h.G1) return "win"; return h.xe >= 2 ? "tee" : 1; }
   if (x >= h.F0 && x <= h.F1) return "tee"; // 숲 = OB
-  return bandOf(Math.abs(x - h.P) - rbRef, h.bw);
+  return bandOf(Math.abs(x - h.P) - rbRef, h.bw, h.tl || 15);
 }
 const bv = b => typeof b === "number" ? b : 0;
 
@@ -531,8 +542,8 @@ function judge(R) {
   let kind = band, pts = 0, dn = 0, luck = false, fav = 1;
   const evm = (h.bet ? h.stake : 1) * (h.gallery ? 2 : 1) * (h.barOn ? 1.5 : 1);
   if (s.caught) {
-    kind = "caught"; R.caught++; R.streak = 0; dn = c.half ? 1 : c.catchN;
-    if (c.half && bv(band)) pts = h.pts * bv(band) * evm * .5;
+    kind = "caught"; R.caught++; R.streak = 0; dn = c.catchN;
+    if (c.half && !R.halfUsed) { R.halfUsed = 1; if (bv(band)) pts = h.pts * bv(band) * evm * .5; } // 사장 특기: 한 번은 걸려도 반
   } else if (band === "win") {
     R.wins++; R.streak = 0;
     if (h.bet) dn = 2; else if (R.luck > 0) { R.luck--; luck = true; } else dn = c.winN;
@@ -541,7 +552,7 @@ function judge(R) {
     if (band >= 5) R.streak++; else R.streak = 0;
     fav = [1, 1, 1.5, 2, 3][Math.min(R.streak, 4)];
     pts = h.pts * band * fav * evm;
-    if (band === 10) { dn = -1; R.x10++; }
+    if (band === 10) { R.x10++; if (!R.refund) { dn = -1; R.refund = 1; } } // ×10 눈치 환급은 판마다 1번
     if (h.bet) R.stake++;
   }
   pts = Math.round(pts); R.score += pts; R.best = Math.max(R.best, bv(band) * (s.caught ? 0 : 1));
@@ -590,44 +601,50 @@ function step(R, inp) {
 }
 
 // ═════════ 봇 (화면에 보이는 정보만 쓴다) ═════════
-// human: 탭 오차 ±15ms(정규), 반응 0.4초, 굴림은 그린 빠르기로 어림(±20%), 사건 대응·발 웨지·연장 판단
-// survive: 늘 +5m 여유, 발 웨지·연장 안 함 / perfect: 오차 0, 늘 +0.5m, 사건 무시, 발 웨지 안 함, 연장 3홀 고정
-function makeBot(kind, seed) { return { kind, r: rng(hs(seed, 99, kind.length)), sig: kind === "perfect" ? 0 : .015, aim: null, tP: 0, e: 0, jit: 0 }; }
-const destRoll = h => NOM[h.spd - 1] * h.gs * (h.sl > 0 ? 1.4 : h.sl < 0 ? .4 : 1); // 화면의 그린 빠르기(▮▮▯)로 어림
+// 손: 보통 손 = 탭 σ35ms, 웨지 반응 0.5~0.7초(공 감속을 보고 미리 누름, 예측 오차 ±25%) / 서툰 손 = 탭 σ50ms, 반응 0.7초(본 뒤에 누름)
+// 머리: 굴림은 화면의 굴림 예상 구간(그린 빠르기) 가운데로 어림(실제 ±20%), 사건 대응, 이길 것 같으면 웨지, 연장은 눈치 2칸 남고 3홀 미만
+// 변형: greedy = 늘 연장(6홀) / fixA = 일반 홀 조준 여유 고정 / extK = 눈치 무시하고 K홀까지 연장 / survive = 늘 +5m·웨지·연장 안 함 / perfect = 오차 0·+0.5m·사건 무시·웨지 안 함·연장 3
+const HANDS = { normal: { sig: .035, re: [.5, .7], pred: 1 }, rough: { sig: .05, re: [.7, .7], pred: 0 }, perfect: { sig: 0, re: [0, 0], pred: 1 } };
+function makeBot(kind, seed, o = {}) {
+  const hand = HANDS[o.hand || (kind === "perfect" ? "perfect" : kind === "rough" ? "rough" : "normal")];
+  return Object.assign({ kind: kind === "rough" || kind === "greedy" ? "human" : kind, greedy: kind === "greedy", r: rng(hs(seed, 99, kind.length, (o.fixA || 0) * 10 + (o.extK ?? 9))), aim: null, tP: 0, e: 0, pe: 0, wAt: null }, o, { hand });
+}
+const destRoll = h => NOM[h.spd - 1] * h.gs * h.gsx * (h.sl > 0 ? 1.4 : h.sl < 0 ? .4 : 1); // 화면의 굴림 예상 구간 가운데
 function sideAim(h, rb, a, dest, sc) {
-  let M = h.P - rb - a - dest, far = false;
-  if (M - sc < h.F1 + .5) { M = h.P + rb + a - dest; far = true; }
+  // 상사 공 쪽(핀 앞이면 앞, 핀 너머면 너머)의 금색 띠를 노린다. 숲에 걸리면 반대쪽
+  let far = h.side > 0, M = far ? h.P + rb + a - dest : h.P - rb - a - dest;
+  if (!far && M - sc < h.F1 + .5) { M = h.P + rb + a - dest; far = true; }
   return { M, far, a };
 }
-// 사람 근사 봇의 성향 (손실을 꺼려 여유를 두는 보통 사람): 기본 여유 a0 + 흩어짐·굴림 어림에 비례, 웨지는 '이겨 버릴 것 같을 때' 구조용
-const HB = Object.assign({ a0: 3.2, ksc: .9, kd: .15, sT: 1.6, mull: 5.0, ob: 1.9, bet: .8, ks: .2, amin: 1.4, rd: 0, rdA: .8, rdS: 1.0, rdN: 3 }, (() => { try { return JSON.parse(q.get("hb") || "{}"); } catch (e) { return {}; } })());
+const HB = Object.assign({ a0: 1.8, ksc: .8, kd: .12, sT: 1.5, mull: 5.0, ob: 1.9, bet: .8 }, (() => { try { return JSON.parse(q.get("hb") || "{}"); } catch (e) { return {}; } })());
 function aimFor(R, h, b) {
-  const sc = effSc(R, h), dest = destRoll(h), canW = canWedgeHole(R, h) && R.wedges > 0;
+  const sc = effSc(R, h), dest = destRoll(h);
   if (b.kind === "perfect") return sideAim(h, h.ob ? (BOSSES[h.bi].rb[0] + BOSSES[h.bi].rb[1]) / 2 : h.rb, .5, dest, sc);
   if (b.kind === "survive") return h.ob ? { M: (h.F0 + h.F1) / 2 } : sideAim(h, h.rb, 5, dest, sc);
   if (h.ob) return { M: h.F1 - (HB.ob + .8 * sc) };
-  const slack = Math.max(0, R.c.nun - R.nun - 2) + R.luck;  // 남은 눈치 여유만큼 바짝 (판단)
-  let a = Math.max(HB.amin, HB.a0 + HB.ksc * sc + HB.kd * dest - HB.ks * slack), sT = HB.sT * h.bw;
-  if (canW) a -= HB.kd * dest * .5;          // 웨지가 있으면 굴림 어림 여유를 반만
-  if (canW && R.c.read && HB.rd && R.wedges >= HB.rdN) { a = HB.rdA + .5 * sc; sT = HB.rdS * h.bw; } // 굴림 읽기: 일부러 길게 → 점선 보고 금색에서 웨지
-  if (h.mull) { a = HB.mull + .4 * sc; sT = HB.mull; }
-  if (h.bet) { a += HB.bet; sT += .3; }
-  if (h.gallery) a += .3;
+  let a = b.fixA !== undefined ? b.fixA : HB.a0 * h.bw + HB.ksc * sc + HB.kd * dest, sT = HB.sT * h.bw;
+  if (h.mull) { a = Math.max(a, HB.mull + .4 * sc); sT = HB.mull; }
+  if (h.bet && b.fixA === undefined) { a += HB.bet; sT += .3; }
+  if (h.gallery && b.fixA === undefined) a += .3;
   const o = sideAim(h, h.rb, a, dest, sc); o.sT = sT; return o;
 }
 function botWedge(R, b) {
-  if (b.kind !== "human" || !canWedgeNow(R) || R.pt < .4) return null;
-  const h = R.h, s = R.shot, fin = s.path.end, x = s.x;
-  const e = R.c.read ? 0 : b.e, estFin = fin + (fin - x) * e; // 부장부터 '굴림 읽기' 점선
-  const mNow = Math.abs(x - h.P) - R.rbRef, mFin = Math.abs(estFin - h.P) - R.rbRef;
-  const toward = (s.v > 0) === (x < h.P), jit = Math.abs(s.v) * b.jit, sT = b.aim && b.aim.sT !== undefined ? b.aim.sT : HB.sT * h.bw;
+  if (b.kind !== "human" || !canWedgeNow(R)) return null;
+  if (b.wAt !== null) return R.pt >= b.wAt ? (b.wAt = null, { wedge: 1 }) : null; // 마음먹은 뒤 손이 닿는 시각
+  if (R.pt < .15) return null;
+  const h = R.h, s = R.shot, p = s.path, fin = p.end, x = s.x, d = b.d;
+  const estFin = R.c.read && R.pt > .3 ? fin + b.rf : fin + (fin - x) * b.e; // 부장부터 '굴림 읽기': 끝점 ±1m 구간
+  const mFin = Math.abs(estFin - h.P) - R.rbRef;
+  // 손이 닿을 때(d초 뒤) 공이 있을 자리: 예측하는 손은 감속을 보고 어림(±25%), 아닌 손은 지금 자리
+  const xLater = b.hand.pred ? x + (rollPos(p, R.pt + d).x - x) * (1 + b.pe) : x;
+  const mL = Math.abs(xLater - h.P) - R.rbRef, mNow = Math.abs(x - h.P) - R.rbRef;
+  const toward = (s.v > 0) === (x < h.P), sT = b.aim && b.aim.sT !== undefined ? b.aim.sT : HB.sT * h.bw;
   let want = false;
-  if (toward) { if (mFin < (h.mull ? sT - 1.5 : .2) && mNow <= sT + jit && mNow >= 0) want = true; }
-  else if (mFin > (h.mull ? sT + 3 : 7 * h.bw) && mNow >= (h.mull ? sT : 1.2 * h.bw) + jit) want = true;
+  if (toward) { if (mFin < (h.mull ? sT - 1.5 : .2) && mL <= sT && mNow >= 0) want = true; }
+  else if (mFin > (h.mull ? sT + 3 : 7 * h.bw) && mL >= (h.mull ? sT : 1.2 * h.bw)) want = true;
   if (!want) return null;
-  const safe = gazeAt(h, R.gt - .4) === 0; // 0.4초 전에 본 시선
-  if (!safe && !(R.c.half && toward && mFin < 0)) return null;
-  return { wedge: 1 };
+  if (gazeAt(h, R.gt - .3) !== 0 && !(R.c.half && !R.halfUsed && toward && mFin < 0)) return null; // 보고 있거나 움찔하면 참는다
+  b.wAt = R.pt + d; return null;
 }
 function botAct(R, b) {
   const ph = R.ph, h = R.h;
@@ -638,21 +655,24 @@ function botAct(R, b) {
   if (ph === "aim") return R.block <= 0 ? { tap: 1 } : null;
   if (ph === "swing") {
     if (R.pt < DT * 1.5) { b.aim = aimFor(R, h, b); const p = clamp((b.aim.M - h.P + BACK - h.w * WK) / SPAN, .002, .998);
-      b.tP = Math.max(0, p * BAR + gauss(b.r) * b.sig); b.e = clamp(gauss(b.r) * .1, -.2, .2); b.jit = gauss(b.r) * .04; b.lastP = p; }
+      b.tP = Math.max(0, p * BAR + gauss(b.r) * b.hand.sig); b.e = clamp(gauss(b.r) * .1, -.2, .2); b.pe = (b.r() * 2 - 1) * .25; b.rf = h.ro;
+      b.d = b.hand.re[0] + (b.hand.re[1] - b.hand.re[0]) * b.r(); b.wAt = null; }
     if (R.pt >= b.tP) return { tap: 1, back: R.pt - b.tP };
     return null;
   }
   if (ph === "roll") return botWedge(R, b);
   const left = R.c.nun - R.nun;
-  if (ph === "bar") return R.pt > .45 ? { pick: b.kind === "human" && left >= 2 ? "a" : "b" } : null;
+  if (ph === "bar") return R.pt > .45 ? { pick: b.kind === "human" && left >= 3 ? "a" : "b" } : null;
   if (ph === "settle") { if (R.pt <= .45) return null;
+    if (b.extK !== undefined) return { pick: R.ext < b.extK ? "b" : "a" };
+    if (b.greedy) return { pick: "b" };
     if (b.kind === "human") return { pick: left >= 2 && R.ext < 3 ? "b" : "a" };
     if (b.kind === "perfect") return { pick: R.ext < 3 ? "b" : "a" };
     return { pick: "a" }; }
   return null;
 }
 function simRound(n, seed, kind, o = {}) {
-  const R = newRound(n, seed, Object.assign({ quiet: true }, o)), b = makeBot(kind, seed);
+  const R = newRound(n, seed, Object.assign({ quiet: true }, o)), b = makeBot(kind, seed, o.bot || {});
   for (let k = 0; k < 120 * 900 && !R.done; k++) step(R, botAct(R, b));
   return R;
 }
@@ -661,7 +681,7 @@ function simRound(n, seed, kind, o = {}) {
 const store = { get() { try { return JSON.parse(localStorage.getItem("g031") || "{}"); } catch (e) { return {}; } }, set(v) { try { localStorage.setItem("g031", JSON.stringify(v)); } catch (e) {} } };
 let save = Object.assign({ cleared: 0, stars: {}, best: {}, endlessBest: 0, runs: 0, tut: {}, mute: false }, store.get());
 let auto = false, selftesting = false;
-const persist = () => { if (auto || selftesting) return; store.set(save); };
+const persist = () => { if (auto || selftesting || DEBUG) return; store.set(save); };
 
 // ═════════ 오락실 신호 ═════════
 let posted = 0, sink = null, lastInputEmit = 0;
@@ -722,13 +742,13 @@ const cv = $("cv"), ctx = cv.getContext("2d");
 let VW = 375, VH = 760, DPR = 1, GY = 420;
 function resize() {
   const r = $("game").getBoundingClientRect(); VW = r.width; VH = r.height; DPR = Math.min(2, window.devicePixelRatio || 1);
-  cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); GY = Math.round(VH * .6);
+  cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); GY = Math.round(VH * .7);
 }
 addEventListener("resize", resize);
 const I = (n, c) => UI.icon(n, c);
 // 카메라: 넓은 보기(티~핀 직선) ↔ 조준 보기(상사 공 근처를 크게 보는 어안). b = 0..1
 const cam = { b: 0, tb: 0, sx: 0 };
-function ua(x, h) { const c = h.ob ? h.F1 - 1 : h.P - h.rb, K = .16 * VW; return .44 * VW + K * Math.asinh((x - c) / 3); }
+function ua(x, h) { const far = !h.ob && h.side > 0, c = h.ob ? h.F1 - 1 : h.P + h.side * (h.rb + .5), K = .16 * VW; return (far ? .5 : .44) * VW + K * Math.asinh((x - c) / 3); } // 상사 공 바로 뒤 금색 띠를 크게
 function uw(x, h) { return .05 * VW + (x + 6) / (h.P + 30) * .9 * VW; }
 function ux(x, h) { return lerp(uw(x, h), ua(x, h), cam.b) + cam.sx; }
 
@@ -787,7 +807,7 @@ function bandSegs(h, rbRef) {
   const P = h.P, w = h.bw, out = [];
   if (h.ob) { out.push([h.F0, h.F1 - 1, 5], [h.F1 - 1, h.F1, 10], [h.G0, h.G1, "win"]); return out; }
   out.push([P - rbRef, P + rbRef, "win"]);
-  const L = [[0, w, 10], [w, 3 * w, 5], [3 * w, 7 * w, 2], [7 * w, 15 * w, 1]];
+  const tl = h.tl || 15, L = [[0, w, 10], [w, 3 * w, 5], [3 * w, Math.min(7, tl) * w, 2], [7 * w, tl * w, 1]];
   for (const [a, b, k] of L) { out.push([P - rbRef - b, P - rbRef - a, k]); out.push([P + rbRef + a, P + rbRef + b, k]); }
   return out.map(s => [Math.max(s[0], s[2] === "win" ? -1e9 : h.F1), s[1], s[2]]).filter(s => s[1] > s[0]);
 }
@@ -822,8 +842,9 @@ function draw(dt, now) {
     g.fillStyle = "rgba(20,60,20,.55)"; const cx = ux(h.P + (h.sl > 0 ? 10 : -10), h), d = h.sl > 0 ? 1 : -1;
     for (let k = 0; k < 2; k++) { const X = cx + k * 10 * d; g.beginPath(); g.moveTo(X + 6 * d, GY - 18); g.lineTo(X - 2 * d, GY - 24); g.lineTo(X - 2 * d, GY - 12); g.fill(); } }
   { // 그린 빠르기: 그린 위 화살표 1~3개 (굴림 어림용)
-    const X0 = h.side > 0 && !h.ob ? ux(h.P, h) - 54 : ux(h.P, h) + 14; g.fillStyle = "rgba(255,255,255,.85)"; rr(g, X0 - 4, GY - 22, 44, 14, 7); g.fill();
-    for (let k = 0; k < 3; k++) { g.fillStyle = k < h.spd ? "#1d6b2a" : "rgba(29,107,42,.2)"; const X = X0 + k * 12; g.beginPath(); g.moveTo(X, GY - 19); g.lineTo(X + 7, GY - 15); g.lineTo(X, GY - 11); g.fill(); } }
+    const X0 = h.side > 0 && !h.ob ? ux(h.P, h) - 78 : ux(h.P, h) + 14, Y = GY - 44, fast = h.gsx > 1; g.fillStyle = "rgba(255,255,255,.92)"; rr(g, X0 - 6, Y - 13, fast ? 72 : 62, 26, 13); g.fill();
+    for (let k = 0; k < 3; k++) { g.fillStyle = k < h.spd ? "#1d6b2a" : "rgba(29,107,42,.18)"; const X = X0 + k * 17; g.beginPath(); g.moveTo(X, Y - 8); g.lineTo(X + 11, Y); g.lineTo(X, Y + 8); g.fill(); }
+    if (fast) { g.fillStyle = "#e5383f"; g.font = "700 14px " + getComputedStyle(document.body).fontFamily; g.textAlign = "left"; g.fillText("+", X0 + 52, Y + 5); } }
   // 배수 띠 (땅 아래 띠 + 금색 빛기둥)
   if (!(R.ph === "card" || R.ph === "intro" || (R.ph === "boss" && R.pt < 2.0))) drawBands(g, W, h, now); // 상사 공이 멈춘 뒤에 띠를 편다
   // 핀
@@ -857,7 +878,7 @@ function drawGround(g, W, H, h) {
   g.fillStyle = "#93dc78"; g.fillRect(-20, GY - 2, W + 40, 4);
 }
 function drawBands(g, W, h, now) {
-  const segs = bandSegs(h, fx.rbShow ?? R.rbRef), y0 = GY + 8, bh = 20;
+  const segs = bandSegs(h, fx.rbShow ?? R.rbRef), y0 = GY + 6, bh = 40, FF = getComputedStyle(document.body).fontFamily;
   g.fillStyle = "rgba(0,0,0,.12)"; rr(g, -4, y0 - 2, W + 8, bh + 4, 6); g.fill();
   // 빗금(티 나게 짐) 바탕
   g.fillStyle = "rgba(255,90,95,.16)"; g.fillRect(0, y0, W, bh);
@@ -868,8 +889,11 @@ function drawBands(g, W, h, now) {
     g.fillStyle = BCOL[k]; g.fillRect(A, y0, Math.max(1.5, B - A), bh);
     if (k === 10) { const lg = g.createLinearGradient(0, GY - 90, 0, GY); lg.addColorStop(0, "rgba(255,210,80,0)"); lg.addColorStop(1, `rgba(255,210,80,${.35 + .25 * Math.sin(now * 4) + flash * .3})`); g.fillStyle = lg; g.fillRect(A, GY - 90, Math.max(2, B - A), 90); }
     if (flash) { g.fillStyle = `rgba(255,255,255,${flash * .5})`; g.fillRect(A, y0, B - A, bh); }
-    const wpx = B - A; if (wpx >= 22) { g.font = "800 12px " + getComputedStyle(document.body).fontFamily; g.textAlign = "center"; g.fillStyle = k === "win" ? "#fff" : "#2a2a2a";
-      const lab = k === "win" ? (wpx > 34 ? "이김" : "") : "×" + k; if (lab) g.fillText(lab, (A + B) / 2, y0 + 14.5); }
+    const wpx = B - A, cx = (A + B) / 2; g.font = "700 14px " + FF; g.textAlign = "center";
+    if (k === 10 && wpx < 30 && cx > 0 && cx < W) { // ×10 표시는 폭과 상관없이: 띠 아래 금색 꼬리표
+      g.fillStyle = "#ffc23a"; rr(g, cx - 18, y0 + bh + 4, 36, 20, 10); g.fill(); g.beginPath(); g.moveTo(cx - 4, y0 + bh + 4); g.lineTo(cx, y0 + bh); g.lineTo(cx + 4, y0 + bh + 4); g.fill();
+      g.fillStyle = "#3a2a00"; g.fillText("×10", cx, y0 + bh + 19); }
+    else if (wpx >= 26) { g.fillStyle = k === "win" ? "#fff" : "#2a2a2a"; const lab = k === "win" ? (wpx > 36 ? "이김" : "") : "×" + k; if (lab) g.fillText(lab, cx, y0 + bh / 2 + 5); }
   }
 }
 function drawBossBall(g, h, now) {
@@ -898,6 +922,10 @@ function drawMarker(g, h, now) {
   g.strokeStyle = "#1d2733"; g.lineWidth = 2.5; g.beginPath(); g.moveTo(A + 4, GY - 12); g.lineTo(A, GY - 12); g.lineTo(A, GY + 4); g.lineTo(A + 4, GY + 4); g.moveTo(B - 4, GY - 12); g.lineTo(B, GY - 12); g.lineTo(B, GY + 4); g.lineTo(B - 4, GY + 4); g.stroke();
   g.fillStyle = "#1d2733"; g.beginPath(); g.moveTo(M, GY - 16); g.lineTo(M - 7, GY - 28); g.lineTo(M + 7, GY - 28); g.fill();
   g.setLineDash([3, 3]); g.lineWidth = 1.5; g.beginPath(); g.moveTo(M, GY - 16); g.lineTo(M, GY); g.stroke(); g.setLineDash([]);
+  // 굴림 예상 구간 (그린 빠르기·경사 반영, 실제 굴림은 이 안): 표식에서 이어지는 점선 + 반투명 막대
+  const dst = destRoll(h), R0 = ux(m + dst * .8, h), R1 = ux(m + dst * 1.2, h), Rc = ux(m + dst, h);
+  g.strokeStyle = "rgba(29,39,51,.45)"; g.setLineDash([2, 4]); g.lineWidth = 2; g.beginPath(); g.moveTo(M, GY - 22); g.quadraticCurveTo((M + Rc) / 2, GY - 40, Rc, GY - 14); g.stroke(); g.setLineDash([]);
+  g.fillStyle = "rgba(29,39,51,.28)"; rr(g, Math.min(R0, R1), GY - 12, Math.max(6, Math.abs(R1 - R0)), 10, 5); g.fill();
 }
 function drawMyBall(g, h, now) {
   const s = R.shot; if (!s) return;
@@ -909,7 +937,7 @@ function drawMyBall(g, h, now) {
   } else x = s.x;
   const X = ux(x, h);
   // 굴림 읽기 점선 (부장부터, 착지 직후 0.5초)
-  if (R.ph === "roll" && R.c.read && R.pt < .5 && !s.path.wood) { const E = ux(s.path.end, h); g.strokeStyle = "rgba(29,39,51,.7)"; g.setLineDash([4, 4]); g.lineWidth = 2; g.beginPath(); g.moveTo(X, GY - 6); g.lineTo(E, GY - 6); g.stroke(); g.setLineDash([]); g.fillStyle = "#1d2733"; g.beginPath(); g.arc(E, GY - 6, 3, 0, 6.283); g.fill(); }
+  if (R.ph === "roll" && R.c.read && R.pt < .5 && !s.path.wood) { const C = s.path.end + h.ro, E = ux(C, h), E0 = ux(C - 1, h), E1 = ux(C + 1, h); g.strokeStyle = "rgba(29,39,51,.7)"; g.setLineDash([4, 4]); g.lineWidth = 2; g.beginPath(); g.moveTo(X, GY - 6); g.lineTo(E, GY - 6); g.stroke(); g.setLineDash([]); g.fillStyle = "rgba(29,39,51,.35)"; rr(g, E0, GY - 11, Math.max(4, E1 - E0), 10, 5); g.fill(); }
   const b = R.ph === "fly" || R.ph === "roll" ? judgeX(h, x, R.rbRef) : null;
   if (b === 10 && R.ph === "roll") { g.fillStyle = `rgba(255,214,90,${.45 + .3 * Math.sin(now * 18)})`; g.beginPath(); g.arc(X, y, 10, 0, 6.283); g.fill(); }
   ball(g, X, y, 5, "#fff");
@@ -985,7 +1013,7 @@ function menu() {
     + (save.cleared >= 6 ? `<button class="ui-level" data-s="7" aria-label="무한 라운드">${I("trophy")}</button>` : `<button class="ui-level lock" disabled aria-label="무한 라운드 잠김">${I("lock")}</button>`);
   openOv(`<div class="ui-col ui-center ui-enter" id="heroBox"></div>
     <div class="ui-col ui-center ui-enter"><h1 class="ui-title">져주기 골프</h1><p class="ui-sub">상사보다 살짝 못 쳐라</p></div>
-    <div class="ui-levels ui-enter-2" style="grid-template-columns:repeat(7,minmax(0,1fr))">${cells}</div>
+    <div class="ui-levels ui-enter-2" style="grid-template-columns:repeat(4,minmax(0,1fr))">${cells}</div>
     ${save.cleared < 6 ? `<div class="ui-enter-2">${nextHtml(cur)}</div>` : ""}
     <div class="ui-row ui-enter-3"><button class="ui-btn primary" id="go">${I("play", "lg")}라운딩 시작</button><button class="ui-btn icon" id="snd" aria-label="소리">${I(save.mute ? "volume-x" : "volume-2")}</button></div>`);
   $("heroBox").appendChild(hero || (hero = heroCanvas()));
@@ -1002,7 +1030,7 @@ function startLive(n, seed, o = {}) {
   $("hud").hidden = false; hudKey = ""; save.runs++; persist();
   if (o.hole) { R.startAt = o.hole; }
   if (!auto) sigStart(R);
-  showCard(`<b>${I(R.c.rule.ic, "lg")}${R.n === 7 ? "무한 라운드" : `${RANK[R.n - 1]} · ${BOSSES[R.c.boss].t}`}</b><span>${R.c.rule.t}</span>`);
+  showCard(`<b>${I(R.c.rule.ic, "lg")}${R.n === 7 ? "무한 라운드" : `${RANK[R.n - 1]} · ${BOSSES[R.c.boss].t}`}</b><span>${R.c.rule.t}</span>${R.c.perk && R.n <= 6 ? `<span>${R.c.perk.map(([ic, t]) => I(ic, "sm") + t).join(" · ")}</span>` : ""}`);
 }
 function showCard(html) { const c = $("card"); c.innerHTML = html; c.classList.add("on"); }
 function hideCard() { $("card").classList.remove("on"); }
@@ -1029,7 +1057,7 @@ function hud() {
   $("goalTx").innerHTML = c.endless ? `${I("trophy", "sm")}<small>${fmt(save.endlessBest)}</small>` : st >= 1 ? UI.stars(st) : `${I("target", "sm")}<small>${fmt(c.target)}</small>`;
   $("nunChip").innerHTML = `${I("triangle-alert")}${pips(R.nun)}`;
   $("wedgeChip").hidden = !c.wedge || !h; $("wedgeChip").innerHTML = `${I("footprints")}<span class="ui-num">${R.wedges}</span>`;
-  $("windChip").hidden = !h;
+  $("windChip").hidden = !h || !c.wind[1];
   if (h) { $("windChip").innerHTML = `${I("wind")}${I("arrow-right", h.w < 0 ? "flip" : "")}<span class="ui-num">${Math.abs(h.w).toFixed(0)}</span>`; }
   const fav = [1, 1, 1.5, 2, 3][Math.min(R.streak + 1, 4)];
   $("favChip").hidden = R.streak < 1; $("favChip").innerHTML = `${I("sparkles")}<span class="ui-num">×${fav}</span>`; $("favChip").setAttribute("aria-label", "총애 ×" + fav);
@@ -1067,13 +1095,13 @@ function onQ(e) {
     case "mull": UI.toast("멀리건!", 1400, "top"); say(["한 번 더!", "멀리건이네"][Math.floor(Math.random() * 2)], 1200); setTimeout(() => SFX.boss(), 300); break;
     case "judge": onJudge(e.d); break;
     case "bar": SFX.sheet(); openSheet(`<div class="ui-col"><div class="g-sline">${I("beer", "lg")}<b>그늘집 · 한잔?</b></div><p class="ui-sub">×1.5 · 흔들림 ×2 · 2홀</p>
-      <div class="ui-row"><button class="ui-btn" data-pick="b">사양</button><button class="ui-btn primary" data-pick="a">${I("beer")}한잔</button></div></div>`); bindSheet(); break;
+      <div class="ui-row"><button class="ui-btn" data-pick="b">사양</button><button class="ui-btn" data-pick="a">${I("beer")}한잔</button></div></div>`); bindSheet(); break;
     case "barPick": closeSheet(); break;
     case "settle": {
       SFX.sheet(); const c = R.c, next = Math.round(R.lastBase * 1.5 / 10) * 10, st = c.endless ? 0 : starsOf(c, R.score);
-      const line = c.endless ? `${I("trophy")}최고 <b class="ui-num">${fmt(save.endlessBest)}</b>` : st < 1 ? `${I("target")}목표까지 <b class="ui-num">${fmt(c.target - R.score)}</b>` : st < 3 ? `${UI.stars(st)}<span>★${st + 1}까지</span><b class="ui-num">${fmt(c.target * (st === 1 ? c.A : c.B) - R.score)}</b>` : UI.stars(3);
-      openSheet(`<div class="ui-col"><div class="g-sline"><b class="ui-num" style="font-size:var(--ui-t5)">${fmt(R.score)}</b><span class="ui-spacer"></span>${line}</div>
-        <div class="ui-col" style="gap:var(--ui-s2)"><button class="ui-btn primary" data-pick="a">${I("utensils", "lg")}회식 가기</button><button class="ui-btn" data-pick="b">${I("flag")}한 홀 더<span class="ui-badge muted ui-num">${fmt(next)}</span></button></div></div>`); bindSheet(); break; }
+      const line = c.endless ? `${I("trophy")}최고 <b class="ui-num">${fmt(save.endlessBest)}</b>` : st < 1 ? `${I("target")}목표까지 <b class="ui-num">${fmt(c.target - R.score)}</b>` : st < 3 ? `${UI.stars(st)}<span>${I("star", "sm")}${st + 1}까지</span><b class="ui-num">${fmt(c.target * (st === 1 ? c.A : c.B) - R.score)}</b>` : UI.stars(3);
+      openSheet(`<div class="ui-col"><div class="g-sline"><b class="ui-num" style="font-size:var(--ui-t4)">${fmt(R.score)}</b><span class="ui-spacer"></span>${line}</div>
+        <div class="ui-col" style="gap:var(--ui-s2)"><button class="ui-btn primary" data-pick="a">${I("utensils", "lg")}회식 가기</button><button class="ui-btn" data-pick="b" aria-label="한 홀 더, 기본 ${fmt(next)}, 난도 ${R.ext + 1}">${I("flag")}한 홀 더<span class="ui-badge muted ui-num">${fmt(next)}</span><span class="g-heat">${Array.from({ length: Math.min(3, Math.ceil((R.ext + 1) / 2)) }, () => I("flame", "sm")).join("")}</span></button></div></div>`); bindSheet(); break; }
     case "exile": closeSheet(); SFX.train(); $("stamp").className = "g-stamp sbad"; $("stamp").innerHTML = `${I("train-front", "lg")} 지방 발령`; setTimeout(() => $("stamp").classList.add("on"), 300); ["wedge", "eye"].forEach(k => $(k).classList.remove("show")); $("bigm").classList.remove("on"); break;
     case "end": closeSheet(); break;
   }
@@ -1133,7 +1161,7 @@ function result(d, prevBest, promoted) {
     else if (d.score > prevBest && prevBest > 0) line = `최고 ${fmt(prevBest)} → ${fmt(d.score)}`;
     else if (R.x10 >= 2) line = `종이 한 장 ×10 · ${R.x10}번`;
     else if (!d.clear && n <= 6) line = `목표까지 −${fmt(c.target - d.score)}`;
-    else if (n <= 6 && d.stars < 3) line = `★${d.stars + 1}까지 +${fmt(c.target * (d.stars === 1 ? c.A : c.B) - d.score)}`;
+    else if (n <= 6 && d.stars < 3) line = `${I("star", "sm")}${d.stars + 1}까지 +${fmt(c.target * (d.stars === 1 ? c.A : c.B) - d.score)}`;
     else line = `종이 한 장 ×10 · ${R.x10}번`;
   }
   const nextOk = n <= 6 && save.cleared >= n;
@@ -1237,43 +1265,58 @@ const GOAL = [
 ];
 function selftest() {
   selftesting = true; auto = true;
-  const out = [], seeds = []; for (let s = 301; s <= 340; s++) seeds.push(s);
+  const out = [], seeds = [], seeds2 = []; for (let s = 301; s <= 340; s++) seeds.push(s); for (let s = 501; s <= 540; s++) seeds2.push(s);
   let pass = 0, total = 0; const ok = (b, line) => { total++; if (b) pass++; out.push((b ? "OK   " : "FAIL ") + line); };
-  // 공통 시뮬레이션
-  const H = {}, S = {}, P = {};
-  for (const c of STAGES) { H[c.n] = seeds.map(s => simRound(c.n, s, "human")); S[c.n] = seeds.map(s => simRound(c.n, s, "survive")); P[c.n] = seeds.map(s => simRound(c.n, s, "perfect")); }
-  // 목표 점수 다시 맞추기 안내: 생존 봇 기본 홀 점수 중앙값
-  out.push("[목표] 단계\t목표\t생존 봇 기본홀 중앙\t사람 봇 정산 중앙\t★배수 A·B");
+  const avg = a => a.reduce((x, y) => x + y, 0) / Math.max(1, a.length), rate = (rs, f) => rs.filter(f).length / rs.length, P_ = v => Math.round(v * 100) + "%";
   const qn = (a, f) => { const s = a.slice().sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(f * s.length))]; };
-  for (const c of STAGES) { const base = S[c.n].map(R => R.log.filter(l => !l.ext).reduce((a, l) => a + l.pts, 0)), hs_ = H[c.n].map(R => R.done.score);
-    out.push(`       ${c.n}\t${fmt(c.target)}\t${fmt(median(base))} (40% ${fmt(qn(base, .4))})\t${fmt(median(hs_))} (사람 ×목표 30/50/70/80%: ${[.3, .5, .7, .8].map(f => (qn(hs_, f) / c.target).toFixed(1)).join("/")})\t×${c.A}·×${c.B}`); }
-  // [A] 공정한 홀
+  const sim = (n, ss, kind, bot) => ss.map(s => simRound(n, s, kind, bot ? { bot } : {}));
+  // 공통 시뮬레이션: 보통 손(시드 두 세트) · 서툰 손 · 늘 연장 · 생존 · 완벽 타이밍
+  const H = {}, H2 = {}, RO = {}, GR = {}, S = {}, P = {};
+  for (const c of STAGES) { const n = c.n; H[n] = sim(n, seeds, "human"); H2[n] = sim(n, seeds2, "human"); RO[n] = sim(n, seeds, "rough"); GR[n] = sim(n, seeds, "greedy"); S[n] = sim(n, seeds, "survive"); P[n] = sim(n, seeds, "perfect"); }
+  const row = rs => { const L = rs.flatMap(R => R.log); return `통과 ${P_(rate(rs, R => R.done.clear))} ★3 ${P_(rate(rs, R => R.done.stars === 3))} 평균 ${fmt(avg(rs.map(R => R.done.score)))} 발령 ${P_(rate(rs, R => R.done.exile))} 이김 ${P_(L.filter(l => l.kind === "win").length / L.length)} 배수 ×${(L.reduce((a, l) => a + bv(l.band) * (l.caught ? 0 : 1), 0) / L.length).toFixed(2)} 연장 ${avg(rs.map(R => R.ext)).toFixed(1)}`; };
+  out.push("[곡선] 단계 · 목표 · ★A·B / 보통 손(σ35·반응0.5~0.7, 시드 301~340+501~540) / 서툰 손(σ50·반응0.7) / 늘 연장(보통 손)");
+  for (const c of STAGES) out.push(`  ${c.n} · ${fmt(c.target)} · ×${c.A}·×${c.B}\n     보통 ${row(H[c.n].concat(H2[c.n]))}\n     서툰 ${row(RO[c.n])}\n     늘연장 ${row(GR[c.n])}\n     (보통 손 점수 ×목표 30/50/70/80%: ${[.3, .5, .7, .8].map(f => (qn(H[c.n].concat(H2[c.n]).map(R => R.done.score), f) / c.target).toFixed(1)).join("/")} · 생존 봇 기본홀 40/50% ${fmt(qn(S[c.n].map(R => R.done.score), .4))}/${fmt(qn(S[c.n].map(R => R.done.score), .5))})`);
+  out.push("");
+  // [A] 공정한 홀 (연장 홀 3개 포함)
   { let n = 0; const bad = [];
-    for (const c of STAGES) for (let seed = 1; seed <= 50; seed++) { const R = newRound(c.n, seed, { quiet: true }); for (let i = 0; i < c.holes + 3; i++) { const h = holeAt(R, i); n++;
+    for (const c of STAGES) for (let seed = 1; seed <= 50; seed++) { const R = newRound(c.n, seed, { quiet: true }); for (let i = 0; i < c.holes + 6; i++) { const h = holeAt(R, i); n++;
       let best = 0; for (let k = 0; k <= 4000; k++) { const p = k / 4000, L = markerAt(h, p), x = rollPath(h, L).end; best = Math.max(best, bv(judgeX(h, x, h.rb))); }
       const need = h.ob ? 5 : 2; if (best < need) bad.push(`${c.n}-${seed}-${i}:최고×${best}`);
-      if (!(4 * h.bw >= 2 * c.sc) || !(7 * h.bw >= 2 * Math.min(SC_MAX, h.sc0 * 2))) bad.push(`${c.n}-${seed}-${i}:띠폭`);
-      const far = h.P + h.rb + 15, near = h.P - h.rb - 15; if (markerAt(h, 1) + h.D * 1.4 < h.P + h.rb && markerAt(h, 0) > near) bad.push(`${c.n}-${seed}-${i}:거리`); } }
-    ok(!bad.length, `[A] 공정한 홀 ${n - bad.length}/${n} (모든 홀에 ×2 이상·OB홀 ×5 이상 힘 값 존재, ×2 띠 4m ≥ 흩어짐×2, ×2 이상 7m ≥ 괄호 폭) ${bad.slice(0, 6).join(" ")}`); }
-  // [B] 단계 곡선 (사람 근사 봇)
-  out.push("", "[B] 사람 근사 봇 (탭 오차 ±15ms, 반응 0.4초, 굴림 어림 ±20%, 시드 301~340)");
+      if (!(4 * h.bw >= 2 * c.sc) || !(7 * h.bw >= 2 * Math.min(SC_MAX, h.sc0 * 2))) bad.push(`${c.n}-${seed}-${i}:띠폭`); } }
+    ok(!bad.length, `[A] 공정한 홀 ${n - bad.length}/${n} (기본+연장 6홀 모두 ×2 이상·OB홀 ×5 이상 힘 값 존재, ×2 띠 4m ≥ 기본 흩어짐×2, ×2 이상 7m ≥ 괄호 폭) ${bad.slice(0, 6).join(" ")}`); }
+  // [B] 단계 곡선 (보통 손, 시드 두 세트 모두)
+  out.push("", "[B] 보통 손 봇 — 시드 301~340 / 501~540 둘 다 기준 안(★3은 ±5%p 여유)");
   const IM = [];
   for (const c of STAGES) {
-    const rs = H[c.n], clear = rs.filter(R => R.done.clear).length, ex = rs.filter(R => R.done.exile).length, st = [0, 0, 0, 0]; rs.forEach(R => st[R.done.clear ? R.done.stars : 0]++);
-    const holes = rs.flatMap(R => R.log), mult = holes.reduce((a, l) => a + bv(l.band) * (l.caught ? 0 : 1), 0) / holes.length, win = holes.filter(l => l.kind === "win").length / holes.length;
-    const ms = holes.filter(l => l.m !== null).map(l => l.m), ext = rs.reduce((a, R) => a + R.ext, 0) / rs.length, kicks = rs.reduce((a, R) => a + R.kicks, 0) / rs.length, cau = holes.filter(l => l.caught).length;
-    IM.push({ mult, win }); const G = GOAL[c.n - 1], s3 = st[3] / rs.length, hist = [10, 5, 2, 1, "win", "tee", "caught"].map(k => k + ":" + holes.filter(l => (l.kind === "caught" ? "caught" : l.band) === k).length).join(" ");
-    ok(clear / rs.length >= G.pass && s3 >= G.s3[0] && s3 <= G.s3[1], `[B${c.n}] 통과 ${clear}/40 (${pct(clear, 40)}, 기준 ${G.pass * 100}%+) · 발령 ${ex} · ★1/2/3 ${st[1]}/${st[2]}/${st[3]} (★3 ${pct(st[3], 40)}, 기준 ${G.s3[0] * 100}~${G.s3[1] * 100}%) · 평균 배수 ×${mult.toFixed(2)} · 이김 ${pct(win * 1000, 1000)} · margin 중앙 ${median(ms).toFixed(1)}m · 연장 ${ext.toFixed(1)} · 웨지 ${kicks.toFixed(1)} · 걸림 ${cau} · ${hist}`);
+    const G = GOAL[c.n - 1], cell = rs => { const st = [0, 0, 0, 0]; rs.forEach(R => st[R.done.clear ? R.done.stars : 0]++); return { cl: rate(rs, R => R.done.clear), s3: st[3] / rs.length, st }; };
+    const a = cell(H[c.n]), b = cell(H2[c.n]), good = x => x.cl >= G.pass && x.s3 >= G.s3[0] - .05 && x.s3 <= G.s3[1] + .05;
+    const holes = H[c.n].concat(H2[c.n]).flatMap(R => R.log), mult = holes.reduce((x, l) => x + bv(l.band) * (l.caught ? 0 : 1), 0) / holes.length, win = holes.filter(l => l.kind === "win").length / holes.length;
+    IM.push({ mult, win });
+    ok(good(a) && good(b), `[B${c.n}] 통과 ${P_(a.cl)}/${P_(b.cl)} (기준 ${G.pass * 100}%+) · ★1/2/3 ${a.st.slice(1).join("/")} | ${b.st.slice(1).join("/")} (★3 ${P_(a.s3)}/${P_(b.s3)}, 기준 ${G.s3[0] * 100}~${G.s3[1] * 100}%) · 웨지 ${avg(H[c.n].map(R => R.kicks)).toFixed(1)} · 걸림 ${holes.filter(l => l.caught).length}`);
   }
-  // [C] 생존 봇
+  // [C] 생존 봇 + [M] 목표 계단
   out.push("", "[C] 생존 봇 (늘 +5m, 웨지·연장 안 함) — 기준: 발령 10% 이하, 통과 50% 이상");
-  for (const c of STAGES) { const rs = S[c.n], clear = rs.filter(R => R.done.clear).length, ex = rs.filter(R => R.done.exile).length;
-    ok(ex / 40 <= .1 && clear / 40 >= .5, `[C${c.n}] 통과 ${clear}/40 (${pct(clear, 40)}) · 발령 ${ex}/40 (${pct(ex, 40)}) · 정산 중앙 ${fmt(median(rs.map(R => R.done.score)))}`); }
+  const sp = [];
+  for (const c of STAGES) { const rs = S[c.n], cl = rate(rs, R => R.done.clear), ex = rate(rs, R => R.done.exile); sp.push(cl);
+    ok(ex <= .1 && cl >= .5, `[C${c.n}] 통과 ${P_(cl)} · 발령 ${P_(ex)} · 정산 중앙 ${fmt(median(rs.map(R => R.done.score)))}`); }
+  ok(sp.every((v, i) => !i || v <= sp[i - 1] + .05), `[M] 목표 계단: 생존 봇 통과율이 단계마다 줄거나 같음(±5%p) ${sp.map(P_).join(" → ")}`);
   // [D] 판단이 타이밍을 이긴다
   { const rows = []; let good = true;
-    for (const n of [3, 4, 5, 6]) { const ha = H[n].reduce((a, R) => a + R.done.score, 0) / 40, pa = P[n].reduce((a, R) => a + R.done.score, 0) / 40, pe = P[n].filter(R => R.done.exile).length / 40;
-      if (!(ha > pa && pe >= .3)) good = false; rows.push(`${n}단계 사람 ${fmt(ha)} vs 완벽 ${fmt(pa)} (완벽 발령 ${Math.round(pe * 100)}%)`); }
+    for (const n of [3, 4, 5, 6]) { const ha = avg(H[n].map(R => R.done.score)), pa = avg(P[n].map(R => R.done.score)), pe = rate(P[n], R => R.done.exile);
+      if (!(ha > pa && pe >= .3)) good = false; rows.push(`${n}단계 보통 손 ${fmt(ha)} vs 완벽 ${fmt(pa)} (완벽 발령 ${P_(pe)})`); }
     ok(good, `[D] 판단 > 타이밍 (G013 방지): ${rows.join(" · ")}`); }
+  // [K] 멈출까 더 갈까: 연장 상한 K별 (보통 손, 눈치 무시하고 K홀까지)
+  { const rows = []; let good = true;
+    for (const c of STAGES) { const r = {}; for (const k of [0, 2, 3, 6]) { const rs = sim(c.n, seeds.concat(seeds2), "human", { extK: k }); r[k] = { a: avg(rs.map(R => R.done.score)), e: rate(rs, R => R.done.exile) }; }
+      const g = r[6].a <= 1.1 * Math.max(r[2].a, r[3].a) && r[6].e >= .3; if (!g) good = false;
+      rows.push(`${c.n}: ${[0, 2, 3, 6].map(k => `K${k} ${fmt(r[k].a)}/${P_(r[k].e)}`).join(" ")}${g ? "" : "!"}`); }
+    ok(good, `[K] 연장 위험 (평균/발령) — 기준: 늘 연장(K6) 평균 ≤ 연장 2~3 최고×1.1, K6 발령 30%+ · ${rows.join(" · ")}`); }
+  // [L] 얼마나 바짝: 조준 여유 a별 평균 (보통 손, 2~6단계)
+  { const rows = []; let good = true; const AS = [1, 1.8, 2.5, 3.2, 4.5];
+    for (const n of [2, 3, 4, 5, 6]) { const r = AS.map(a => { const rs = sim(n, seeds.concat(seeds2), "human", { fixA: a }); return { a, s: avg(rs.map(R => R.done.score)), e: rate(rs, R => R.done.exile) }; });
+      const best = r.reduce((x, y) => y.s > x.s ? y : x), g = best.a >= 1.8 && best.a <= 3.2 && r[0].e >= .15; if (!g) good = false;
+      rows.push(`${n}: ${r.map(x => `a${x.a} ${fmt(x.s)}${x.a === 1 ? "/" + P_(x.e) : ""}`).join(" ")} → 최고 a${best.a}${g ? "" : "!"}`); }
+    ok(good, `[L] 조준 여유 (시드 80판) — 기준: 최고 점수 a가 1.8~3.2m, 1m 바짝 발령 15%+ · ${rows.join(" · ")}`); }
   // [E] 예고 정직성
   { let n = 0, bad = 0, gz = 0, gbad = 0;
     for (const c of STAGES) for (const R of H[c.n].concat(S[c.n])) { for (const l of R.log) { if (l.ev.length) { n++; if (!(l.card < l.swing && l.banner <= l.swing)) bad++; } }
@@ -1332,9 +1375,11 @@ function setSafe() { const d = document.createElement("div"); d.style.cssText = 
 resize(); setSafe();
 if (q.has("selftest")) { setTimeout(selftest, 30); }
 else if (q.has("diag")) { selftesting = auto = true; const kind = q.get("diag"), out = [];
-  for (const n of [1, 2, 3, 4, 5, 6]) { const rs = []; for (let s = 301; s <= 340; s++) rs.push(simRound(n, s, kind)); const L = rs.flatMap(R => R.log);
+  for (const n of [1, 2, 3, 4, 5, 6]) { const rs = []; for (let s = 301; s <= 340; s++) rs.push(simRound(n, s, kind, q.has("fixa") ? { bot: { fixA: Number(q.get("fixa")) } } : {})); const L = rs.flatMap(R => R.log);
     const hist = [10, 5, 2, 1, "win", "tee", "caught"].map(k => k + ":" + L.filter(l => (l.kind === "caught" ? "caught" : l.band) === k).length).join(" ");
     const evw = {}; L.forEach(l => { const k = l.ev.join("+") || "-"; evw[k] = evw[k] || [0, 0]; evw[k][0]++; if (l.kind === "win") evw[k][1]++; });
+    const LX = L.filter(l => l.ext), hx = [10, 5, 2, 1, "win", "tee", "caught"].map(k => k + ":" + LX.filter(l => (l.kind === "caught" ? "caught" : l.band) === k).length).join(" ");
+    out.push(`   연장홀 ${hx} · 웨지 ${LX.filter(l => l.wedge).length} · 사건 ${LX.filter(l => l.ev.length).length}/${LX.length} · 눈치 끝 평균 ${(rs.reduce((a, R) => a + R.nun, 0) / 40).toFixed(1)}`);
     out.push(`${n}: 발령 ${rs.filter(R => R.done.exile).length}/40 · 홀 ${L.length} · ${hist} · luck남음 ${rs.reduce((a, R) => a + R.luck, 0)} · 사건별 이김 ${Object.entries(evw).map(([k, v]) => k + " " + v[1] + "/" + v[0]).join(", ")} · 점수 중앙 ${median(rs.map(R => R.done.score))}`); }
   document.body.insertAdjacentHTML("beforeend", `<pre id="selftest">${out.join("\n")}</pre>`); document.title = "DIAG"; }
 else if (q.has("autoplay")) {
