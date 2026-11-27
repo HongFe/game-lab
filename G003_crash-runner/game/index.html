@@ -114,7 +114,202 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .pop.s{font:900 16px -apple-system,sans-serif}
 .pop.l{font:900 30px -apple-system,sans-serif;animation-duration:1.2s}
 @keyframes popup{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{transform:translate(-50%,-8px) scale(1.15);opacity:1}100%{transform:translate(-50%,-60px) scale(1);opacity:0}}
+
+/* ── 보상형 광고 · 코인 (파일럿, 2026-11-27) ── */
+.g-coin .ui-icon{color:var(--ui-accent)}
+.g-top{display:flex;justify-content:flex-end;width:100%}
+#adCont{width:100%}
+#adCont .ui-icon{color:var(--ui-accent)}
+.g-slow{min-height:48px}
+.g-slow .ui-icon{color:var(--ui-muted);flex:none}
+.g-slow .ui-val{display:inline-flex;align-items:center;gap:var(--ui-s1)}
+.g-slow .ui-val .ui-icon{color:var(--ui-accent)}
+.g-slow[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--ui-text)}
+.g-slow[aria-pressed="true"]>.ui-icon{color:var(--ui-text)}
+.g-slow:disabled{opacity:.38;pointer-events:none}
+.g-flags{gap:var(--ui-s1)}
+.g-flags .ui-badge{display:inline-flex;gap:var(--ui-s1);height:24px}
+.g-flags .ui-badge .ui-icon{width:14px;height:14px;color:var(--ui-muted)}
 </style>
+<!-- nhc-shared:start -->
+<script data-shared="coin-system.js">
+/* NHC game-lab 코인 시스템 v1 (2026-11-27) — 인앱 코인(현금화 없음, 이 브라우저에만 저장)
+   - 저장: localStorage "gl_coins" = {n: 잔액, t: 저장 시각, c: 체크섬}. 오락실과 게임(iframe)이 같은 출처라 잔액을 같이 쓴다
+   - 최대 보유 500. 체크섬이 안 맞으면(직접 고침) 0으로 리셋
+   - 한계(정직하게): 브라우저 안 검증이라 코드를 읽은 사람은 우회할 수 있다. '그냥 숫자 바꾸기'를 막는 수준. 코인에 실제 가치가 생기면 서버 장부(Supabase)로 옮긴다
+   쓰는 법: CoinSystem.getCoins() / addCoins(n) → 새 잔액 / spendCoins(n) → true|false
+   바뀔 때마다 window 에 "gl-coins" 이벤트(detail=잔액). 다른 창(오락실↔게임)은 "storage" 이벤트로 알 수 있다 */
+(function () {
+  if (window.CoinSystem) return;
+  var KEY = "gl_coins", MAX = 500, SALT = "nhc-game-lab|coins|v1";
+  function sum(n, t) {   // FNV-1a 32bit 두 번 — 위조 방지가 아니라 손 편집 감지용
+    var s = SALT + "|" + n + "|" + t + "|" + SALT.length, h = 2166136261, g = 5381;
+    for (var i = 0; i < s.length; i++) { var ch = s.charCodeAt(i); h ^= ch; h = Math.imul(h, 16777619); g = (Math.imul(g, 33) + ch) | 0; }
+    return (h >>> 0).toString(36) + "." + (g >>> 0).toString(36);
+  }
+  function write(n) {
+    var t = Date.now();
+    try { localStorage.setItem(KEY, JSON.stringify({ n: n, t: t, c: sum(n, t) })); } catch (e) {}
+    try { window.dispatchEvent(new CustomEvent("gl-coins", { detail: n })); } catch (e) {}
+    return n;
+  }
+  function read() {
+    var raw = null;
+    try { raw = localStorage.getItem(KEY); } catch (e) { return 0; }
+    if (raw === null) return 0;
+    try {
+      var o = JSON.parse(raw);
+      if (!o || typeof o.n !== "number" || typeof o.t !== "number" || o.n !== Math.floor(o.n) || o.n < 0 || o.n > MAX || o.c !== sum(o.n, o.t)) return write(0);
+      return o.n;
+    } catch (e) { return write(0); }
+  }
+  window.CoinSystem = {
+    MAX: MAX,
+    getCoins: read,
+    addCoins: function (n) { n = Math.floor(+n || 0); if (n <= 0) return read(); return write(Math.min(MAX, read() + n)); },
+    spendCoins: function (n) { n = Math.floor(+n || 0); var v = read(); if (n <= 0 || v < n) return false; write(v - n); return true; },
+  };
+})();
+</script>
+<script data-shared="rewarded-ad.js">
+/* NHC game-lab 보상형 광고 모듈 v1.1 (2026-11-27) — 어댑터 방식
+   - 기본 어댑터 "stub": 회색 박스 + 카운트다운(외부 스크립트 없음 — game-lab 오프라인 규칙 그대로). 개발·플레이테스트용
+   - 플랫폼 출시 빌드에서만 그 플랫폼 SDK <script> 1줄과 window.NHC_AD_ADAPTER = "crazygames" | "poki" 를 이 모듈보다 앞에 넣는다
+     (게임 본체 game/index.html 은 바꾸지 않는다. 출시용 사본은 build/<플랫폼>/ 에 따로 만든다)
+   - SDK가 없거나 실패하면 보상 없이 onSkipped({reason:"unavailable"|"error"}) — 게임은 그대로 진행(우아한 실패). 출시 빌드에서 stub으로 몰래 보상하지 않는다
+   - 한도(하루 5회)·쿨다운(60초)·코인 지급은 어댑터와 무관하게 이 모듈이 판정. 완료 여부는 stub은 두 시계, 실제 SDK는 SDK 콜백이 판정
+   - 실제 SDK 함수 이름은 출시 직전에 각 플랫폼 최신 문서로 다시 확인할 것(아래 어댑터는 2026-11 기준 알려진 형태)
+
+   쓰는 법 (coin-system.js 가 먼저 있어야 코인이 들어간다):
+     RewardedAd.show({ coins: 5, onComplete: function (coins) {}, onSkipped: function (info) {} })
+       → 끝까지 보고 '광고 종료'를 누르면 coins 지급 후 onComplete(coins)
+       → 창 전환·ESC·한도 초과·쿨다운 중이면 지급 없이 onSkipped({reason}) — reason: "hidden" | "esc" | "limit" | "cooldown" | "busy" | "unavailable" | "error" | "skipped"
+     RewardedAd.status() → { left: 오늘 남은 횟수, cooldown: 남은 쿨다운 초, canShow: bool, label: 버튼에 쓸 짧은 글 }
+
+   규칙: 하루 5회(자정에 리셋), 직전 광고 완료 후 60초 쿨다운, 기본 15초
+   스킵 방지: 닫기 버튼은 끝나기 전 비활성 / visibilitychange(hidden)·ESC 감지 시 즉시 실패
+   시간 검증: 진행은 setInterval 횟수가 아니라 Date.now() 와 performance.now() 두 시계의 실제 경과로만 판정(둘 다 기준을 넘어야 완료)
+   한계: 브라우저 안 판정이라 개발자 도구로 우회할 수 있다. 코인에 실제 가치가 생기면 광고 SDK의 서버 검증 콜백(SSV)으로 옮긴다 */
+(function () {
+  if (window.RewardedAd) return;
+  var KEY = "gl_ad", PER_DAY = 5, COOLDOWN = 60, DURATION = 15;
+  var busy = false;
+  function today() { var d = new Date(); return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate(); }
+  function load() {
+    var o = null; try { o = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+    if (!o || o.day !== today()) o = { day: today(), count: 0, last: (o && o.last) || 0 };
+    return o;
+  }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function status() {
+    var o = load(), left = Math.max(0, PER_DAY - o.count);
+    var cd = Math.max(0, Math.ceil(COOLDOWN - (Date.now() - (o.last || 0)) / 1000));
+    if (o.last > Date.now()) cd = COOLDOWN;   // 시계를 뒤로 돌린 경우
+    var av = adapter().a;
+    return { left: left, cooldown: cd, canShow: !!av && left > 0 && cd === 0 && !busy, label: !av ? "광고 준비 안 됨" : left <= 0 ? "오늘 광고 한도 초과" : cd > 0 ? cd + "초 뒤 다시" : busy ? "광고 중" : "광고 보기" };
+  }
+
+  var CSS = ".gl-ad{position:fixed;inset:0;z-index:2147483000;background:#0b0d12;color:#f2f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;animation:gl-ad-in 200ms cubic-bezier(0,0,.2,1)}" +
+    "@keyframes gl-ad-in{from{opacity:0}}" +
+    ".gl-ad-top{position:absolute;left:16px;right:16px;top:max(16px,env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#9aa3b2}" +
+    ".gl-ad-box{width:min(320px,100%);aspect-ratio:9/16;max-height:56vh;border-radius:20px;background:repeating-linear-gradient(45deg,#2a2f3a 0 12px,#252a34 12px 24px);display:grid;place-items:center;color:#9aa3b2;font-weight:700;letter-spacing:.04em}" +
+    ".gl-ad-ring{position:relative;width:64px;height:64px}.gl-ad-ring svg{width:64px;height:64px;transform:rotate(-90deg)}.gl-ad-ring circle{fill:none;stroke-width:5}.gl-ad-ring b{position:absolute;inset:0;display:grid;place-items:center;font:700 20px/1 inherit;font-variant-numeric:tabular-nums}" +
+    ".gl-ad-btn{appearance:none;border:0;min-height:48px;min-width:200px;padding:0 24px;border-radius:12px;font:700 16px/1 inherit;background:#ffc83d;color:#1a1406;cursor:pointer;transition:transform 90ms,opacity 150ms}.gl-ad-btn:active{transform:scale(.96)}.gl-ad-btn:disabled{opacity:.35;pointer-events:none;background:#3a404c;color:#9aa3b2}" +
+    ".gl-ad-msg{min-height:20px;color:#9aa3b2;font-size:14px}";
+
+  function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+  function playStub(sec, coins, done) {   // ← 실제 SDK로 바꿀 자리. done(ok, reason)
+    if (!document.getElementById("gl-ad-css")) { var st = el("style"); st.id = "gl-ad-css"; st.textContent = CSS; document.head.appendChild(st); }
+    var root = el("div", "gl-ad"); root.setAttribute("role", "dialog"); root.setAttribute("aria-label", "광고");
+    var C = 2 * Math.PI * 28;
+    root.innerHTML = '<div class="gl-ad-top"><span>광고 · 테스트</span><span>보상 +' + coins + ' 코인</span></div>' +
+      '<div class="gl-ad-box">AD</div>' +
+      '<div class="gl-ad-ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" stroke="#2a2f3a"/><circle class="gl-ad-arc" cx="32" cy="32" r="28" stroke="#ffc83d" stroke-linecap="round" stroke-dasharray="' + C + '" stroke-dashoffset="' + C + '"/></svg><b>' + sec + '</b></div>' +
+      '<div class="gl-ad-msg">끝까지 보면 코인을 받아요</div>' +
+      '<button class="gl-ad-btn" disabled>광고 종료</button>';
+    document.body.appendChild(root);
+    var arc = root.querySelector(".gl-ad-arc"), num = root.querySelector(".gl-ad-ring b"), btn = root.querySelector(".gl-ad-btn"), msg = root.querySelector(".gl-ad-msg");
+    var t0 = Date.now(), p0 = performance.now(), need = sec * 1000, over = false, ready = false, iv;
+    function elapsed() { return Math.min(Date.now() - t0, performance.now() - p0); }   // 두 시계 중 느린 쪽
+    function finish(ok, reason) {
+      if (over) return; over = true; clearInterval(iv);
+      document.removeEventListener("visibilitychange", onVis); document.removeEventListener("keydown", onKey, true);
+      if (ok) { root.remove(); done(true); return; }
+      msg.textContent = "광고를 끝까지 보지 않아 보상이 없어요"; btn.disabled = false; btn.textContent = "닫기";
+      btn.onclick = function () { root.remove(); };
+      setTimeout(function () { if (root.parentNode) root.remove(); }, 2500);
+      done(false, reason);
+    }
+    function onVis() { if (document.visibilityState === "hidden" && !ready) finish(false, "hidden"); }
+    function onKey(e) { if (e.key === "Escape" || e.key === "Esc") { e.preventDefault(); e.stopPropagation(); if (!ready) finish(false, "esc"); } }
+    document.addEventListener("visibilitychange", onVis);
+    document.addEventListener("keydown", onKey, true);
+    iv = setInterval(function () {
+      var e = elapsed(), left = Math.max(0, Math.ceil((need - e) / 1000));
+      num.textContent = left; arc.setAttribute("stroke-dashoffset", String(C * (1 - Math.min(1, e / need))));
+      if (e >= need && !ready) { ready = true; clearInterval(iv); btn.disabled = false; msg.textContent = "다 봤어요!"; num.textContent = "✓"; }
+    }, 200);
+    btn.onclick = function () {
+      if (over) return;
+      if (!ready || elapsed() < need) return;   // 버튼을 강제로 켜도 실제 경과가 모자라면 무시
+      finish(true);
+    };
+  }
+
+  // ── 어댑터: play(sec, coins, done(ok, reason)) ──
+  var ADAPTERS = {
+    stub: { available: function () { return true; }, play: playStub },
+    crazygames: {   // CrazyGames HTML5 SDK v3 — 출시 빌드에서 SDK 스크립트를 먼저 넣는다
+      available: function () { return !!(window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.ad); },
+      play: function (sec, coins, done) {
+        var fin = false, end = function (ok, r) { if (!fin) { fin = true; done(ok, r); } };
+        try { window.CrazyGames.SDK.ad.requestAd("rewarded", { adStarted: function () {}, adFinished: function () { end(true); }, adError: function () { end(false, "error"); } }); }
+        catch (e) { end(false, "error"); }
+      },
+    },
+    poki: {   // Poki SDK — rewardedBreak() 가 Promise<boolean>(끝까지 봤는지)
+      available: function () { return !!(window.PokiSDK && window.PokiSDK.rewardedBreak); },
+      play: function (sec, coins, done) {
+        try { window.PokiSDK.rewardedBreak().then(function (ok) { done(!!ok, ok ? null : "skipped"); }, function () { done(false, "error"); }); }
+        catch (e) { done(false, "error"); }
+      },
+    },
+  };
+  function adapter() {
+    var name = window.NHC_AD_ADAPTER || "stub", a = ADAPTERS[name];
+    return { name: name, a: a && a.available() ? a : null };
+  }
+
+  window.RewardedAd = {
+    PER_DAY: PER_DAY, COOLDOWN: COOLDOWN, DURATION: DURATION,
+    status: status,
+    adapter: function () { var x = adapter(); return x.a ? x.name : "none"; },
+    register: function (name, impl) { ADAPTERS[name] = impl; },   // 새 플랫폼(예: Capacitor AdMob) 붙일 때
+    show: function (opt) {
+      opt = opt || {};
+      var coins = Math.max(0, Math.floor(opt.coins == null ? 5 : opt.coins)), sec = Math.max(1, opt.duration || DURATION);
+      var s = status();
+      var skip = function (reason) { if (typeof opt.onSkipped === "function") opt.onSkipped({ reason: reason }); return { ok: false, reason: reason }; };
+      if (busy) return skip("busy");
+      if (s.left <= 0) return skip("limit");
+      if (s.cooldown > 0) return skip("cooldown");
+      var ad = adapter();
+      if (!ad.a) return skip("unavailable");   // 출시 빌드인데 SDK가 없음 → 보상 없이 게임 계속
+      busy = true;
+      ad.a.play(sec, coins, function (ok, reason) {
+        busy = false;
+        if (!ok) { skip(reason); return; }
+        var o = load(); o.count++; o.last = Date.now(); save(o);
+        if (window.CoinSystem && coins) window.CoinSystem.addCoins(coins);
+        if (typeof opt.onComplete === "function") opt.onComplete(coins);
+      });
+      return { ok: true };
+    },
+  };
+})();
+</script>
+<!-- nhc-shared:end -->
 </head>
 <body>
 <!-- nhc-ui-kit:start -->
@@ -309,6 +504,7 @@ UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=d
     <div class="hrow">
       <div><div class="ret" id="ret">+0.0%</div><div class="ret-l">수익률</div></div>
       <span class="ui-spacer"></span>
+      <span class="ui-chip g-coin" id="hudCoin" aria-label="코인" hidden><svg class="ui-icon" aria-hidden="true"><use href="#i-coins"/></svg><span class="g-coin-n">0</span></span>
       <span class="ui-chip" id="lev" aria-label="레버리지"><svg class="ui-icon" aria-hidden="true"><use href="#i-zap"/></svg><span id="levn">x1</span></span>
     </div>
     <div class="hrow" id="goal"><div class="ui-meter"><i id="goalbar"></i></div><span class="ui-chip" id="goaltx"></span></div>
@@ -329,6 +525,7 @@ const LEV_EVERY = 8, MAX_LEV = 10, START_GRACE = 3;
 // 강화 아이템(시간 제한): 지속 시간(초)
 const DUR = { up: 4, stop: 8, water: 5, cb: 3, hold: 6 };
 const PCOL = { up: "#ff4d5e", stop: "#5fe0a0", water: "#4fc3ff", cb: "#ffa24d", hold: "#c39bff" };
+const SLOW_MUL = .92; // 느린 하락: 파란 캔들 손실 ×0.92 (자체 검사 [H]: 사람 근사 봇 ★3 단계마다 +10%p 이하 — ×0.9는 5단계 +12.5%p로 넘침)
 const RIDE_V = 420, CB_SLOW = .55, CAT_V = 640, BULL_V = 820, STOMP_V = 480, KNIFE_LEAD = .75, FORCE_LEAD = 1.25, FORCE_V = 170, BEAR_V = 45;
 const TIERS = [
   { n: "개미", s: "기본 몸", e: "🐜", ab: "기본 몸. 곰은 밟으면 보너스, 부딪히면 −10%" },
@@ -543,6 +740,7 @@ function blankState(W, tier, up) {
   const s = { W, levAdj: 0, bg: { up: 0, water: 0 }, durMul: 1 + .15 * (up.dur || 0), stopCost: (up.stop || 0) >= 2 ? .35 : .5, jv2: JV2 * (1 + .03 * (up.jump || 0)), x: 2 * CW, y: 0, vy: 0, gnd: true, jumps: 0, lastG: 0, t: 0, dead: null, ret: 0, lastIdx: 2, landH: 0, done: new Set(), trig: {}, buffs: { up: 0, water: 0, cb: 0, stop: 0, hold: 0 }, inv: 0, fog: 0, streak: 0, combo: 0, tier: tier || 0, grip: GRIP[tier || 0], strict: false, kills: 0, hits: 0 };
   s.stopN = Math.min(2, (s.tier >= 3 ? 1 : 0) + ((up.stop || 0) >= 1 ? 1 : 0)); // 손절매 기본 횟수: 큰손 1 + 상점 1 (최대 2)
   s.grip += up.grip || 0;
+  s.dnMul = up.slow ? SLOW_MUL : 1; // 코인 소비 '느린 하락 1회': 파란(하락) 캔들 손실만 줄인다. 기본 1 = 원래 규칙 그대로
   return s;
 }
 function newState(seed, cfg, up) { cfg = cfg || ENDLESS; const s = blankState(makeWorld(seed, cfg), cfg.tier, up); s.seed = seed; return s; }
@@ -647,7 +845,7 @@ function step(st, jump, ev) {
     // FOMC·블랙스완 구간: 계단을 걸어 내려가며 잠깐 뜬 것도 '밟은 것' (점프로 건너뛴 것만 면제)
     if ((st.gnd || (st.W.wk[st.lastIdx] && st.jumps === 0)) && c !== null && c !== undefined && p !== null && p !== undefined) {
       const dl = Math.max(-40, Math.min(40, c - p));
-      if (Math.abs(dl) > 2) { let b = dl * 0.00025 * L * zmul; raw += b; if (b < 0 && B.water > 0) b = -b; else if (b < 0 && B.up > 0) b = 0; else if (b > 0 && B.up > 0) b *= 2; g += b; ev && ev("candle", b); }
+      if (Math.abs(dl) > 2) { let b = dl * 0.00025 * L * zmul; if (b < 0) b *= st.dnMul || 1; raw += b; if (b < 0 && B.water > 0) b = -b; else if (b < 0 && B.up > 0) b = 0; else if (b > 0 && B.up > 0) b *= 2; g += b; ev && ev("candle", b); }
     }
     st.ret += g; if (g !== raw) st.bg[B.up > 0 ? "up" : "water"] += g - raw; // 아이템 덕에 더 번 몫
   }
@@ -822,19 +1020,23 @@ function onEvent(kind, a) {
 }
 function startRun(stageN, seed) {
   cfg = stageN === 7 ? ENDLESS : STAGES[(stageN || 1) - 1];
-  st = newState(seed ?? (Date.now() % 100000), cfg, save.up); mode = "run"; acc = 0; mem = { tick: 0 }; camY = 0; lastLev = 1; fx.parts = []; fx.gone = []; fx.rings = []; fx.slow = 1; fx.edge = 0; fx.banner = null; fx.swan = null; fx.knifeStuck = new Set(); fx.catT = {};
+  run = { cont: 0, slow: 0, failSent: false, snap: null };
+  if (MONEY && slowArmed) { slowArmed = false; if (CoinSystem.spendCoins(SLOW_COST)) run.slow = 1; } // 켜 둔 '느린 하락'은 이 판 시작에 코인을 쓰고 이 판에만
+  st = newState(seed ?? (Date.now() % 100000), cfg, run.slow ? Object.assign({}, save.up, { slow: 1 }) : save.up); mode = "run"; acc = 0; mem = { tick: 0 }; camY = 0; lastLev = 1; fx.parts = []; fx.gone = []; fx.rings = []; fx.slow = 1; fx.edge = 0; fx.banner = null; fx.swan = null; fx.knifeStuck = new Set(); fx.catT = {};
   introPtr = 0; zonePtr = 0; goalHit = false; runMet = new Set(); newTerms = []; cardQ = []; candleAcc = 0;
   $("ov").classList.remove("on"); $("stamp").classList.remove("on"); $("cash").style.display = "flex"; $("tip").style.display = "flex"; $("goal").style.display = cfg.goal ? "" : "none"; goalKey = "";
   SC = scaleFor(200, VW, VH); if (cfg.n <= 6) cardQ.push({ at: nowS(), custom: { e: TIERS[cfg.tier].e, n: `${cfg.n}단계 · ${UI.icon("target", "sm")}${pct(cfg.need)}`, s: TIERS[cfg.tier].s } });
-  save.runs++; persist(); emit("level_start", { level: cfg.n, run: save.runs }); hud(true);
+  save.runs++; persist(); emit("level_start", Object.assign({ level: cfg.n, run: save.runs }, runFlags())); hud(true); refreshCoins();
+  if (run.slow) UI.toast("느린 하락 켜짐", 1400, "top");
 }
 function die(why) {
   mode = "dying"; deadAt = performance.now(); fx.slow = .22; SFX.dead(); fx.shake = 16; fx.flash = { t: 0, dur: .6, col: "#ff3b2f" };
   puff(st.x, st.y + 10, 30, { speed: 220, life: .9, r: 4, cols: ["#ff4d5e", "#ffcc4d", "#e8a33d"], g: 300 });
   setTimeout(() => $("stamp").classList.add("on"), 250);
+  run.snap = run.cont ? null : { kind: "liq", save: { total: save.total } }; // 이어하기용: 청산 직전 계좌
   const before = save.total; save.total = Math.max(1e5, Math.round(save.total * .9)); meet("liq"); persist();
   $("cash").style.display = "none";
-  emit("fail", { level: cfg.n, ret: st.ret, lev: lev(st), why });
+  failOnce({ level: cfg.n, ret: st.ret, lev: lev(st), why });
   setTimeout(() => result(false, why, before), 1300);
 }
 const reached = () => cfg.goal && st.x >= cfg.goal * CW;
@@ -842,6 +1044,7 @@ const starsOf = r => starsOfC(cfg, r);
 function cashOut() {
   if (mode !== "run" || st.t < START_GRACE) return;
   mode = "cashed"; const before = save.total, gain = save.total * st.ret;
+  const snap = { kind: "cash", save: { total: save.total, cashouts: save.cashouts, bestRet: save.bestRet, bestLev: save.bestLev } }; // 이어하기용: 익절 직전 계좌
   save.total = Math.max(1e5, Math.round(save.total * (1 + st.ret))); save.cashouts++; meet("cash");
   const best = st.ret > save.bestRet; if (best) save.bestRet = st.ret; save.bestLev = Math.max(save.bestLev, lev(st));
   let clear = false, stars = 0, evolve = false;
@@ -854,7 +1057,8 @@ function cashOut() {
   SFX.cash(); buzz([20, 40, 20]); fx.flash = { t: 0, dur: .35, col: "#ffe28a" };
   for (let i = 0; i < 5; i++) setTimeout(() => puff(st.x + (Math.random() - .3) * 300, st.y + 340, 14, { angle: Math.PI / 2 * 3, spread: 1, speed: 40, g: -500, life: 1.6, r: 5, cols: ["#ffcc4d", "#ffe28a", UP, "#fff"], sq: true }), i * 120);
   $("cash").style.display = "none";
-  if (clear || cfg.n === 7) emit("level_clear", { level: cfg.n, ret: st.ret, lev: lev(st), stars }); else emit("fail", { level: cfg.n, ret: st.ret, why: reached() ? "low_ret" : "early_cash" });
+  run.snap = clear || cfg.n === 7 || run.cont ? null : snap; // 미달 익절만 이어하기 대상
+  if (clear || cfg.n === 7) emit("level_clear", Object.assign({ level: cfg.n, ret: st.ret, lev: lev(st), stars }, runFlags())); else failOnce({ level: cfg.n, ret: st.ret, why: reached() ? "low_ret" : "early_cash" });
   setTimeout(() => evolve ? startEvolve(() => result(true, { best, clear, stars, badge, evolved: true }, before)) : result(true, { best, clear, stars, badge }, before), 900);
 }
 function startEvolve(done) { document.querySelector(".hud").style.visibility = "hidden"; $("cash").style.display = "none"; mode = "evolve"; evoT = 0; SFX.evolve(); fx.evoDone = done; $("tip").style.display = "none"; $("goal").style.display = "none"; }
@@ -862,6 +1066,57 @@ function startEvolve(done) { document.querySelector(".hud").style.visibility = "
 // 원칙: 화면마다 주 버튼 하나(강조색), 글자 크기 3단계 이하, 숫자 고정폭, UI 머리에는 아이콘(이모지는 몸·용어·아이템 그림에만)
 const I = (n, c) => UI.icon(n, c);
 const DISC = "가상 차트 · 투자와 무관 · P = 가상 포인트";
+
+// ───────── 보상형 광고 · 코인 (파일럿, 공용 모듈 _shared/coin-system.js · rewarded-ad.js) ─────────
+// - 실패 결과(강제 청산·목표 미달)에서 광고를 끝까지 보면 +5코인 + 그 판을 이어 간다. 한 판 1회
+//   청산 → 청산 직전 계좌(−10% 취소)로, 앞쪽 안전한 땅에서 1.5초 무적으로 다시 달린다(수익률·레버리지·시간 그대로)
+//   미달 → 익절을 취소하고 그 자리에서 계속 달린다(계좌는 익절 전으로). 깃발·목표를 다시 노릴 기회
+// - 코인 50 = '느린 하락 1회': 다음 한 판 파란 캔들 손실 ×0.92
+// - 공정성: 이어하기·느린 하락을 쓴 판은 level_clear(·fail·level_start) data 에 cont:1 / slow:1, 결과 화면에 표시
+// - fail 은 판당 1회: 결과가 뜨는 순간 보내고, 이어 간 판은 같은 판이라 다시 실패해도 보내지 않는다
+// - ?selftest · ?autoplay · ?diag 에서는 광고·코인 UI 없음, 코인 저장소(gl_coins·gl_ad)를 읽지도 쓰지도 않는다
+const QS0 = new URLSearchParams(location.search);
+const MONEY = !!(window.CoinSystem && window.RewardedAd) && !["selftest", "autoplay", "diag"].some(k => QS0.has(k));
+const AD_COINS = 5, SLOW_COST = 50, AD_TXT = `광고 보고 계속하기 (+${AD_COINS}코인)`;
+let run = { cont: 0, slow: 0, failSent: false, snap: null }, slowArmed = false;
+const runFlags = () => Object.assign({}, run.cont ? { cont: 1 } : {}, run.slow ? { slow: 1 } : {});
+function failOnce(d) { if (run.failSent) return; run.failSent = true; emit("fail", Object.assign(d, runFlags())); }
+const coinsNow = () => MONEY ? CoinSystem.getCoins() : 0;
+const coinChip = () => MONEY ? `<span class="ui-chip g-coin" aria-label="코인">${I("coins")}<span class="g-coin-n">${coinsNow()}</span></span>` : "";
+function refreshCoins() {
+  if (!MONEY) return; const n = coinsNow();
+  document.querySelectorAll(".g-coin-n").forEach(e => e.textContent = n);
+  const b = $("slowBtn"); if (b) { if (slowArmed && n < SLOW_COST) slowArmed = false; b.disabled = n < SLOW_COST && !slowArmed; b.setAttribute("aria-pressed", slowArmed ? "true" : "false"); b.querySelector(".g-slow-s").textContent = slowArmed ? "다음 판 켜짐" : n < SLOW_COST ? "코인 부족" : "다음 판 파랑 손실 ↓"; }
+}
+function refreshAdBtn() {
+  const b = $("adCont"); if (!b || !MONEY) return; const s = RewardedAd.status();
+  b.disabled = !s.canShow; b.querySelector("span").textContent = s.canShow ? AD_TXT : s.label;
+}
+if (MONEY) {
+  addEventListener("gl-coins", refreshCoins);
+  addEventListener("storage", e => { if (!e.key || e.key === "gl_coins") refreshCoins(); if (!e.key || e.key === "gl_ad") refreshAdBtn(); });
+  setInterval(refreshAdBtn, 500); // 쿨다운 'N초 뒤 다시' 숫자
+  refreshCoins();
+}
+const canCont = () => MONEY && !run.cont && run.snap && st && (run.snap.kind === "cash" || safeSpot(clone(st)) >= 0);
+function adContinue() {
+  if (!canCont()) return; const s = RewardedAd.status(); if (!s.canShow) { refreshAdBtn(); return; }
+  RewardedAd.show({ coins: AD_COINS,
+    onComplete: c => { SFX.coin(6); UI.toast(`코인 +${c}`, 1400, "top"); doContinue(); },
+    onSkipped: i => { refreshAdBtn(); if (i.reason === "hidden" || i.reason === "esc") UI.toast("보상 없음", 1600); } });
+  refreshAdBtn();
+}
+function doContinue() { // 실패 직전으로 되돌려 같은 판을 이어 간다
+  const sn = run.snap; if (!sn || !st) return;
+  run.cont = 1; run.snap = null; Object.assign(save, sn.save); persist();
+  if (sn.kind === "liq") { const i = safeSpot(st); st.dead = null; st.x = i * CW + CW / 2; st.y = st.W.C[i] + 1; st.vy = 0; st.gnd = false; st.jumps = 0; st.lastG = st.W.C[i]; st.lastAir = st.y; st.lastIdx = i; st.ride = false; st.inv = 1.5; st.fog = 0; }
+  else st.inv = Math.max(st.inv, .5);
+  mode = "run"; acc = 0; jumpQ = false; camY = st.y; fx.slow = 1; fx.shake = 0; fx.flash = null; fx.stop = 1; // 1초 멈춘 뒤 출발
+  fx.banner = { text: "이어서 달리기", col: "#1b1b1b", bg: "rgba(255,204,77,.92)", t: 0, dur: 1.4 };
+  $("stamp").classList.remove("on"); $("ov").classList.remove("on"); $("cash").style.display = "flex"; $("tip").style.display = "flex";
+  ring(st.x, st.y + 14, "#ffcc4d", 90); SFX.rescue(); chipKey = ""; hud(true); refreshCoins();
+}
+const flagsHtml = () => run.cont || run.slow ? `<p class="g-line g-flags">${run.cont ? `<span class="ui-badge muted" aria-label="이어하기 사용">${I("undo-2")}이어하기</span>` : ""}${run.slow ? `<span class="ui-badge muted" aria-label="느린 하락 사용">${I("trending-down")}느린 하락</span>` : ""}</p>` : "";
 function openOv(html) { const ov = $("ov"); $("box").innerHTML = html; ov.classList.add("on"); ov.scrollTop = 0; }
 const iconBtn = (id, icon, label, badge) => `<button class="ui-btn icon" id="${id}" aria-label="${label}">${I(icon)}${badge ? `<span class="ui-badge g-dot">${badge}</span>` : ""}</button>`;
 function newTermHtml() { return newTerms.length ? `<p class="g-line ui-enter-3">${I("book-open")}도감 +${newTerms.length} <span>${newTerms.map(k => TERMS[k].e).join(" ")}</span></p>` : ""; }
@@ -889,9 +1144,10 @@ function result(ok, extra, before) {
   }
   const d = save.total - before;
   const mainHtml = mainIcon === "arrow-right" ? `${main}${I(mainIcon, "lg")}` : `${I(mainIcon, "lg")}${main}`;
-  openOv(`<div class="ui-col ui-center ui-enter">${head}</div>${newTermHtml()}
+  const failEnd = !ok || (stg && !extra.clear), contHtml = failEnd && canCont() ? `<button class="ui-btn" id="adCont">${I("play")}<span>${AD_TXT}</span></button>` : "";
+  openOv(`${MONEY ? `<div class="g-top ui-enter">${coinChip()}</div>` : ""}<div class="ui-col ui-center ui-enter">${head}${flagsHtml()}</div>${newTermHtml()}
     <div class="ui-card flat g-acct ui-enter-2">${I("coins")}<span>가상 자산</span><b>${fmtWon(save.total)}</b><b class="${d >= 0 ? "g-up" : "g-dn"}">${d >= 0 ? "+" : ""}${fmtWon(d)}</b></div>
-    <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)"><button class="ui-btn primary" id="${mainId}">${mainHtml}</button>
+    <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)">${contHtml}<button class="ui-btn primary" id="${mainId}">${mainHtml}</button>
     <div class="ui-row">${alt}${alt ? "" : `<button class="ui-btn" id="toMenu">${I("house")}단계</button>`}${alt ? iconBtn("toMenu", "house", "단계 선택") : ""}${save.cleared >= 1 ? iconBtn("toShop", "store", "상점", shopReady()) : ""}${iconBtn("toDex", "book-open", "도감")}</div></div>`);
   const n = cfg.n; if ($("toShop")) $("toShop").onclick = () => showShop(lastResult);
   $("again").onclick = () => { $("stamp").classList.remove("on"); startRun(n); };
@@ -899,6 +1155,7 @@ function result(ok, extra, before) {
   if ($("endless")) $("endless").onclick = () => startRun(7);
   $("toMenu").onclick = () => { $("stamp").classList.remove("on"); menu(); };
   $("toDex").onclick = () => showDex(lastResult);
+  if ($("adCont")) { $("adCont").onclick = adContinue; refreshAdBtn(); }
   hud();
 }
 // 다음 단계 보상 미리보기: 한 줄 — 새 몸이 있으면 몸, 없으면 새 용어 그림
@@ -932,13 +1189,15 @@ function menu() {
       : `<button class="ui-level lock" data-s="${s.n}" disabled aria-label="${s.n}단계 잠김">${I("lock")}</button>`; }).join("")
     + (save.cleared >= 6 ? `<button class="ui-level" data-s="7" aria-label="무한 장">∞</button>` : `<button class="ui-level lock" data-s="7" disabled aria-label="무한 장 잠김">${I("lock")}</button>`);
   const shopOpen = save.cleared >= 1;
-  openOv(`<div class="ui-col ui-center ui-enter"><div class="ui-hero" aria-hidden="true">${T.e}</div><h1 class="ui-title">폭락 러너</h1><p class="g-tag">개미에서 고래까지, 차트를 달린다</p></div>
+  const slowHtml = MONEY ? `<button class="ui-item g-slow" id="slowBtn" aria-pressed="false">${I("trending-down")}<span class="ui-grow"><b>느린 하락 1회</b><small class="g-slow-s"></small></span><span class="ui-val">${I("coins")}${SLOW_COST}</span></button>` : "";
+  openOv(`${MONEY ? `<div class="g-top ui-enter">${coinChip()}</div>` : ""}<div class="ui-col ui-center ui-enter"><div class="ui-hero" aria-hidden="true">${T.e}</div><h1 class="ui-title">폭락 러너</h1><p class="g-tag">개미에서 고래까지, 차트를 달린다</p></div>
     <div class="ui-levels ui-enter-2">${cells}</div>
-    <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)"><button class="ui-btn primary" id="go">${I("play", "lg")}${cur}단계 시작</button>
+    <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)">${slowHtml}<button class="ui-btn primary" id="go">${I("play", "lg")}${cur}단계 시작</button>
     <div class="ui-row"><button class="ui-btn ${shopOpen ? "" : "off"}" id="shopBtn" ${shopOpen ? "" : "disabled"}>${I(shopOpen ? "store" : "lock")}상점${shopReady() ? `<span class="ui-badge">${save.badges}</span>` : ""}</button><button class="ui-btn" id="dexBtn">${I("book-open")}도감</button></div></div>`);
   $("go").onclick = () => startRun(cur); $("shopBtn").onclick = () => { if (save.cleared >= 1) showShop(menu); };
   $("box").querySelectorAll(".ui-level").forEach(b => b.onclick = () => { if (!b.disabled) startRun(Number(b.dataset.s)); });
   $("dexBtn").onclick = () => showDex(menu);
+  if ($("slowBtn")) { $("slowBtn").onclick = () => { if (!slowArmed && coinsNow() < SLOW_COST) return; slowArmed = !slowArmed; SFX.off(); refreshCoins(); }; refreshCoins(); }
 }
 function showDex(back) {
   const groups = ["기본", "아이템", "몹", "이벤트"], label = { 기본: "기본 용어", 아이템: "강화 아이템", 몹: "몹 · 방해물", 이벤트: "이벤트" };
@@ -958,6 +1217,7 @@ function hud(force) {
   const r = st ? st.ret : 0, L = st ? lev(st) : 1;
   const el = $("ret"); el.textContent = pct(r); el.style.color = r >= 0 ? "var(--up)" : "var(--dn)";
   $("levn").textContent = "x" + L;
+  $("hudCoin").hidden = !MONEY || !st || !(mode === "run" || mode === "dying" || mode === "cashed");
   const c = $("cash"); c.disabled = !st || st.t < START_GRACE || mode !== "run";
   if (st && mode === "run") {
     const stg = cfg.n <= 6, ok = stg && reached() && r >= cfg.need;
@@ -970,7 +1230,7 @@ function hud(force) {
     const B = st.buffs, act = Object.keys(B).filter(k => B[k] > 0), extra = st.grip > 0 && st.grip < 90 ? ["grip"] : [];
     const key = act.concat(extra).join(",") + "|" + st.grip + "|" + st.stopN;
     if (key !== chipKey || force) { chipKey = key;
-      $("buffs").innerHTML = act.map(k => `<div class="ui-chip" style="color:${PCOL[k]}">${TERMS[k].e}<b data-k="${k}"></b></div>`).join("") + (st.stopN > 0 ? `<div class="ui-chip" style="color:#5fe0a0" aria-label="손절매">${I("shield")}<span>${st.stopN}</span></div>` : "") + (extra.length ? `<div class="ui-chip" style="color:#c08bff" aria-label="세력 버팀">${I("heart")}<span>${st.grip}</span></div>` : ""); }
+      $("buffs").innerHTML = act.map(k => `<div class="ui-chip" style="color:${PCOL[k]}">${TERMS[k].e}<b data-k="${k}"></b></div>`).join("") + (st.stopN > 0 ? `<div class="ui-chip" style="color:#5fe0a0" aria-label="손절매">${I("shield")}<span>${st.stopN}</span></div>` : "") + (extra.length ? `<div class="ui-chip" style="color:#c08bff" aria-label="세력 버팀">${I("heart")}<span>${st.grip}</span></div>` : "") + (run.slow ? `<div class="ui-chip" style="color:var(--dn)" aria-label="느린 하락">${I("trending-down")}</div>` : ""); }
     $("buffs").querySelectorAll("b[data-k]").forEach(b => { const k = b.dataset.k; b.style.width = (Math.max(0, B[k] / (DUR[k] * st.durMul)) * 100) + "%"; });
   } else { c.classList.remove("go", "pre"); }
 }
@@ -1378,11 +1638,11 @@ function selftest() {
   let e72 = 0; for (let seed = 301; seed <= 320; seed++) { const r = humanRun(seed, ENDLESS, { ...HO, after: 0, tmax: 72 }); if (!r.dead) e72++; }
   const okE = e72 >= 10; total++; if (okE) pass++;
   out.push(`  무한 장 72초(x10) 생존 ${e72}/20 (${Math.round(e72 / .2)}%) ${okE ? "OK" : "FAIL"} — 기준 50% 이상`);
-  const base3 = [];
+  const base3 = [], base40 = [];
   for (const c of STAGES) {
     let p1 = 0, p2 = 0, p3 = 0, dead = 0; const tg = [];
     const b20 = []; for (let seed = 301; seed <= 340; seed++) { const r = humanRun(seed, c, { ...HO, after: 40, tmax: 160 }); if (seed <= 320) b20.push(r.T[3] !== null); if (r.T[1] !== null) p1++; if (r.T[2] !== null) p2++; if (r.T[3] !== null) p3++; if (r.dead && r.goalT === null) dead++; if (r.T[3] !== null) tg.push(r.T[3] - r.goalT); }
-    tg.sort((a, b) => a - b); base3.push(b20.filter(Boolean).length); const ok = p1 >= 28 && p3 >= 6 && p3 <= 18; total++; if (ok) pass++;
+    tg.sort((a, b) => a - b); base3.push(b20.filter(Boolean).length); base40.push([p1, p3]); const ok = p1 >= 28 && p3 >= 6 && p3 <= 18; total++; if (ok) pass++;
     out.push(`  ${c.n}단계 ${ok ? "OK" : "FAIL"}\t통과 ${p1}/40\t깃발 전 청산 ${dead}\t★2 ${p2}/40\t★3 ${p3}/40 (${Math.round(p3 * 2.5)}%, 깃발 뒤 ${tg.length ? tg[tg.length >> 1].toFixed(0) + "초" : "-"})\t★ 배수 ×${starMult(c)[2]}·×${starMult(c)[3]} — 기준: 통과 70%+, ★3 15~45%`);
   }
   // F. 상점 최대 강화(버팀 +2, 아이템 +45%, 손절매 기본·비용 35%, 2단 점프 +6%)가 난이도를 무너뜨리지 않는가
@@ -1391,6 +1651,14 @@ function selftest() {
   STAGES.forEach((c, k) => { let p1 = 0, p3 = 0; for (let seed = 301; seed <= 320; seed++) { const r = humanRun(seed, c, { ...HO, after: 40, tmax: 160, up: MAXUP }); if (r.T[1] !== null) p1++; if (r.T[3] !== null) p3++; }
     const ok = p3 - base3[k] <= 5 && p3 <= 12; if (!ok) okF = false; out.push(`  ${c.n}단계 ${ok ? "OK" : "FAIL"}\t통과 ${p1}/20\t★3 ${base3[k]} → ${p3}/20 (${p3 - base3[k] >= 0 ? "+" : ""}${(p3 - base3[k]) * 5}%p)`); });
   total++; if (okF) pass++;
+  // H. 코인 소비 '느린 하락 1회'(파란 캔들 손실 ×SLOW_MUL)가 작은 도움에 그치는가 — 같은 사람 근사 봇·시드 301~340
+  out.push("", `[H] 느린 하락(파란 캔들 손실 ×${SLOW_MUL}) vs 없음 (사람 근사 봇 시드 301~340) — 기준: 단계마다 ★3 증가 10%p(4판) 이하`);
+  let okH = true, dH = 0;
+  STAGES.forEach((c, k) => { let p1 = 0, p3 = 0; for (let seed = 301; seed <= 340; seed++) { const r = humanRun(seed, c, { ...HO, after: 40, tmax: 160, up: { slow: 1 } }); if (r.T[1] !== null) p1++; if (r.T[3] !== null) p3++; }
+    const d = p3 - base40[k][1], ok = d <= 4; dH += d; if (!ok) okH = false;
+    out.push(`  ${c.n}단계 ${ok ? "OK" : "FAIL"}\t통과 ${base40[k][0]} → ${p1}/40\t★3 ${base40[k][1]} → ${p3}/40 (${d >= 0 ? "+" : ""}${(d * 2.5).toFixed(1)}%p)`); });
+  out.push(`  6단계 합계 ★3 ${dH >= 0 ? "+" : ""}${dH}판`);
+  total++; if (okH) pass++;
   // G. FOMC 인상 구간을 점프 없이 그냥 지나가면 손해(기대값 음수)여야 익절 판단이 생긴다. 블랙스완 계단도 그냥 걸으면 손해
   out.push("", "[G] 이벤트 구간을 점프 없이 걸어서 지날 때 손익 (무한 장 시드 1~40, 레버리지 x1·x5·x10)");
   const ev = { hawk: [], dove: [], swan: [] };
