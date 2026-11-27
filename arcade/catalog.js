@@ -14,7 +14,8 @@ window.CATALOG = [
   "version": "2026-11-26 13:27",
   "note": "NHC POCKET 오락실 + G001 이중주차 탈출",
   "rating": null,
-  "hot": false
+  "hot": true,
+  "pop": null
  },
  {
   "id": "G002",
@@ -30,7 +31,8 @@ window.CATALOG = [
   "version": "2026-11-26 19:35",
   "note": "곰 붙잡기 제한(웨이브 최장 74초), 컷인 띠 축소, 패널 위치, 중…",
   "rating": null,
-  "hot": false
+  "hot": false,
+  "pop": null
  },
  {
   "id": "G003",
@@ -46,7 +48,8 @@ window.CATALOG = [
   "version": "2026-11-26 20:23",
   "note": "FOMC 인상·블랙스완 손실 정상화, 상점 🏅 배지 화폐 분리, 황소…",
   "rating": null,
-  "hot": true
+  "hot": true,
+  "pop": null
  },
  {
   "id": "G004",
@@ -62,7 +65,8 @@ window.CATALOG = [
   "version": "2026-11-26 14:02",
   "note": "G003 폭락 러너·G004 고양이 타자수 추가, 오락실 사용자/관리자…",
   "rating": null,
-  "hot": false
+  "hot": false,
+  "pop": null
  },
  {
   "id": "G006",
@@ -78,7 +82,8 @@ window.CATALOG = [
   "version": "2026-11-26 19:22",
   "note": "이모지 불투명, ?에 멈추는 봇 곡선 추가·재조정, 모자·조끼 예고…",
   "rating": null,
-  "hot": false
+  "hot": false,
+  "pop": null
  },
  {
   "id": "G011",
@@ -94,7 +99,8 @@ window.CATALOG = [
   "version": "2026-11-26 19:39",
   "note": "탄 속도 노선 순서대로, 노선 1→2 점프 완화, 체크포인트 별 최대…",
   "rating": null,
-  "hot": false
+  "hot": false,
+  "pop": null
  },
  {
   "id": "G012",
@@ -110,7 +116,8 @@ window.CATALOG = [
   "version": "2026-11-26 19:43",
   "note": "시간 문구·현금 음수 버그, 실제 총 확률 표시, 청약 쏠림 해소, 알…",
   "rating": null,
-  "hot": false
+  "hot": false,
+  "pop": null
  },
  {
   "id": "G013",
@@ -126,6 +133,7 @@ window.CATALOG = [
   "version": "2026-11-26 21:04",
   "note": "실수당 최대 2명, 앞사람 바뀌면 힘 초기화, ±12% 힘 오차 곡선…",
   "rating": null,
-  "hot": false
+  "hot": false,
+  "pop": null
  }
 ];

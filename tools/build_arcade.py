@@ -6,7 +6,9 @@
 - version 은 game/index.html 수정 시각(YYYY-MM-DD HH:MM). 피드백이 어느 빌드에 대한 것인지 구분하고, 오락실의 UP 표시에도 쓴다
 - note 는 그 게임 폴더의 마지막 커밋 제목에서 '—' 뒤 한 줄(짧게). 게임을 커밋한 뒤 이 스크립트를 다시 돌리면 최신 내용이 들어간다
 - arcade/ratings.json (선택): 모든 테스터가 보는 평점·인기 표시. playtest-recorder/관리자가 관리자 화면 집계로 갱신한다
-  {"G003": {"avg": 4.3, "n": 6, "hot": true, "src": "2026-11-26 관리자 집계"}}  — 숫자는 실제 집계만 넣는다
+  {"G003": {"avg": 4.3, "n": 6, "users": 9, "back": 4, "hot": true, "src": "2026-11-26 관리자 집계"}}  — 숫자는 실제 집계만 넣는다
+  users = 최근 14일 플레이한 테스터 수, back = 그중 이틀 이상 다시 온 수. 오락실 BEST 3 = users + 2×back (+hot 1) 상위 3개, 나머지는 새 게임 순
+  (관리자 화면 '인기 숫자 복사' 버튼이 이 형식으로 만들어 준다)
 """
 import datetime, json, pathlib, subprocess
 
@@ -51,6 +53,7 @@ def main():
             "color": g.get("color") or COLORS[i % len(COLORS)], "icon": g.get("icon", "🎮"), "version": ver,
             "note": last_note(folder),
             "rating": {k: r[k] for k in ("avg", "n") if k in r} or None, "hot": bool(r.get("hot")),
+            "pop": {k: r[k] for k in ("users", "back") if k in r} or None,
         })
     out = ROOT / "arcade" / "catalog.js"
     out.parent.mkdir(exist_ok=True)

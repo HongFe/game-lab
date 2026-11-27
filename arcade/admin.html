@@ -44,7 +44,7 @@ td.m{font-family:var(--mono);white-space:nowrap}
   <div class="bar">
     <select id="fGame"><option value="">모든 게임</option></select>
     <select id="fTester"><option value="">모든 테스터</option></select>
-    <button id="reload">새로고침</button><button id="exJson">JSON 내보내기</button><button id="exCsv">CSV 내보내기</button>
+    <button id="reload">새로고침</button><button id="exPop">인기 숫자 복사</button><button id="exJson">JSON 내보내기</button><button id="exCsv">CSV 내보내기</button>
   </div>
 
   <h2>게임별 판정 <small>테스터 5명부터 판정 · 계속: 5명 중 3명 '한 판 더' / 그만: 1명 이하</small></h2>
@@ -167,6 +167,14 @@ $("imp").onclick = () => {
 $("clrImp").onclick = () => { if (confirm("붙여 넣어 가져온 피드백을 지울까요?")) { LS.set("admin_imported", []); LS.set("admin_imported_votes", []); load(); } };
 $("reload").onclick = load; $("lg").onclick = login; $("fGame").onchange = render; $("fTester").onchange = render;
 function dl(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); }
+$("exPop").onclick = () => {   // 오락실 BEST 3용: 최근 14일 활성 사용자 + 이틀 이상 재접속 → arcade/ratings.json 에 붙일 JSON
+  const cut = Date.now() - 14 * 864e5, by = {};
+  DATA.sessions.forEach(x => { if (!x.anon_id || new Date(x.created_at).getTime() < cut) return; const g = by[x.game_id] || (by[x.game_id] = {}); (g[x.anon_id] || (g[x.anon_id] = new Set())).add(String(x.created_at).slice(0, 10)); });
+  const out = {}, day = new Date().toISOString().slice(0, 10);
+  Object.entries(by).forEach(([id, t]) => { const d = Object.values(t), rs = DATA.feedback.filter(f => f.game_id === id && f.rating).map(f => f.rating);
+    out[id] = { users: d.length, back: d.filter(z => z.size >= 2).length, ...(rs.length ? { avg: Math.round(10 * rs.reduce((a, b) => a + b, 0) / rs.length) / 10, n: rs.length } : {}), src: day + " 관리자 집계" }; });
+  const txt = JSON.stringify(out, null, 1); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => alertMsg("인기 숫자를 복사했어요 → ratings.json 에 반영"), () => prompt("복사하세요", txt));
+};
 $("exJson").onclick = () => dl("nhc-pocket-data.json", JSON.stringify(DATA, null, 1), "application/json");
 $("exCsv").onclick = () => { const cols = ["created_at", "game_id", "version", "anon_id", "tester", "liked", "rating", "again", "understood", "play_seconds", "levels_cleared", "fails", "device", "comment"];
   dl("nhc-pocket-feedback.csv", "﻿" + [cols.join(",")].concat(DATA.feedback.map(f => cols.map(c => `"${String(f[c] ?? "").replace(/"/g, '""')}"`).join(","))).join("\n"), "text/csv"); };

@@ -44,14 +44,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logo{font:900 14px/1 var(--mono);flex:1}
 .me{border:1.5px solid var(--lcd0);background:transparent;color:var(--lcd0);border-radius:4px;padding:3px 7px;font:800 12px var(--mono)}
 .news{margin:6px 8px 0;padding:5px 8px;border-radius:3px;background:var(--lcd0);color:var(--lcd3);font:800 12.5px var(--mono)}
-.sort{display:flex;gap:6px;padding:6px 8px}
-.sort button{border:1.5px solid var(--lcd0);background:transparent;color:var(--lcd0);border-radius:4px;padding:3px 9px;font:800 12px var(--mono)}
-.sort button.on{background:var(--lcd0);color:var(--lcd3)}
+.sec{font:900 11.5px/1 var(--mono);color:var(--lcd0);padding:7px 4px 3px;letter-spacing:.5px}
+.rk{font:900 15px/1 var(--mono);color:var(--lcd0);width:16px;text-align:center;flex:none}
+.pop{font:800 10.5px/1.2 var(--mono);color:var(--lcd0);opacity:.8;flex:none;text-align:right}
 .list{flex:1;overflow:auto;padding:0 6px 6px;display:flex;flex-direction:column;gap:3px;overscroll-behavior:contain}
 .gm{display:flex;gap:8px;align-items:center;padding:6px;border-radius:3px;cursor:pointer}
 .gm.sel{background:var(--lcd0);color:var(--lcd3)}
 .gm .ic{width:34px;height:34px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none;background:var(--lcd2)!important}
 .gm.sel .ic{background:var(--lcd1)!important}
+.gm.sel .rk,.gm.sel .pop{color:var(--lcd3)}
 .gm .w{min-width:0;flex:1}
 .gm .t{font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
 .gm .m{font-size:12px;opacity:.85;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -137,8 +138,7 @@ pre.out{white-space:pre-wrap;background:#14131a;border-radius:10px;padding:10px;
         <div class="lcd">
           <div class="top"><div class="logo">카트리지 <span id="cnt"></span></div><button class="me" id="meBtn">내 기록</button></div>
           <div id="newsBar"></div>
-          <div class="sort" id="sortBar"><button data-s="hot" class="on">인기</button><button data-s="new">최신</button></div>
-          <div class="list" id="list"></div>
+                    <div class="list" id="list"></div>
           <div class="detail" id="detail"></div>
         </div>
       </div>
@@ -214,11 +214,16 @@ let summary = {};   // game_id → {n, likes, rating, again, ...}
 async function refreshSummary() {
   const fb = await DB.all("feedback"); const s = {};
   fb.forEach(f => { const g = s[f.game_id] || (s[f.game_id] = { n: 0, likes: 0, rsum: 0, rn: 0 }); g.n++; if (f.liked) g.likes++; if (f.rating) { g.rsum += f.rating; g.rn++; } });
+  if (DB.remote) {   // 공유 DB일 때만 모두의 접속 기록으로 인기 계산 (이 기기 기록은 나 한 명뿐이라 쓰지 않는다)
+    const cut = Date.now() - 14 * 864e5, by = {};
+    (await DB.all("sessions")).forEach(x => { if (new Date(x.created_at).getTime() < cut) return; const g = by[x.game_id] || (by[x.game_id] = {}); (g[x.anon_id] || (g[x.anon_id] = new Set())).add(String(x.created_at).slice(0, 10)); });
+    Object.entries(by).forEach(([id, t]) => { const g = s[id] || (s[id] = { n: 0, likes: 0, rsum: 0, rn: 0 }); const d = Object.values(t); g.pop = { users: d.length, back: d.filter(x => x.size >= 2).length }; });
+  }
   summary = s; if (view === "menu") renderMenu();
 }
 
 // ── 메뉴: 목록 + 선택한 게임 설명 ──
-let view = "menu", sel = null, sortBy = LS.get("sort", "hot");
+let view = "menu", sel = null;
 let seen = LS.get("seen", null);          // 게임별 마지막으로 해 본 빌드. null = 첫 방문
 const firstSeen = seen === null; if (firstSeen) { seen = {}; }
 const days = d => d ? (Date.now() - new Date(d + "T00:00:00").getTime()) / 864e5 : 99;
@@ -227,26 +232,29 @@ function ratingOf(g) {   // 모두가 보는 집계(ratings.json) 우선, 없으
   if (g.rating && g.rating.n) return { avg: g.rating.avg, n: g.rating.n };
   const s = summary[g.id]; return s && s.rn ? { avg: s.rsum / s.rn, n: s.rn } : null;
 }
-function hotScore(g) { const r = ratingOf(g), s = summary[g.id]; return (g.hot ? 100 : 0) + (r ? r.avg * Math.min(r.n, 10) : 0) + (s ? s.likes * 2 : 0); }
-function sorted() {
-  const L = CAT.slice();
-  if (sortBy === "new") L.sort((a, b) => b.version.localeCompare(a.version));
-  else L.sort((a, b) => hotScore(b) - hotScore(a) || b.version.localeCompare(a.version));
-  return L;
+// 인기 = 활성 사용자(최근 14일 플레이한 사람) + 재접속(이틀 이상 다시 온 사람, 2배). ratings.json 집계 우선, 없으면 공유 DB
+function popOf(g) { return (g.pop && g.pop.users) ? g.pop : (summary[g.id] && summary[g.id].pop) || null; }
+function popScore(g) { const p = popOf(g); return (p ? p.users + 2 * p.back : 0) + (g.hot ? 1 : 0); }
+const newer = (a, b) => (b.created || "").localeCompare(a.created || "") || b.version.localeCompare(a.version);
+function groups() {
+  const best = CAT.filter(g => popScore(g) > 0).sort((a, b) => popScore(b) - popScore(a) || newer(a, b)).slice(0, 3);
+  return { best, rest: CAT.filter(g => !best.includes(g)).sort(newer) };
 }
+function sorted() { const G = groups(); return G.best.concat(G.rest); }
 const BD = { new: '<span class="bd new">NEW</span>', up: '<span class="bd up">UP</span>' };
 function renderMenu() {
   const L = sorted(); if (!sel || !CAT.some(g => g.id === sel)) sel = L[0] && L[0].id;
   const fresh = CAT.filter(g => badgeOf(g)).length;
   $("newsBar").innerHTML = fresh && !firstSeen ? `<div class="news">★ 새 소식 ${fresh}개</div>` : "";
-  $("sortBar").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.s === sortBy));
-  $("list").innerHTML = L.length ? L.map(g => {
-    const r = ratingOf(g), b = badgeOf(g);
+  const G = groups();
+  const row = (g, rank) => {
+    const r = ratingOf(g), b = badgeOf(g), p = popOf(g);
     return `<div class="gm${g.id === sel ? " sel" : ""}" data-id="${esc(g.id)}">
-      <div class="ic" style="background:${esc(g.color)}33">${esc(g.icon)}</div>
-      <div class="w"><div class="t">${esc(g.title)}${g.hot ? '<span class="bd hot">HOT</span>' : ""}${BD[b] || ""}</div><div class="m">${esc(g.one_liner)}</div></div>
-      ${r ? `<div class="rt">★${r.avg.toFixed(1)}<small>${r.n}명</small></div>` : ""}</div>`;
-  }).join("") : '<p class="empty">아직 꽂힌 게임이 없어요</p>';
+      ${rank ? `<div class="rk">${rank}</div>` : ""}<div class="ic" style="background:${esc(g.color)}33">${esc(g.icon)}</div>
+      <div class="w"><div class="t">${esc(g.title)}${BD[b] || ""}</div><div class="m">${esc(g.one_liner)}</div></div>
+      ${p ? `<div class="pop">👥${p.users}<br>🔁${p.back}</div>` : r ? `<div class="rt">★${r.avg.toFixed(1)}<small>${r.n}명</small></div>` : ""}</div>`;
+  };
+  $("list").innerHTML = L.length ? (G.best.length ? `<div class="sec">🏆 BEST</div>` + G.best.map((g, i) => row(g, i + 1)).join("") + `<div class="sec">🆕 새 게임</div>` : "") + G.rest.map(g => row(g, 0)).join("") : '<p class="empty">아직 꽂힌 게임이 없어요</p>';
   $("list").querySelectorAll(".gm").forEach(el => el.onclick = () => { if (sel === el.dataset.id) { start(sel); return; } sel = el.dataset.id; SND.nav(); renderMenu(); });
   const g = CAT.find(x => x.id === sel);
   $("detail").innerHTML = g ? `<h3>${esc(g.icon)} ${esc(g.title)}</h3><p>${esc(g.one_liner)}</p>
@@ -256,7 +264,6 @@ function renderMenu() {
   $("meBtn").textContent = LS.get("nick", "") || anon; $("cnt").textContent = CAT.length;
 }
 function start(id) { SND.ok(); const g = CAT.find(x => x.id === id); seen[id] = g.version; LS.set("seen", seen); play([id]); }
-$("sortBar").querySelectorAll("button").forEach(b => b.onclick = () => { sortBy = b.dataset.s; LS.set("sort", sortBy); SND.nav(); renderMenu(); });
 $("meBtn").onclick = $("bBtn").onclick = () => { SND.back(); openMine(); };
 $("aBtn").onclick = () => { if (sel) start(sel); };
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 2400); }
