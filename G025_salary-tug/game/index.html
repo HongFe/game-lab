@@ -48,13 +48,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 
 /* ── 아래: 카드 버튼(왼쪽) · 도장 버튼(오른쪽, 판 중 주 버튼) ── */
 #stampBtn{position:absolute;right:var(--ui-s4);bottom:max(var(--ui-s4),env(safe-area-inset-bottom));width:88px;height:88px;border-radius:50%;border:0;background:var(--ui-surface2);color:var(--ui-text);font:700 var(--ui-t3)/1.2 var(--ui-font);box-shadow:var(--ui-shadow1),inset 0 -4px 0 rgba(0,0,0,.2);display:none;flex-direction:column;align-items:center;justify-content:center;gap:2px;touch-action:none;transition:transform 90ms var(--ui-in),background .2s,color .2s;z-index:30}
-#stampBtn small{font-size:var(--ui-t1);font-weight:400;color:var(--ui-muted);font-variant-numeric:tabular-nums}
+#stampBtn small{font-size:var(--ui-t2);font-weight:400;color:var(--ui-muted);font-variant-numeric:tabular-nums}
 #stampBtn:active{transform:scale(.92)}
-#stampBtn.go{background:var(--ui-accent);color:var(--ui-on-accent);animation:pulse 1s ease-in-out infinite}
+#stampBtn.go{background:var(--ui-accent);color:var(--ui-on-accent);animation:pulse 1s var(--ui-in) infinite}
 #stampBtn.go small{color:var(--ui-on-accent);opacity:.85}
 @keyframes pulse{0%,100%{transform:scale(1);box-shadow:var(--ui-shadow1)}50%{transform:scale(1.08);box-shadow:var(--ui-shadow1),0 0 0 10px rgba(77,157,255,.25)}}
 #cards{position:absolute;left:var(--ui-s4);bottom:max(var(--ui-s4),env(safe-area-inset-bottom));display:none;gap:var(--ui-s2);z-index:30}
-.cbtn{position:relative;width:60px;height:60px;border-radius:var(--ui-r2);border:0;background:var(--ui-surface2);color:var(--ui-text);box-shadow:var(--ui-shadow1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:700 var(--ui-t1)/1 var(--ui-font);touch-action:none;transition:transform 90ms var(--ui-in),opacity .2s}
+.cbtn{position:relative;width:64px;height:64px;border-radius:var(--ui-r2);border:0;background:var(--ui-surface2);color:var(--ui-text);box-shadow:var(--ui-shadow1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:700 var(--ui-t2)/1 var(--ui-font);touch-action:none;transition:transform 90ms var(--ui-in),opacity .2s}
 .cbtn .ui-icon{width:24px;height:24px}
 .cbtn:active{transform:scale(.92)}
 .cbtn.used{opacity:.25;pointer-events:none}
@@ -63,14 +63,14 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 /* ── 안내 카드 한 줄 · 팝업 숫자 ── */
 #tip{position:absolute;left:var(--ui-s3);right:var(--ui-s3);bottom:calc(max(var(--ui-s4),env(safe-area-inset-bottom)) + 100px);transform:translateY(8px);opacity:0;transition:opacity 195ms var(--ui-out),transform 195ms var(--ui-out);pointer-events:none;z-index:31}
 #tip.on{opacity:1;transform:none;transition:opacity 225ms var(--ui-in),transform 225ms var(--ui-in)}
-#tip .ui-em{width:32px;height:32px;font-size:26px}
+#tip .ui-em{width:32px;height:32px;font-size:var(--ui-t5)}
 #tip img{width:36px;height:36px;border-radius:var(--ui-r1);background:var(--ui-surface2);flex:none}
 #tip .n{font-weight:700;font-size:var(--ui-t3);line-height:1.25;display:flex;align-items:center;gap:var(--ui-s2)}
 #tip .f{font-size:var(--ui-t2);line-height:1.4;color:var(--ui-muted)}
 #tip .ui-badge{background:var(--ui-surface2);color:var(--ui-text)}
-.pop{position:absolute;font:800 22px var(--ui-font);font-variant-numeric:tabular-nums;pointer-events:none;animation:popup .9s ease-out forwards;text-shadow:0 2px 8px rgba(0,0,0,.7);white-space:nowrap;z-index:25}
-.pop.s{font-size:16px;animation-duration:.8s}
-.pop.l{font-size:34px;animation-duration:1.2s}
+.pop{position:absolute;font:700 var(--ui-t3) var(--ui-font);font-variant-numeric:tabular-nums;pointer-events:none;animation:popup .9s var(--ui-in) forwards;text-shadow:0 2px 8px rgba(0,0,0,.7);white-space:nowrap;z-index:25}
+.pop.s{animation-duration:.8s}
+.pop.l{font-size:var(--ui-t5);animation-duration:1.2s}
 @keyframes popup{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{transform:translate(-50%,-8px) scale(1.15);opacity:1}100%{transform:translate(-50%,-56px) scale(1);opacity:0}}
 #hand{display:none}
 #hand.up{animation:lift 1s var(--ui-in) infinite}
@@ -92,6 +92,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .g-pv b{font-size:var(--ui-t3)}
 .g-pv small{font-size:var(--ui-t2);color:var(--ui-muted);display:flex;align-items:center;gap:var(--ui-s1);flex-wrap:wrap}
 .g-pv small .ui-stars .ui-icon{width:12px;height:12px;color:var(--gold)}
+button.ui-item small{font-size:var(--ui-t2)}
 button.ui-item.pick{box-shadow:inset 0 0 0 2px var(--ui-text)}
 button.ui-item .ui-val .ui-icon{color:var(--ui-text)}
 button.ui-item:not(.pick) .ui-val{opacity:0}
@@ -325,25 +326,29 @@ const gaussR = r => { let u = 0; for (let i = 0; i < 6; i++) u += r(); return (u
 const TEN_UP = 40, TEN_DN = 100, YEL = 50;
 // 구간별 인상(%/초)·줄 소모(/초): 초록 · 노랑 · 빨강. 초록에서 손을 떼고 있으면 되밀림
 const GAIN = [0, .9, 1.7], COST = [0, 2.5, 12], DRIFT = -.2, MAXED = 1.5;
+// 줄이 바닥(LOW 아래)이면 상대가 눈치챈다: 초록에서도 줄이 닳고(LOW_DRAIN/초), 버럭은 놓고 있어도 LOW_DMG 이상, 반응이 잦아진다
+const LOW = 30, LOW_DRAIN = 1.5, LOW_DMG = 26, LOW_GAP = .5; // 바닥 줄에서는 버럭 한 번이 최소 26(책상 치기 52)
+// 예고 여유(초): 반응 0.6~0.7초 사람이 판단할 시간. 회의 시간이 끝나면 '결렬' → 지금 인상률의 절반만
+const WARN_PAD = .3, TIMEOUT_K = .5;
 const RANKS = [
   { n: "인턴", dmg: .7, rope: 100, pick: [2, 1], ctr: null, ab: "꾹 당기고 도장" },
   { n: "사원", dmg: .65, rope: 100, pick: [2, 1], ctr: null, ab: "버럭 피해 줄어듦" },
   { n: "대리", dmg: .55, rope: 110, pick: [3, 2], ctr: null, ab: "카드 2장 · 줄 110" },
-  { n: "과장", dmg: .46, rope: 110, pick: [3, 2], ctr: { dm: .25, add: 4, slam: false }, ab: "맞받아치기 열림" },
-  { n: "부장", dmg: .34, rope: 120, pick: [3, 2], ctr: { dm: 0, add: 5, slam: true }, ab: "맞받아치면 +5%" },
-  { n: "임원", dmg: .3, rope: 120, pick: [3, 2], ctr: { dm: 0, add: 6, slam: true, chance: true }, ab: "맞받으면 기회" },
+  { n: "과장", dmg: .46, rope: 110, pick: [3, 2], ctr: { dm: .5, add: 3, slam: false, chance: 2 }, ab: "맞받아치기 열림" },
+  { n: "부장", dmg: .34, rope: 120, pick: [3, 2], ctr: { dm: 0, add: 5, slam: true, chance: 2 }, ab: "맞받아치면 +5%" },
+  { n: "임원", dmg: .3, rope: 120, pick: [3, 2], ctr: { dm: 0, add: 8, slam: true, chance: 2 }, ab: "맞받으면 기회" },
 ];
 const OPPS = ["사수 선배", "팀장", "인사팀", "본부장", "재무 이사", "대표"];
 // 반응 가중치(상대 성격): 단계마다 하나씩 늘어난다
 const R_W = { cough: 3.5, chin: 2, watch: 1.2, phone: 1.2, slam: 1.5 };
 const ALLR = ["cough", "chin", "watch", "phone", "slam"], ALLE = ["bonus", "offer", "mood", "restr"];
 const STAGES = [
-  { n: 1, rank: 0, opp: 0, base: 2400, goal: 17, s2: 22, s3: 27.4, T: 40, W: 1.2, gap: [5, 8], reacts: ["cough"], evNew: null, evPool: [], evN: [0, 0], first: [3, 7] },
-  { n: 2, rank: 1, opp: 1, base: 3200, goal: 22, s2: 29, s3: 36, T: 45, W: 1.1, gap: [3, 7], reacts: ["cough", "chin"], evNew: "bonus", evPool: [], evN: [1, 1] },
-  { n: 3, rank: 2, opp: 2, base: 4000, goal: 27, s2: 34, s3: 40, T: 50, W: 1.0, gap: [3, 7], reacts: ["cough", "chin", "watch"], evNew: "offer", evPool: ["bonus"], evN: [1, 2], wmul: { watch: 1.6 }, hit: 1.05 },
-  { n: 4, rank: 3, opp: 3, base: 5200, goal: 29, s2: 34, s3: 39, T: 55, W: 1.0, hit: 1.2, wmul: { cough: 1.3 }, gap: [3, 7], reacts: ["cough", "chin", "watch", "phone"], evNew: "mood", evPool: ["bonus", "offer"], evN: [1, 2] },
-  { n: 5, rank: 4, opp: 4, base: 7200, goal: 29, s2: 34, s3: 39, T: 60, W: .7, gap: [3, 7], reacts: ALLR, evNew: "restr", evPool: ["bonus", "offer", "mood"], evN: [1, 2] },
-  { n: 6, rank: 5, opp: 5, base: 10000, goal: 36, s2: 43, s3: 50, T: 60, W: .8, gap: [3, 5], reacts: ALLR, evNew: null, evPool: ALLE, evN: [2, 2] },
+  { n: 1, rank: 0, opp: 0, base: 2400, goal: 19, s2: 22.8, s3: 26.5, T: 40, W: 1.2, gap: [5, 8], reacts: ["cough"], evNew: null, evPool: [], evN: [0, 0], first: [3, 7] },
+  { n: 2, rank: 1, opp: 1, base: 3200, goal: 25, s2: 31.5, s3: 39, T: 45, W: 1.1, gap: [3, 7], reacts: ["cough", "chin"], evNew: "bonus", evPool: [], evN: [1, 1] },
+  { n: 3, rank: 2, opp: 2, base: 4000, goal: 30, s2: 35, s3: 40, T: 50, W: 1.0, gap: [3, 7], reacts: ["cough", "chin", "watch"], evNew: "offer", evPool: ["bonus"], evN: [1, 2], wmul: { watch: 1.6 }, hit: 1.05 },
+  { n: 4, rank: 3, opp: 3, base: 5200, goal: 32, s2: 38.3, s3: 44.5, T: 55, W: 1.0, hit: 1.2, wmul: { cough: 1.3 }, gap: [3, 7], reacts: ["cough", "chin", "watch", "phone"], evNew: "mood", evPool: ["bonus", "offer"], evN: [1, 2] },
+  { n: 5, rank: 4, opp: 4, base: 7200, goal: 34, s2: 38, s3: 42, T: 60, W: .8, wmul: { cough: 1.3 }, gap: [3, 7], reacts: ALLR, evNew: "restr", evPool: ["bonus", "offer", "mood"], evN: [1, 2] },
+  { n: 6, rank: 5, opp: 5, base: 10000, goal: 50, s2: 55.5, s3: 61, T: 60, W: .8, gap: [3, 5], reacts: ALLR, evNew: null, evPool: ALLE, evN: [2, 2] },
 ];
 // 무한 협상: 임원 규칙 그대로, 한 협상(45초)마다 목표 +15%를 넘겨 도장 → 줄을 이어 다음 상대
 const ENDLESS = Object.assign({}, STAGES[5], { n: 7, T: 45, goal: 15, s2: 1e9, s3: 1e9, endless: true, evN: [1, 2] });
@@ -359,12 +364,12 @@ function schedEvents(R, c, t0) {
   while (list.length < n && pool.length) { const k = pool.splice(Math.floor(R() * pool.length), 1)[0]; if (!list.includes(k)) list.push(k); }
   for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
   const lo = 7, hi = c.T - 8, span = (hi - lo) / Math.max(1, list.length);
-  return list.map((k, i) => ({ k, at: t0 + lo + span * i + R() * Math.max(0, span - 9), dir: R() < .6 ? 1 : -1, warned: false, done: false }));
+  return list.map((k, i) => ({ k, at: t0 + lo + span * i + R() * Math.max(0, span - 9) + (k === "bonus" ? 3 : 0), dir: R() < .6 ? 1 : -1, warned: false, done: false }));
 }
 function newState(seed, c, opt) {
   opt = opt || {};
   const R = rng(seed * 977 + c.n * 131 + 5), rk = RANKS[c.rank], f = c.first || [2, 9.5];
-  const st = { c, R, seed, t: 0, t0: 0, left: c.T, ten: 0, ropeMax: rk.rope, rope: rk.rope - Math.min(30, (opt.rep || 0) * 10), raise: 0, press: false, zone: 0,
+  const st = { c, R, seed, t: 0, lastHitT: -9, lastHitK: "", t0: 0, left: c.T, ten: 0, ropeMax: rk.rope, rope: rk.rope - Math.min(30, (opt.rep || 0) * 10), raise: 0, press: false, zone: 0,
     react: null, nextR: f[0] + R() * (f[1] - f[0]), lastR: "", watchN: 0, warns: [],
     b: { chance: 0, phone: 0, proof: 0, offer: 0, bonus: 0, mood: 0, moodDir: 0, chanceT0: -9, bonusT0: -9 },
     silence: 0, hand: (opt.hand || []).map(k => ({ k, used: false })), used: [], results: 0, fails: 0, result: null, counters: 0, flagT: null,
@@ -385,7 +390,7 @@ function useCard(st, i, ev) {
 }
 function starsOf(c, r) { return r >= c.s3 ? 3 : r >= c.s2 ? 2 : r >= c.goal ? 1 : 0; }
 function finish(st, why, ev) {
-  const c = st.c, b = st.b, bonus = b.bonus > 0 && why !== "snap", raise = why === "snap" ? 0 : st.raise * (bonus ? 1.5 : 1);
+  const c = st.c, b = st.b, bonus = b.bonus > 0 && why === "stamp", raise = why === "snap" ? 0 : st.raise * (bonus ? 1.5 : 1) * (why === "time" ? TIMEOUT_K : 1);
   if (c.endless && why !== "snap" && raise >= st.goal) { // 무한: 다음 상대가 바로 온다
     st.cum = ((1 + st.cum / 100) * (1 + raise / 100) - 1) * 100; st.rounds++;
     ev && ev("round", { raise, bonus, n: st.rounds });
@@ -396,7 +401,8 @@ function finish(st, why, ev) {
     return;
   }
   const clear = why !== "snap" && raise >= st.goal;
-  st.result = { type: why === "snap" ? "snap" : clear ? "clear" : "short", why, raise: c.endless ? st.cum : raise, round: raise, stars: c.endless ? 0 : clear ? starsOf(c, raise) : 0, bonus, t: st.t, rounds: st.rounds };
+  const cause = why !== "snap" ? "" : st.t - st.lastHitT < .4 ? st.lastHitK : st.rope0Low ? "low" : st.zone === 2 ? "red" : "yellow";
+  st.result = { type: why === "snap" ? "snap" : clear ? "clear" : "short", why, cause, raw: st.raise, raise: c.endless ? st.cum : raise, round: raise, stars: c.endless ? 0 : clear ? starsOf(c, raise) : 0, bonus, t: st.t, rounds: st.rounds };
   st.results++; if (st.result.type !== "clear" && !(c.endless && st.rounds > 0)) st.fails++;
   ev && ev("end", st.result);
 }
@@ -416,6 +422,7 @@ function step(st, inp, ev) {
     let g = GAIN[z]; if (g > 0) g *= (b.chance > 0 ? 3 : 1) * (b.offer > 0 ? 2 : 1); else if (!st.press) g = DRIFT;
     st.raise = Math.max(0, st.raise + g * DT);
     if (b.proof <= 0) st.rope -= COST[z] * (st.ten >= 99.5 ? MAXED : 1) * DT; // 끝까지 당긴 줄(100)은 더 빨리 닳는다
+    st.rope0Low = z === 0 && st.rope < LOW; if (st.rope0Low) st.rope -= LOW_DRAIN * DT; // 바닥 줄은 쉬어도 닳는다
   }
   st.left -= DT;
   if (st.flagT === null && st.raise >= st.goal) { st.flagT = st.t - st.t0; ev && ev("flag"); }
@@ -424,7 +431,7 @@ function step(st, inp, ev) {
     const pool = c.reacts.filter(k => (k !== st.lastR || c.reacts.length === 1) && (k !== "watch" || st.watchN < 2));
     let tot = 0; const w = k => R_W[k] * ((c.wmul && c.wmul[k]) || 1); pool.forEach(k => tot += w(k));
     let x = R() * tot, k = pool[0]; for (const p of pool) { x -= w(p); if (x <= 0) { k = p; break; } }
-    st.react = { k, t0: st.t, w: c.W + (k === "slam" ? .4 : 0), phase: "warn" }; st.lastR = k; if (k === "watch") st.watchN++;
+    st.react = { k, t0: st.t, w: c.W + WARN_PAD + (k === "slam" ? .4 : 0), phase: "warn" }; st.lastR = k; if (k === "watch") st.watchN++;
     st.warns.push({ k, t: st.t - st.t0 });
     ev && ev("warn", st.react);
   }
@@ -436,18 +443,18 @@ function step(st, inp, ev) {
       if (st.silence > 0) { st.silence--; rc.res = "silenced"; ev && ev("silenced", rc); }
       else if (C && (rc.k === "cough" || C.slam) && st.press && st.ten >= redS && b.phone <= 0) { // 맞받아치기
         const d = st.ten * mul * C.dm; st.rope -= d; st.raise += C.add; st.counters++; rc.res = "counter"; rc.dmg = d;
-        if (C.chance) { b.chance = 2; b.chanceT0 = st.t; }
+        if (C.chance) { b.chance = C.chance; b.chanceT0 = st.t; }
         st.log.push({ k: rc.k, d, warned: rc.w > 0, released: false, counter: true });
         ev && ev("counter", { rc, d, add: C.add });
       } else {
-        const d = st.ten * mul; st.rope -= d; rc.res = "hit"; rc.dmg = d;
+        const d = st.rope < LOW ? Math.max(st.ten * mul, LOW_DMG * (rc.k === "slam" ? 2 : 1)) : st.ten * mul; st.rope -= d; rc.res = "hit"; rc.dmg = d; st.lastHitT = st.t; st.lastHitK = rc.k;
         st.log.push({ k: rc.k, d, warned: rc.w > 0, released: !st.press, ten: st.ten });
         st.ten *= .5; ev && ev("hit", { rc, d });
       }
     } else if (rc.k === "chin") { b.chance = 2; b.chanceT0 = st.t; rc.dur = 2; ev && ev("chance"); }
     else if (rc.k === "watch") { st.left = Math.max(.6, st.left - 10); rc.dur = .8; ev && ev("watch"); }
     else if (rc.k === "phone") { b.phone = 3; rc.dur = 3; ev && ev("phone"); }
-    st.nextR = st.t + rc.dur + c.gap[0] + R() * (c.gap[1] - c.gap[0]);
+    st.nextR = st.t + rc.dur + (c.gap[0] + R() * (c.gap[1] - c.gap[0])) * (st.rope < LOW ? LOW_GAP : 1);
   }
   if (rc && rc.phase === "act" && st.t - rc.ta >= rc.dur) st.react = null;
   // 사건: 3초 전 띠 배너 → 효과
@@ -457,7 +464,7 @@ function step(st, inp, ev) {
       if (e.k === "bonus") { b.bonus = 6; b.bonusT0 = st.t; }
       else if (e.k === "offer") b.offer = 5;
       else if (e.k === "mood") { b.mood = 8; b.moodDir = e.dir; }
-      else if (e.k === "restr") { const d = Math.min(st.rope * .5, 50); st.rope -= d; st.log.push({ k: "restr", d, warned: e.warned && st.t - e.wt >= 2.9 }); }
+      else if (e.k === "restr") { const d = Math.min(st.rope * .5, 50); st.rope -= d; st.lastHitT = st.t; st.lastHitK = "restr"; st.log.push({ k: "restr", d, warned: e.warned && st.t - e.wt >= 2.9 }); }
       ev && ev("event", e); }
   }
   if (st.rope <= 0) { st.rope = 0; finish(st, "snap", ev); return; }
@@ -477,7 +484,7 @@ function deal(seed, c, cleared) {
 function botNew(seed, c, o) {
   o = o || {}; const r = rng(seed * 131 + 7 + (o.salt || 0));
   const gr = r(), g = o.greed || (gr < .2 ? 1 : gr < .5 ? 2 : 3);
-  return { o, r, g, target: o.target ? o.target : c.endless ? c.goal + 3 : o.kind === "survive" ? c.goal : g === 1 ? c.goal + 1 : g === 2 ? c.s2 + .5 : c.s3 + .5, press: false, nz: 0, cd: 0 };
+  return { o, r, g, target: o.target ? o.target : c.endless ? c.goal + 3 : o.kind === "survive" ? c.goal : g === 1 ? c.goal + 1 : g === 2 ? c.s2 + .5 : c.s3 + .5, press: false, nz: 0, cd: 0, ropeStop: o.ropeStop ?? 18 + r() * 24 }; // 사람마다 '여기서 찍자' 줄 기준이 다르다
 }
 function botPick(m, offer, k) { // 카드 고르기: 줄 회복 우선, 약간 무작위
   const pref = { coffee: 3, concede: 2.4, last: 2.2, proof: 2, extend: 1.6, silence: 1.2 };
@@ -488,7 +495,7 @@ function botInput(st, m) {
   if (kind === "press") { inp.press = true; return inp; }
   const hyst = (lo, hi) => { if (m.press && st.ten >= hi + m.nz) { m.press = false; m.nz = gaussR(m.r) * 2.4; } else if (!m.press && st.ten <= lo + m.nz) { m.press = true; m.nz = gaussR(m.r) * 6; } return m.press; };
   if (kind === "green") { inp.press = hyst(28, 44); return inp; }
-  const R = o.R ?? .4, ig = !!o.ignore, seen = t0 => st.t - t0 >= R;
+  const R = o.R ?? .65, ig = !!o.ignore, seen = t0 => st.t - t0 >= R;
   const warn = !ig && st.react && st.react.phase === "warn" && seen(st.react.t0) ? st.react.k : null;
   const chance = !ig && b.chance > 0 && seen(b.chanceT0);
   const redS = ig ? 80 : redStart(st), target = c.endless ? st.goal + 3 : m.target;
@@ -498,7 +505,8 @@ function botInput(st, m) {
   if (kind !== "idle") {
     if (st.raise >= target) inp.stamp = true;
     else if (inBonus && o.bonus !== "never" && (st.raise * 1.5 >= target || (o.bonus === "early" && b.bonus < .6 && st.raise * 1.5 >= st.goal))) inp.stamp = true;
-    else if (st.raise >= st.goal && (st.rope < 30 || (restrSoon && st.rope < 60))) inp.stamp = true;
+    else if (st.raise >= st.goal && (st.rope < m.ropeStop || (restrSoon && st.rope < 60))) inp.stamp = true;
+    else if (st.left < .8 && !o.waitTime) inp.stamp = true; // 회의 끝 결렬(절반) 전에 찍는다
     if (inp.stamp) return inp;
   }
   const need = (target - st.raise) / Math.max(1, st.left - 1.5);
@@ -548,7 +556,7 @@ function selfChecks() {
   const agg = (c, o, s0, n) => { const A = { p: 0, s3: 0, sn: 0, sum: 0, ft: [], st: [0, 0, 0, 0], n };
     for (let s = s0; s < s0 + n; s++) { const { st, r } = playRun(s, c, o); if (r.type === "clear") { A.p++; A.sum += r.raise; } if (r.stars === 3) A.s3++; A.st[r.stars]++; if (r.type === "snap") A.sn++; if (st.flagT !== null) A.ft.push(st.flagT); }
     A.avg = A.sum / n; A.p /= n; A.s3 /= n; A.sn /= n; A.fm = med(A.ft); return A; };
-  out.push("[A] 단계별 사람 근사 봇 (반응 0.4초 · 누르기 오차 60ms · 욕심 ★1/2/3 무작위 · 시드 301~340)");
+  out.push("[A] 단계별 사람 근사 봇 (반응 0.65초 · 누르기 오차 60ms · 욕심 ★1/2/3 무작위 · 시드 301~340)");
   const H = STAGES.map((c, i) => { const A = agg(c, {}, 301, 40), t = TGT[i]; const ok = A.p >= t[0] && A.s3 >= t[1] && A.s3 <= t[2];
     add(ok, `${c.n}단계 ${RANKS[c.rank].n}·${OPPS[c.opp]}  통과 ${pct(A.p)} (기준 ${pct(t[0])}↑) · ★3 ${pct(A.s3)} (${pct(t[1])}~${pct(t[2])}) · ★0/1/2/3 ${A.st.join("/")} · 끊김 ${pct(A.sn)} · 깃발 중앙 ${A.fm.toFixed(1)}초 · 평균 인상 +${A.avg.toFixed(1)}%`); return A; });
   out.push("  곡선 통과: " + H.map(a => pct(a.p)).join(" → ") + " · ★3: " + H.map(a => pct(a.s3)).join(" → ") + " · 깃발: " + H.map(a => a.fm.toFixed(0) + "초").join(" → "));
@@ -558,17 +566,17 @@ function selfChecks() {
   out.push("", "[C] 예고가 중요하다: 사람 근사 봇 vs 예고 무시 봇 (평균 인상 +6%p 이상, 끊김 2배 이상)");
   { let ok = true; const ls = STAGES.map((c, i) => { const g = agg(c, { ignore: true }, 301, 40), h = H[i], o1 = h.avg >= g.avg + 6 && g.sn >= Math.max(2 * h.sn, .05); if (!o1) ok = false;
       return `${c.n}:${h.avg.toFixed(1)} vs ${g.avg.toFixed(1)} 끊김 ${pct(h.sn)}/${pct(g.sn)}${o1 ? "" : "✗"}`; }); add(ok, ls.join(" · ")); }
-  out.push("", "[D] 같은 반응이 다르게: 1~3단계는 버럭 때 놓기 > 버티기, 4~6단계는 줄 40↑에서 맞받아치기 > 놓기");
+  out.push("", "[D] 같은 반응이 다르게: 1~3단계는 버럭 때 놓기 > 버티기, 4~6단계는 줄 40↑에서 맞받아치기가 놓기보다 +4%p 이상(★3 노리고 끝까지 올리는 봇)");
   { let ok = true; const ls = STAGES.map((c, i) => { let a, b2;
-      if (i < 3) { a = agg(c, {}, 301, 40).avg; b2 = agg(c, { hold: true }, 301, 40).avg; } else { a = H[i].avg; b2 = agg(c, { counter: "never" }, 301, 40).avg; }
-      const o1 = a > b2; if (!o1) ok = false; return `${c.n}:${i < 3 ? "놓기" : "맞받기"} ${a.toFixed(1)} vs ${i < 3 ? "버티기" : "놓기"} ${b2.toFixed(1)}${o1 ? "" : "✗"}`; }); add(ok, ls.join(" · ")); }
+      if (i < 3) { a = agg(c, {}, 301, 40).avg; b2 = agg(c, { hold: true }, 301, 40).avg; } else { a = agg(c, { greed: 3, target: 999 }, 301, 40).avg; b2 = agg(c, { greed: 3, target: 999, counter: "never" }, 301, 40).avg; } // 4~6: 끝까지 올리기 봇으로 맞받기의 값만 잰다
+      const o1 = i < 3 ? a > b2 : a >= b2 + 4; if (!o1) ok = false; return `${c.n}:${i < 3 ? "놓기" : "맞받기"} ${a.toFixed(1)} vs ${i < 3 ? "버티기" : "놓기"} ${b2.toFixed(1)}${o1 ? "" : "✗"}`; }); add(ok, ls.join(" · ")); }
   out.push("", "[E] 한 가지 방법이 정답이 아님");
   { let ok = true; const ls = [];
     STAGES.slice(1).forEach(c => { let snapPre = 0; for (let s = 1; s <= 40; s++) { const { st, r } = playRun(s, c, { kind: "press" }); if (r.type === "snap" && st.flagT === null) snapPre++; } if (snapPre < 36) ok = false; ls.push(`누르기만 ${c.n}:${snapPre}/40`); });
     let flagG = 0; STAGES.forEach(c => { for (let s = 1; s <= 20; s++) { const { st } = playRun(s, c, { kind: "green" }); if (st.flagT !== null) flagG++; } }); if (flagG) ok = false; ls.push(`초록만 깃발 ${flagG}`);
     let win = 0, n = 0; const val = r => r.type === "clear" ? r.raise : 0;
-    for (const c of [STAGES[1], STAGES[2]]) for (let s = 1; s <= 20; s++) { const e = playRun(s, c, { bonus: "early" }), l = playRun(s, c, { bonus: "never" }); if (!e.st.evs.some(x => x.k === "bonus")) continue; n++; if (val(e.r) > val(l.r)) win++; }
-    const wr = win / Math.max(1, n); if (!(wr >= .3 && wr <= .7)) ok = false; ls.push(`성과급 창 도장이 이득 ${win}/${n} (${pct(wr)}, 기준 30~70%)`);
+    for (const c of [STAGES[1], STAGES[2]]) for (let s = 1; s <= 20; s++) { const e = playRun(s, c, { bonus: "early" }), l = playRun(s, c, { bonus: "never" }); if (!e.st.evs.some(x => x.k === "bonus") || Math.abs(val(e.r) - val(l.r)) < .05) continue; n++; if (val(e.r) > val(l.r)) win++; } // 성과급이 결과를 바꾼 판만
+    const wr = win / Math.max(1, n); if (!(wr >= .3 && wr <= .7)) ok = false; ls.push(`성과급 창 도장이 이득 ${win}/${n}판 (결과가 갈린 판, ${pct(wr)}, 기준 30~70%)`);
     add(ok, ls.join(" · ")); }
   out.push("", "[F] 외우면 끝나지 않음: 시드 1~20 첫 예고 3개 시각 표준편차 ≥1.5초, 사건 조합 ≥3가지");
   { let ok = true; const ls = [];
@@ -579,12 +587,12 @@ function selfChecks() {
       const sds = T.map(sd), o1 = Math.min(...sds) >= 1.5 && combos.size >= 3; if (!o1) ok = false;
       ls.push(`${c.n}단계 σ ${sds.map(x => x.toFixed(1)).join("/")}초 · 조합 ${combos.size}`); }
     add(ok, ls.join(" · ")); }
-  out.push("", "[G] 공정성: 예고 없는 줄 피해 0건, 0.4초 뒤 놓으면 버럭 피해 ≤25 (장력 100에서 시작)");
+  out.push("", "[G] 공정성: 예고 없는 줄 피해 0건, 줄이 넉넉할 때 0.65초 뒤 놓으면 버럭 피해 ≤25 (장력 100에서 시작)");
   { let ok = true, unw = 0; const ls = [];
     STAGES.forEach(c => { for (let s = 301; s <= 320; s++) { const { st } = playRun(s, c, {}); unw += st.log.filter(l => !l.warned).length; } });
     STAGES.forEach(c => { let mx = 0; for (const k of c.reacts.filter(k => k === "cough" || k === "slam")) {
-        const st = newState(1, c, {}); st.ten = 100; st.nextR = 1e9; st.evs = []; st.react = { k, t0: 0, w: c.W + (k === "slam" ? .4 : 0), phase: "warn" }; const r0 = st.rope;
-        for (let j = 0; j < 3 / DT && st.react && st.react.phase === "warn"; j++) step(st, { press: st.t < .4, stamp: false, card: -1 });
+        const st = newState(1, c, {}); st.ten = 100; st.nextR = 1e9; st.evs = []; st.react = { k, t0: 0, w: c.W + WARN_PAD + (k === "slam" ? .4 : 0), phase: "warn" }; const r0 = st.rope;
+        for (let j = 0; j < 3 / DT && st.react && st.react.phase === "warn"; j++) step(st, { press: st.t < .65, stamp: false, card: -1 });
         mx = Math.max(mx, st.log.reduce((x, l) => x + l.d, 0)); }
       if (mx > 25) ok = false; ls.push(`${c.n}:${mx.toFixed(0)}`); });
     if (unw) ok = false; add(ok, `예고 없는 피해 ${unw}건 · 놓았을 때 최대 피해 ${ls.join(" ")}`); }
@@ -595,6 +603,25 @@ function selfChecks() {
   out.push("", "[I] 무한 협상 시드 1~20: 사람 근사 봇 생존 시간 중앙값 90초 이상");
   { const ts = [], rs = []; for (let s = 1; s <= 20; s++) { const { st } = playRun(s, ENDLESS, {}, 5); ts.push(st.t); rs.push(st.rounds); }
     const m = med(ts); add(m >= 90, `생존 중앙 ${m.toFixed(0)}초 · 협상 수 중앙 ${med(rs)} (최소 ${Math.min(...rs)} · 최대 ${Math.max(...rs)})`); }
+  out.push("", "[J] 언제 멈출지 (G003): ★3 노리기 봇이 줄 30에서 도장 vs 줄 3까지 짜냄 (깃발 넘고 줄 30에 닿은 판) — 기대 인상 비슷(±15%), 끊김 2배 이상");
+  { let e30 = 0, e3 = 0, s30 = 0, s3 = 0, n = 0; const ls = [];
+    STAGES.forEach(c => { let a = 0, b2 = 0, x = 0, y = 0; for (let s = 301; s <= 340; s++) { const P = playRun(s, c, { greed: 3, ropeStop: 30 }), A = P.r;
+        if (!(A.type === "clear" && A.why === "stamp" && P.st.rope < 30.5 && A.raise < P.m.target)) continue; // 멈춤 결정이 있었던 판만: 깃발 넘고 줄 30에 닿아 찍은 판
+        const B = playRun(s, c, { greed: 3, ropeStop: 3 }).r;
+        a += A.type === "clear" ? A.raise : 0; b2 += B.type === "clear" ? B.raise : 0; x += A.type === "snap"; y += B.type === "snap"; n++; }
+      e30 += a; e3 += b2; s30 += x; s3 += y; ls.push(`${c.n}:${y}/${x + (n - x) * 0}`); });
+    const r = e3 / e30, ok = n >= 30 && r >= .85 && r <= 1.15 && s3 >= Math.max(2 * s30, 6);
+    add(ok, `멈춤 결정 판 ${n}개: 기대 인상 줄30 ${(e30 / n).toFixed(1)} vs 줄3 ${(e3 / n).toFixed(1)} (×${r.toFixed(2)}) · 끊김 ${s30} vs ${s3} — 단계별 짜냄 끊김 ${ls.join(" · ")}`); }
+  out.push("", "[K] 반응 속도가 아니라 판단: ★3 비율 반응 0.4초 vs 0.7초 (0.7초가 0.4초의 60% 이상, 0%가 되는 단계 없음)");
+  { let a = 0, b2 = 0, ok = true; const ls = STAGES.map(c => { let x = 0, y = 0; for (let s = 301; s <= 340; s++) { x += playRun(s, c, { R: .4 }).r.stars === 3; y += playRun(s, c, { R: .7 }).r.stars === 3; } a += x; b2 += y; if (y === 0) ok = false; return `${c.n}:${x}/${y}`; });
+    if (b2 < .6 * a) ok = false; add(ok, `★3 0.4초 ${a} vs 0.7초 ${b2} (/240) — ${ls.join(" · ")}`); }
+  out.push("", "[L] 곡선: 목표가 단계마다 오르고, 6단계가 5단계보다 쉽지 않고, 1단계 자동 도장 기다리기가 직접 도장보다 불리");
+  { let ok = true; const g = STAGES.map(c => c.goal); for (let i = 1; i < 6; i++) if (g[i] <= g[i - 1]) ok = false;
+    const sv = STAGES.map(c => agg(c, { kind: "survive" }, 301, 40));
+    if (H[5].p > H[4].p + .025 || sv[5].p > sv[4].p + .025) ok = false;
+    let w = 0, d = 0; for (let s = 301; s <= 340; s++) { w += playRun(s, STAGES[0], { greed: 3, waitTime: true, target: 999, ropeStop: 0 }).r.stars; d += playRun(s, STAGES[0], { greed: 3 }).r.stars; }
+    if (w >= d) ok = false;
+    add(ok, `목표 ${g.map(x => "+" + x).join(" → ")} · 생존 봇(노랑만·깃발에 도장) 통과 ${sv.map(a => pct(a.p)).join(" → ")} · 1단계 별 합 기다리기 ${w} vs 직접 도장 ${d}`); }
   return { out, pass: res.filter(Boolean).length, total: res.length };
 }
 // ==CORE END==
@@ -604,7 +631,7 @@ function selfChecks() {
 const $ = id => document.getElementById(id);
 const Q = new URLSearchParams(location.search);
 const JUICE = !Q.has("nojuice");
-const fmtP = v => { v = Math.round(v); if (v >= 10000) { const e = Math.floor(v / 10000), r = v % 10000; return e + "억" + (r ? " " + r.toLocaleString("ko-KR") : "") + "만P"; } return v.toLocaleString("ko-KR") + "만P"; };
+const fmtP = v => { v = Math.round(v); if (v >= 10000) { const e = Math.floor(v / 10000), r = v % 10000; return r ? e + "억 " + r.toLocaleString("ko-KR") + "만P" : e + "억P"; } return v.toLocaleString("ko-KR") + "만P"; };
 const pctS = r => (r >= 0 ? "+" : "") + r.toFixed(1) + "%";
 const pct0 = r => "+" + (Math.round(r * 10) / 10) + "%";
 let auto = false; // 자동 플레이(?autoplay·?selftest): 신호·저장 안 함
@@ -621,12 +648,14 @@ const TERMS = {
   watch: { e: "⌚", n: "시계 보기", s: "회의 −10초", f: "곧 회의 시간이 10초 줄어든다. 지금 찍을지 서두를지" },
   phone: { e: "📱", n: "전화 받기", s: "3초 쉬는 틈", f: "3초 동안 장력·연봉이 멈추고 줄이 조금 회복된다" },
   slam: { e: "✋", n: "책상 치기", s: "큰 버럭 · 놓아라", f: "버럭의 2배 피해. 예고가 조금 길다" },
-  counter: { e: "⚡", n: "맞받아치기", s: "빨강 유지 · +%", f: "과장부터: 버럭 순간 빨강으로 당기고 있으면 피해가 줄고 연봉이 오른다" },
+  counter: { e: "⚡", n: "맞받아치기", s: "빨강 유지 · +%", f: "과장부터: 버럭 순간 빨강으로 당기고 있으면 피해가 줄고 연봉 +3/5/8%, 2초 기회 ×3" },
   bonus: { e: "💰", n: "성과급 시즌", s: "6초 · 도장 ×1.5", f: "창이 열린 6초 안에 도장을 찍으면 인상분 ×1.5" },
   offer: { e: "📨", n: "경쟁사 오퍼", s: "5초 · 오름 ×2", f: "5초 동안 연봉 오름 ×2, 대신 장력도 1.5배 빨리 오른다" },
   restr: { e: "📉", n: "구조조정", s: "줄 절반", f: "남은 줄이 절반으로 줄어든다(최대 50). 그 전에 찍거나 미리 써 버리기" },
   mood: { e: "🌤️", n: "기분 변화", s: "빨강 구간 바뀜", f: "맑음: 8초 동안 빨강이 70부터 · 흐림: 90부터" },
   maxed: { e: "🔥", n: "끝까지 당김", s: "줄 1.5배 닳음", f: "장력 100에서는 줄이 1.5배 빨리 닳는다" },
+  low: { e: "🪢", n: "줄 바닥", s: "버럭 한 방에 끊김", f: "줄이 30 아래면 쉬어도 닳고, 버럭은 놓아도 최소 26(책상 치기 52). 여기서 찍을지 더 짜낼지" },
+  timeout: { e: "⏱️", n: "회의 결렬", s: "시간 끝 = 절반", f: "회의 시간이 끝나면 지금 인상률의 절반만 남는다. 그 전에 도장" },
   snap: { e: "✂️", n: "그럼 나가세요", s: "줄 끊김 · 0", f: "줄이 끊기면 이번 판 0, 평판 −1(다음 판 줄 −10). 도장을 찍으면 회복" },
 };
 const CARDS = {
@@ -638,6 +667,16 @@ const NEWR = { 1: "cough", 2: "chin", 3: "watch", 4: "phone", 5: "slam" };
 const I = (n, c) => UI.icon(n, c);
 const cv = $("cv"); let ctx = cv.getContext("2d");
 let FONT = "sans-serif";
+
+// 캔버스용 아이콘(키트 Lucide 심볼을 그림으로) · 끊긴 원인 한 줄 · 사건 아이콘
+const iconCache = {};
+function iconImg(name, col) { const k = name + col; if (iconCache[k]) return iconCache[k]; const sym = document.getElementById("i-" + name), img = new Image();
+  if (sym) img.src = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="${col}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${sym.innerHTML}</svg>`);
+  return iconCache[k] = img; }
+function drawIcon(name, col, x, y, sz) { const im = iconImg(name, col); if (im.complete && im.naturalWidth) ctx.drawImage(im, x, y, sz, sz); }
+const EV_IC = e => ({ bonus: "coins", offer: "mail", restr: "trending-down", mood: e.dir > 0 ? "sparkles" : "wind" })[e.k] || "info";
+const CAUSE = { cough: ["triangle-alert", "버럭 맞음 → 줄 끊김"], slam: ["hand", "책상 치기 → 줄 끊김"], restr: ["trending-down", "구조조정 → 줄 끊김"],
+  red: ["flame", "빨강 오래 → 줄 끊김"], yellow: ["gauge", "줄 다 씀 → 끊김"], low: ["heart", "줄 바닥에서 버팀 → 끊김"] };
 
 // ───────── 소리 (Web Audio 합성, 첫 터치 뒤) ─────────
 let ac = null, master = null, creak = null, noiseBuf = null;
@@ -712,7 +751,7 @@ function meet(k, custom) {
 }
 function showTip(c) {
   const T = c.custom || TERMS[c.k], pic = T.img ? `<img src="${T.img}" alt="">` : `<span class="ui-em">${T.e}</span>`;
-  $("tip").innerHTML = `${pic}<div><div class="n">${T.n}${c.k ? '<span class="ui-badge">NEW</span>' : ""}</div><div class="f">${T.s}</div></div>`;
+  $("tip").innerHTML = `${pic}<div><div class="n">${T.n}</div><div class="f">${T.s}</div></div>`;
   $("tip").classList.add("on"); tipCur = c; tipT = c.custom ? 2.4 : 2.2;
   const t = $("ui-toast"); if (t) t.classList.remove("on");
 }
@@ -735,7 +774,7 @@ function startRun(n, hand0, seed) {
   cfg = stageCfg(n); runHand = hand0 || [];
   st = newState(seed ?? (Date.now() % 100000), cfg, { hand: runHand, rep: auto ? 0 : save.rep });
   mode = "run"; acc = 0; held = false; stampQ = false; cardQ = -1; hadInput = false; failSent = false; stampHold = 0; flagSeen = false;
-  fx.parts = []; fx.rings = []; fx.banner = null; fx.seal = null; fx.snap = null; fx.face = null; fx.bub = null; fx.push = 0; fx.gain = 0; fx.lastRope = Math.ceil(st.rope / 10); fx.stop = 0; fx.lastSal = undefined; fx.gainT = 0;
+  fx.parts = []; fx.rings = []; fx.banner = null; fx.seal = null; fx.snap = null; fx.face = null; fx.bub = null; fx.push = 0; fx.gain = 0; fx.lastRope = Math.ceil(st.rope / 10); fx.stop = 0; fx.lastSal = undefined; fx.gainT = 0; fx.lowSeen = false; fx.warnT = false;
   dispSal = salaryOf(st); tipQ = []; hideTip();
   $("ov").classList.remove("on"); $("hud").hidden = false; $("money").hidden = false; $("stampBtn").style.display = "flex"; $("cards").style.display = "flex";
   $("sal").classList.remove("big");
@@ -780,23 +819,23 @@ function onEv(kind, a) {
   if (kind === "watch") { popText("−10초", "#ff6b5e", .2, .09); const c = $("tchip"); c.classList.remove("bump"); void c.offsetWidth; c.classList.add("bump"); shake(4); }
   if (kind === "phone") popText("3초 휴식", "#cfd6e4", .72, L2.headY / VH - .06, "s");
   if (kind === "banner") { SFX.banner(); const T = TERMS[a.k]; const e = a.k === "mood" ? (a.dir > 0 ? "☀️" : "⛈️") : T.e;
-    fx.banner = { text: `${e} 3초 뒤 ${a.k === "mood" ? (a.dir > 0 ? "기분 맑음" : "기분 흐림") : T.n}`, t: 0, dur: 2.9, bg: "rgba(20,24,34,.92)", col: "#fff" }; meet(a.k); hideTip(); }
+    fx.banner = { ic: EV_IC(a), text: `3초 뒤 ${a.k === "mood" ? (a.dir > 0 ? "기분 맑음" : "기분 흐림") : T.n}`, t: 0, dur: 2.9, bg: "rgba(20,24,34,.92)", col: "#ffffff" }; meet(a.k); hideTip(); }
   if (kind === "event") {
-    if (a.k === "bonus") { SFX.coins(); fx.banner = { text: "💰 6초 · 도장 ×1.5", t: 0, dur: 6, bg: "rgba(255,201,77,.95)", col: "#1d1606", bar: "bonus", max: 6 }; }
-    if (a.k === "offer") { SFX.offer(); fx.banner = { text: "📨 5초 · 오름 ×2", t: 0, dur: 5, bg: "rgba(77,157,255,.92)", col: "#fff", bar: "offer", max: 5 }; }
-    if (a.k === "mood") { SFX.mood(a.dir); fx.banner = { text: a.dir > 0 ? "☀️ 8초 · 빨강 넓게" : "⛈️ 8초 · 빨강 좁게", t: 0, dur: 8, bg: a.dir > 0 ? "rgba(255,170,60,.92)" : "rgba(80,96,130,.95)", col: "#fff", bar: "mood", max: 8 }; }
-    if (a.k === "restr") { SFX.restr(); hitStop(.1); shake(14); flash("rgba(120,140,190,.35)", .4); fx.wob = 1; fx.banner = { text: "📉 구조조정 · 줄 절반", t: 0, dur: 1.6, bg: "rgba(40,48,70,.95)", col: "#fff" };
+    if (a.k === "bonus") { SFX.coins(); fx.banner = { ic: "coins", text: "6초 · 도장 ×1.5", t: 0, dur: 6, bg: "rgba(255,201,77,.95)", col: "#1d1606", bar: "bonus", max: 6 }; }
+    if (a.k === "offer") { SFX.offer(); fx.banner = { ic: "mail", text: "5초 · 오름 ×2", t: 0, dur: 5, bg: "rgba(77,157,255,.92)", col: "#ffffff", bar: "offer", max: 5 }; }
+    if (a.k === "mood") { SFX.mood(a.dir); fx.banner = { ic: a.dir > 0 ? "sparkles" : "wind", text: a.dir > 0 ? "8초 · 빨강 넓게" : "8초 · 빨강 좁게", t: 0, dur: 8, bg: a.dir > 0 ? "rgba(255,170,60,.92)" : "rgba(80,96,130,.95)", col: "#ffffff", bar: "mood", max: 8 }; }
+    if (a.k === "restr") { SFX.restr(); hitStop(.1); shake(14); flash("rgba(120,140,190,.35)", .4); fx.wob = 1; fx.banner = { ic: "trending-down", text: "구조조정 · 줄 절반", t: 0, dur: 1.6, bg: "rgba(40,48,70,.95)", col: "#ffffff" };
       puff(cx, L2.ropeY, 26, { speed: 180, life: .8, r: 2.5, cols: ["#e9edf5", "#9aa3b2"], line: true, g: 300 }); }
   }
   if (kind === "card") { SFX.card(); const C = CARDS[a]; popText(C.n, "#fff", .3, .74, "s"); ring(L2.meX, L2.headY + 30, "#fff", 50); buildCards(); layoutTrack(); }
   if (kind === "flag") {
     if (!flagSeen) { flagSeen = true; SFX.flag(); shake(5); ring(cx, L2.ropeY, "#ffc94d", 110); puff(VW / 2, 150, 26, { speed: 220, life: .8, r: 3.5, cols: ["#ffc94d", "#fff"], sq: true, g: 200 });
-      if (!fx.banner || fx.banner.t > 1) fx.banner = { text: "🚩 목표 달성 · 도장 or 더", t: 0, dur: 2.2, bg: "rgba(255,201,77,.95)", col: "#1d1606" };
+      if (!fx.banner || fx.banner.t > 1) fx.banner = { ic: "flag", text: "목표 달성 · 도장 or 더", t: 0, dur: 2.2, bg: "rgba(255,201,77,.95)", col: "#1d1606" };
       if (!auto && !save.tut.stamp) handSet("stamp"); }
   }
   if (kind === "round") {
     SFX.stamp(1); shake(10); fx.seal = { t: 0, n: 1 }; popText(`협상 ${a.n} · ${pct0(a.raise)}`, "#ffc94d", .5, .3, "l"); flagSeen = false;
-    fx.banner = { text: `🚪 다음 상대 · 목표 ${pct0(st.goal)}`, t: 0, dur: 2.4, bg: "rgba(20,24,34,.92)", col: "#fff" }; buildCards(); layoutTrack();
+    fx.banner = { ic: "users", text: `다음 상대 · 목표 ${pct0(st.goal)}`, t: 0, dur: 2.4, bg: "rgba(20,24,34,.92)", col: "#ffffff" }; fx.warnT = false; buildCards(); layoutTrack();
   }
   if (kind === "end") endRun(a);
 }
@@ -809,7 +848,8 @@ function endRun(r) {
   if (r.type === "snap") {
     SFX.snap(); fx.snap = { t: 0 }; shake(16); flash("rgba(255,60,50,.4)", .6); fx.face = { k: "door", t: 0, dur: 9 }; meet("snap");
     puff(L.cx, L.ropeY, 30, { speed: 240, life: .9, r: 3, cols: ["#e9edf5", "#ffd34d", "#ff6b5e"], line: true, g: 400 });
-    if (!auto) save.rep = Math.min(3, (save.rep || 0) + 1);
+    if (!auto && save.cleared >= 1 && cfg.n >= 2) save.rep = Math.min(3, (save.rep || 0) + 1); // 첫 방문(1단계 전)은 벌칙 없음
+    fx.repHit = !auto && save.cleared >= 1 && cfg.n >= 2;
   } else {
     hitStop(.05); SFX.stamp(r.stars); shake(14); flash("rgba(255,255,255,.35)", .25); fx.seal = { t: 0, n: r.stars };
     puff(L.cx, L.ropeY + 6, 28, { speed: 200, life: .7, r: 3.5, cols: ["#e0342b", "#ff6b5e", "#a51d16"], g: 120 });
@@ -824,9 +864,9 @@ function endRun(r) {
     persist();
     const sec = Math.round(st.t * 10) / 10;
     if (cfg.endless) {
-      if (st.rounds > 0) emit("level_clear", { level: 7, score: Math.round(st.cum * 10) / 10, stars: 0, raise: Math.round(st.cum * 10) / 10, salary: Math.round(salaryOf(st)), sec, card_used: st.used.join(","), counters: st.counters, rounds: st.rounds });
+      if (st.rounds > 0) emit("level_clear", { level: 7, score: Math.round(st.cum * 10) / 10, score_label: "%", stars: 0, raise: Math.round(st.cum * 10) / 10, salary: Math.round(salaryOf(st)), sec, card_used: st.used.join(","), counters: st.counters, rounds: st.rounds });
       else { failSent = true; emit("fail", { level: 7, why: r.type === "snap" ? "snap" : "short", raise: Math.round((r.type === "snap" ? st.raise : r.round) * 10) / 10, sec }); }
-    } else if (r.type === "clear") emit("level_clear", { level: n, score: Math.round(r.raise * 10) / 10, stars: r.stars, raise: Math.round(r.raise * 10) / 10, salary: Math.round(cfg.base * (1 + r.raise / 100)), sec, card_used: st.used.join(","), counters: st.counters });
+    } else if (r.type === "clear") emit("level_clear", { level: n, score: Math.round(r.raise * 10) / 10, score_label: "%", stars: r.stars, raise: Math.round(r.raise * 10) / 10, salary: Math.round(cfg.base * (1 + r.raise / 100)), sec, card_used: st.used.join(","), counters: st.counters });
     else if (!failSent) { failSent = true; emit("fail", { level: n, why: r.type === "snap" ? "snap" : "short", raise: Math.round((r.type === "snap" ? st.raise : r.raise) * 10) / 10, sec }); }
   }
   setTimeout(() => result(r, { newCard, firstClear }), r.type === "snap" ? 1400 : 1250);
@@ -891,14 +931,15 @@ function result(r, x) {
     head = `<div class="ui-pop">${UI.stars(r.stars, 3, "big")}</div>${rank}<h2 class="ui-h">${n}단계 통과</h2><div class="ui-big">${fmtP(final)}</div>
       <p class="g-line"><span class="ui-num">${fmtP(base)}</span>${I("arrow-right")}<b class="g-gold">${pct0(r.raise)}</b>${r.bonus ? `<span>· 성과급 ×1.5</span>` : ""}</p>`;
     info = ok ? `<p class="g-line">${I("trophy")}<b class="g-gold">억대 연봉 달성</b></p>` : prevBest > 0 && r.raise > prevBest + .05 ? `<p class="g-line">${I("trophy")}최고 ${pct0(prevBest)} ${I("arrow-right")}<b>${pct0(r.raise)}</b></p>` : r.stars < 3 ? `<p class="g-line">${I("star")}다음 별 <b>${pct0(r.stars === 1 ? cfg.s2 : cfg.s3)}</b></p>` : "";
+    if (r.why === "time") info = `<p class="g-line">${I("clock")}회의 결렬 · 인상 절반</p>` + info;
     if (x.newCard) info += `<div class="ui-line"><span class="g-cic">${I(CARDS[x.newCard].ic)}</span><span class="ui-grow">새 카드</span><b>${CARDS[x.newCard].n}</b></div>`;
     if (n < 6) { next = stageLine(n + 1); main = `${n + 1}단계`; mainId = "next"; mainIc = "arrow-right"; alt = `<button class="ui-btn" id="again">${I("rotate-ccw")}다시</button>`; }
     else { next = x.firstClear ? `<div class="ui-card flat g-pv"><span class="ui-em">♾️</span><div class="ui-grow"><b>무한 협상 열림</b></div></div>` : ""; main = "무한 협상"; mainId = "endless"; mainIc = "arrow-right"; alt = `<button class="ui-btn" id="again">${I("rotate-ccw")}다시</button>`; }
   } else if (r.type === "snap") {
-    head = `${rank}<h2 class="ui-h">그럼 나가세요</h2><div class="ui-big g-strike">${pct0(st.raise)}</div><p class="g-line">${I("triangle-alert")}줄 끊김 · 평판 −${save.rep || 1}</p>`;
+    head = `${rank}<h2 class="ui-h">그럼 나가세요</h2><div class="ui-big g-strike">${pct0(st.raise)}</div><p class="g-line">${I(CAUSE[r.cause] ? CAUSE[r.cause][0] : "triangle-alert")}${CAUSE[r.cause] ? CAUSE[r.cause][1] : "줄 끊김"}</p>${fx.repHit ? `<p class="g-line">${I("heart")}평판 −${save.rep} · 다음 판 줄 −${save.rep * 10}</p>` : ""}`;
     main = "재도전"; mainId = "again"; mainIc = "rotate-ccw";
   } else {
-    head = `${rank}<h2 class="ui-h">목표 미달</h2><div class="ui-big">${pct0(r.raise)}</div><p class="g-line">${I("flag")}목표까지 <b>${(st.goal - r.raise).toFixed(1)}%</b>${r.why === "time" ? " · 회의 끝" : ""}</p>`;
+    head = `${rank}<h2 class="ui-h">목표 미달</h2><div class="ui-big">${pct0(r.raise)}</div><p class="g-line">${I("flag")}목표까지 <b>${(st.goal - r.raise).toFixed(1)}%</b></p>${r.why === "time" ? `<p class="g-line">${I("clock")}회의 결렬 · 인상 절반</p>` : ""}`;
     main = "재도전"; mainId = "again"; mainIc = "rotate-ccw";
   }
   const mainHtml = mainIc === "arrow-right" ? `${main}${I(mainIc, "lg")}` : `${I(mainIc, "lg")}${main}`;
@@ -913,7 +954,7 @@ function result(r, x) {
 }
 function showDex(back) {
   const keys = Object.keys(TERMS), rules = `<h3 class="g-sec">하는 법</h3><ul class="ui-list">
-    <li>${I("hand")}꾹 누르면 당기기 · 떼면 풀기</li><li>${I("gauge")}노랑은 아껴, 빨강은 빨리</li><li>${I("triangle-alert")}예고를 보고 놓거나 당기기</li><li>${I("stamp")}깃발 넘고 도장 = 통과</li></ul>`;
+    <li>${I("hand")}꾹 누르면 당기기 · 떼면 풀기</li><li>${I("gauge")}노랑은 아껴, 빨강은 빨리</li><li>${I("triangle-alert")}예고를 보고 놓거나 당기기</li><li>${I("stamp")}깃발 넘고 도장 = 통과</li><li>${I("clock")}시간 끝 = 결렬(절반)</li><li>${I("heart")}줄 30 아래 = 위험</li></ul>`;
   const cardsHtml = CARD_ORDER.map((k, i) => i <= save.cleared ? `<div class="ui-item"><span class="g-cic">${I(CARDS[k].ic)}</span><span class="ui-grow"><b>${CARDS[k].n}</b><p>${CARDS[k].s}</p></span></div>` : `<div class="ui-item no"><span class="g-cic">${I("lock")}</span><span class="ui-grow"><p>${i}단계 통과</p></span></div>`).join("");
   openOv(`<div class="ui-head ui-enter"><button class="ui-btn icon" id="back" aria-label="뒤로">${I("chevron-left")}</button><h2 class="ui-h">도감</h2><span class="ui-chip">${I("book-open")}${keys.filter(k => dex.has(k)).length}/${keys.length}</span></div>
     <div class="ui-col g-dex ui-enter-2" style="gap:var(--ui-s2)">${rules}<h3 class="g-sec">상대 반응 · 사건</h3>`
@@ -1151,12 +1192,16 @@ function drawScene(dt) {
   // 줄(인내심) 막대 + 예상 피해 그림자 (정직한 정보)
   const bw = 150 * s, bx = cx - bw / 2, by = cY + ph / 2 + 16 * s;
   ctx.fillStyle = "rgba(255,255,255,.1)"; rr(bx, by, bw, 6, 3); ctx.fill();
-  const rw = bw * Math.max(0, S.rope) / S.ropeMax; ctx.fillStyle = ropeK < .3 ? "#ff6b5e" : "#e9edf5"; rr(bx, by, Math.max(0, rw), 6, 3); ctx.fill();
+  const low = S.rope < LOW, rw = bw * Math.max(0, S.rope) / S.ropeMax;
+  if (low && run) { ctx.fillStyle = `rgba(255,60,50,${.18 + .14 * Math.sin(T * 8)})`; rr(bx - 3, by - 3, bw + 6, 12, 5); ctx.fill(); }
+  ctx.fillStyle = low ? "#ff6b5e" : "#e9edf5"; rr(bx, by, Math.max(0, rw), 6, 3); ctx.fill();
+  drawIcon("heart", low ? "#ff6b5e" : "#cfd6e4", bx - 22, by - 6, 18); // 줄 = 상대 인내심
   if (rc && rc.phase === "warn" && (rc.k === "cough" || rc.k === "slam") && run) {
     const ctrOk = RANKS[cfg.rank].ctr && (rc.k === "cough" || RANKS[cfg.rank].ctr.slam) && S.press && ten >= redS;
-    const pred = S.silence > 0 ? 0 : ten * RANKS[cfg.rank].dmg * (cfg.hit || 1) * (rc.k === "slam" ? 2 : 1) * (ctrOk ? RANKS[cfg.rank].ctr.dm : 1);
+    const mul = RANKS[cfg.rank].dmg * (cfg.hit || 1) * (rc.k === "slam" ? 2 : 1);
+    const pred = S.silence > 0 ? 0 : ctrOk ? ten * mul * RANKS[cfg.rank].ctr.dm : low ? Math.max(ten * mul, LOW_DMG * (rc.k === "slam" ? 2 : 1)) : ten * mul;
     const pw2 = Math.min(rw, bw * pred / S.ropeMax); ctx.fillStyle = `rgba(255,50,40,${.55 + .4 * Math.sin(T * 18)})`; rr(bx + rw - pw2, by - 1, pw2, 8, 3); ctx.fill();
-    if (pred > 1) { ctx.fillStyle = "#ff8a80"; ctx.font = `700 12px ${FONT}`; ctx.textAlign = "center"; ctx.fillText("−" + Math.round(pred), bx + rw - pw2 / 2, by + 20); }
+    if (pred > 1) { ctx.fillStyle = "#ff8a80"; ctx.font = `700 14px ${FONT}`; ctx.textAlign = "center"; ctx.fillText("−" + Math.round(pred), bx + rw - pw2 / 2, by + 20); }
   }
   if (S.b.proof > 0) { ctx.strokeStyle = "#8fd0ff"; ctx.lineWidth = 2; rr(bx - 3, by - 3, bw + 6, 12, 5); ctx.stroke(); }
   // 상대 머리 위 말풍선 (예고 아이콘 1개)
@@ -1180,7 +1225,9 @@ function drawScene(dt) {
   // 사건 띠 배너 (화면 위쪽)
   const bn = fx.banner;
   if (bn) { const a = Math.min(1, bn.t / .15, (bn.dur - bn.t) / .2), y = L.bannerY; ctx.globalAlpha = Math.max(0, a);
-    ctx.fillStyle = bn.bg; ctx.fillRect(0, y, W, 34); ctx.fillStyle = bn.col; ctx.font = `700 16px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(bn.text, W / 2, y + 17); ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = bn.bg; ctx.fillRect(0, y, W, 34); ctx.fillStyle = bn.col; ctx.font = `700 16px ${FONT}`; ctx.textBaseline = "middle";
+    const tw = ctx.measureText(bn.text).width, ix = W / 2 - (tw + (bn.ic ? 26 : 0)) / 2; if (bn.ic) drawIcon(bn.ic, bn.col, ix, y + 7, 20);
+    ctx.textAlign = "left"; ctx.fillText(bn.text, ix + (bn.ic ? 26 : 0), y + 17); ctx.textBaseline = "alphabetic";
     if (bn.bar) { const left = S.b[bn.bar] / bn.max; ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.fillRect(0, y + 30, W * Math.max(0, left), 4); }
     ctx.globalAlpha = 1; }
   if (fx.flash && JUICE) { ctx.globalAlpha = Math.max(0, 1 - fx.flash.t / fx.flash.dur); ctx.fillStyle = fx.flash.col; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
@@ -1207,11 +1254,14 @@ function loop(t) {
       creakSet(st.press && st.b.phone <= 0, st.ten, st.zone === 2);
       // 떠오르는 숫자: 오른 만큼 +28만P
       fx.gainT += dtR; const sal = salaryOf(st); if (fx.lastSal === undefined) fx.lastSal = sal;
-      if (fx.gainT > .5) { const d = sal - fx.lastSal; if (d >= 1) popText("+" + Math.round(d) + "만P", st.zone === 2 ? "#ffc94d" : "#e9edf5", .5, (L.ropeY - 60 * L.s) / VH, "s"); fx.gainT = 0; fx.lastSal = sal; }
+      if (fx.gainT > .5 && !(st.b.chance > 0)) { const d = sal - fx.lastSal; if (d >= 1) popText("+" + Math.round(d) + "만P", st.zone === 2 ? "#ffc94d" : "#e9edf5", .5, (L.ropeY - 60 * L.s) / VH, "s"); fx.gainT = 0; fx.lastSal = sal; }
       if (sal - dispSal > 1 && t - lastTick > 70) { lastTick = t; SFX.tick(st.zone === 2 ? 1 : 0); }
       // 올 풀림 틱
       const rf = Math.ceil(st.rope / 10); if (rf < fx.lastRope) { SFX.fray(); puff(L.cx + (Math.random() - .5) * 120, L.ropeY, 3, { speed: 40, life: .9, r: 2, cols: ["#e9edf5"], line: true, g: 260 }); } fx.lastRope = rf;
       if (st.ten >= 99.5 && st.zone === 2) meet("maxed");
+      if (st.rope < LOW && !fx.lowSeen) { fx.lowSeen = true; meet("low"); SFX.banner(); if (!fx.banner || fx.banner.t > 1.5) fx.banner = { ic: "triangle-alert", text: "줄 바닥 · 버럭 한 방에 끊김", t: 0, dur: 2.2, bg: "rgba(120,20,24,.94)", col: "#ffffff" }; }
+      if (st.rope >= LOW + 8) fx.lowSeen = false;
+      if (st.left < 5 && !fx.warnT) { fx.warnT = true; meet("timeout"); SFX.banner(); fx.banner = { ic: "clock", text: "5초 뒤 결렬 · 인상 절반", t: 0, dur: 2.4, bg: "rgba(20,24,34,.94)", col: "#ffffff" }; }
       // 첫 판 손짓: 줄이 빨개진 채 0.8초 넘게 누르면 '떼기' 한 번 보여 준다
       if (!auto && cfg.n === 1 && !save.tut.red && st.zone === 2 && held) { fx.redT = (fx.redT || 0) + dtR; if (fx.redT > .8) { save.tut.red = 1; persist(); handSet("release"); setTimeout(() => { if (hand.mode === "release") handSet(""); }, 1500); } }
     }
