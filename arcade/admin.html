@@ -44,7 +44,7 @@ td.m{font-family:var(--mono);white-space:nowrap}
   <div class="bar">
     <select id="fGame"><option value="">모든 게임</option></select>
     <select id="fTester"><option value="">모든 테스터</option></select>
-    <button id="reload">새로고침</button><button id="exPop">인기 숫자 복사</button><button id="exJson">JSON 내보내기</button><button id="exCsv">CSV 내보내기</button>
+    <button id="reload">새로고침</button><button id="logout">로그아웃</button><button id="exPop">인기 숫자 복사</button><button id="exJson">JSON 내보내기</button><button id="exCsv">CSV 내보내기</button>
   </div>
 
   <h2>게임별 판정 <small>테스터 5명부터 판정 · 계속: 5명 중 3명 '한 판 더' / 그만: 1명 이하</small></h2>
@@ -73,12 +73,22 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const LS = { get(k, d) { try { const v = localStorage.getItem("nhcpocket_" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem("nhcpocket_" + k, JSON.stringify(v)); } catch (e) {} } };
 const remote = CFG.feedback === "supabase" && CFG.supabaseUrl && CFG.supabaseAnonKey;
 let token = sessionStorage.getItem("nhc_admin_token") || "";
+// 이 기기 로그인 유지: 갱신 토큰만 이 브라우저에 저장해 두고, 열 때마다 새 접속 토큰을 받는다(비밀번호는 저장 안 함)
+const RT = { get() { try { return localStorage.getItem("nhc_admin_refresh") || ""; } catch (e) { return ""; } }, set(v) { try { v ? localStorage.setItem("nhc_admin_refresh", v) : localStorage.removeItem("nhc_admin_refresh"); } catch (e) {} } };
+async function refresh() {
+  const rt = RT.get(); if (!rt) return false;
+  try {
+    const r = await fetch(`${CFG.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, { method: "POST", headers: { apikey: CFG.supabaseAnonKey, "Content-Type": "application/json" }, body: JSON.stringify({ refresh_token: rt }) });
+    const j = await r.json(); if (!r.ok || !j.access_token) { RT.set(""); return false; }
+    token = j.access_token; RT.set(j.refresh_token); try { sessionStorage.setItem("nhc_admin_token", token); } catch (e) {} return true;
+  } catch (e) { return false; }
+}
 let DATA = { feedback: [], compare_votes: [], sessions: [] };
 
 async function login() {
   const r = await fetch(`${CFG.supabaseUrl}/auth/v1/token?grant_type=password`, { method: "POST", headers: { apikey: CFG.supabaseAnonKey, "Content-Type": "application/json" }, body: JSON.stringify({ email: $("em").value, password: $("pw").value }) });
   const j = await r.json(); if (!r.ok) { alertMsg("로그인 실패: " + (j.error_description || j.msg || r.status)); return; }
-  token = j.access_token; try { sessionStorage.setItem("nhc_admin_token", token); } catch (e) {} load();
+  token = j.access_token; RT.set(j.refresh_token); try { sessionStorage.setItem("nhc_admin_token", token); } catch (e) {} load();
 }
 function alertMsg(m) { $("src").textContent = m; }
 async function fetchTable(t) {
@@ -87,9 +97,9 @@ async function fetchTable(t) {
 }
 async function load() {
   if (remote) {
-    if (!token) { $("login").classList.add("on"); alertMsg("공유 DB 모드 · 로그인이 필요합니다"); return; }
+    if (!token && !(await refresh())) { $("login").classList.add("on"); alertMsg("공유 DB 모드 · 로그인이 필요합니다"); return; }
     try { DATA.feedback = await fetchTable("feedback"); DATA.compare_votes = await fetchTable("compare_votes"); DATA.sessions = await fetchTable("sessions"); $("login").classList.remove("on"); alertMsg(`공유 DB (${CFG.supabaseUrl.replace("https://", "")}) · 로그인됨`); }
-    catch (e) { token = ""; try { sessionStorage.removeItem("nhc_admin_token"); } catch (x) {} $("login").classList.add("on"); alertMsg("세션 만료 · 다시 로그인하세요"); return; }
+    catch (e) { token = ""; try { sessionStorage.removeItem("nhc_admin_token"); } catch (x) {} if (await refresh()) return load(); $("login").classList.add("on"); alertMsg("세션 만료 · 다시 로그인하세요"); return; }
   } else {
     DATA.feedback = LS.get("feedback", []).concat(LS.get("admin_imported", [])); DATA.compare_votes = LS.get("compare_votes", []).concat(LS.get("admin_imported_votes", [])); DATA.sessions = LS.get("sessions", []);
     alertMsg("이 기기 모드 (공유 DB 미연결) · 이 브라우저에 있는 기록 + 붙여 넣어 가져온 피드백을 보여 줍니다. config.js 에 Supabase 키를 넣으면 모든 테스터 기록이 모입니다.");
@@ -175,6 +185,7 @@ $("exPop").onclick = () => {   // 오락실 BEST 3용: 최근 14일 활성 사�
     out[id] = { users: d.length, back: d.filter(z => z.size >= 2).length, ...(rs.length ? { avg: Math.round(10 * rs.reduce((a, b) => a + b, 0) / rs.length) / 10, n: rs.length } : {}), src: day + " 관리자 집계" }; });
   const txt = JSON.stringify(out, null, 1); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(() => alertMsg("인기 숫자를 복사했어요 → ratings.json 에 반영"), () => prompt("복사하세요", txt));
 };
+$("logout").onclick = () => { RT.set(""); token = ""; try { sessionStorage.removeItem("nhc_admin_token"); } catch (e) {} load(); };
 $("exJson").onclick = () => dl("nhc-pocket-data.json", JSON.stringify(DATA, null, 1), "application/json");
 $("exCsv").onclick = () => { const cols = ["created_at", "game_id", "version", "anon_id", "tester", "liked", "rating", "again", "understood", "play_seconds", "levels_cleared", "fails", "device", "comment"];
   dl("nhc-pocket-feedback.csv", "﻿" + [cols.join(",")].concat(DATA.feedback.map(f => cols.map(c => `"${String(f[c] ?? "").replace(/"/g, '""')}"`).join(","))).join("\n"), "text/csv"); };
