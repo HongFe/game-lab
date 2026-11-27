@@ -6,92 +6,289 @@
 <meta name="theme-color" content="#2a1640">
 <title>인형뽑기 군단</title>
 <style>
-:root{--bg:#2a1640;--bg2:#160b26;--tx:#fff5fb;--sub:#c6a9d9;--pink:#ff5fa2;--cyan:#38e1ff;--yel:#ffd84d;--panel:rgba(255,255,255,.08);--line:rgba(255,255,255,.14)}
+:root{--bg:#2a1640;--bg2:#160b26;--tx:#fff5fb;--pink:#ff5fa2;--cyan:#38e1ff;--yel:#ffd84d;--ui-accent:#ffd84d;--ui-on-accent:#2a1640}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:radial-gradient(120% 80% at 50% 0%,#4a2370,var(--bg) 45%,var(--bg2));color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
-#app{position:fixed;inset:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column;padding:calc(8px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom))}
-.hud{display:flex;gap:6px;align-items:center}
-.hud div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px 10px;font-size:12px;color:var(--sub);flex:1;text-align:center}
-.hud b{display:block;font:900 18px ui-monospace,Menlo,monospace;color:var(--tx)}
-.hud .coin b{color:var(--yel)}
-.hud .mutegap{flex:0 0 44px;height:44px;background:none;border:0;padding:0}
-.mute{position:fixed;z-index:9;top:calc(8px + env(safe-area-inset-top));right:max(12px,calc((100vw - 480px) / 2 + 12px));width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(60,30,90,.85);font-size:18px;color:#fff;cursor:pointer;padding:0;touch-action:manipulation}
-.sign{text-align:center;font:900 20px -apple-system,sans-serif;letter-spacing:1px;margin:6px 0 4px;color:#fff;text-shadow:0 0 6px var(--pink),0 0 14px var(--pink),0 0 24px #ff2d8a;animation:neon 3s infinite}
+html,body{margin:0;height:100%;background:radial-gradient(120% 80% at 50% 0%,#4a2370,var(--bg) 45%,var(--bg2));color:var(--tx);font-family:var(--ui-font);overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none;word-break:keep-all}
+#app{position:fixed;inset:0;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:var(--ui-s2);padding:max(var(--ui-s2),env(safe-area-inset-top)) var(--ui-s3) max(var(--ui-s3),env(safe-area-inset-bottom))}
+/* 위 칩 줄 (웨이브·코인·최고·소리) */
+.g-top{display:flex;gap:var(--ui-s2);align-items:center;min-height:var(--ui-touch)}
+.g-top .ui-chip b{font-weight:700}
+.g-top .ui-chip.accent b{color:var(--ui-accent)}
+#mute{background:color-mix(in srgb,var(--ui-surface) 86%,transparent);box-shadow:var(--ui-shadow1);color:var(--ui-text)}
+/* 네온 간판 (게임 속 장식) */
+.sign{text-align:center;font:700 var(--ui-t4)/1.25 var(--ui-font);color:#fff;text-shadow:0 0 6px var(--pink),0 0 14px var(--pink),0 0 24px #ff2d8a;animation:neon 3s infinite}
 @keyframes neon{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.4}94%{opacity:1}96%{opacity:.6}97%{opacity:1}}
 #cv{flex:1;width:100%;min-height:0;touch-action:none;display:block}
-.squad{display:flex;gap:4px;min-height:46px;align-items:center;justify-content:center;flex-wrap:wrap;margin:6px 0;touch-action:manipulation}
-.squad span{position:relative;font-size:26px;line-height:1;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px 5px 3px;min-width:40px;text-align:center;cursor:pointer}
-.squad span i{position:absolute;right:-4px;top:-8px;font-style:normal;font-size:12px;color:var(--yel);text-shadow:0 0 4px #000}
-.squad .empty{font-size:12px;color:var(--sub);background:none;border:0;cursor:default}
-.squad span.new{animation:join .5s cubic-bezier(.3,1.6,.6,1)}
-@keyframes join{from{transform:translateY(-30px) scale(1.6)}}
-.btns{display:flex;gap:8px}
-.btns button{flex:1;border:0;border-radius:14px;padding:13px 0;font:900 15px -apple-system,sans-serif;color:#2a1640;background:var(--yel);box-shadow:0 4px 0 #b88f00;cursor:pointer;touch-action:manipulation}
-.btns button.fight{background:var(--pink);color:#fff;box-shadow:0 4px 0 #a8195a}
-.btns button:active{transform:translateY(3px);box-shadow:0 1px 0 #000}
-.btns button:disabled{filter:grayscale(.7) brightness(.7)}
-.tip{font-size:12.5px;color:var(--sub);text-align:center;margin-top:6px}
-.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,6,26,.7);padding:18px;z-index:5}
-.ov.on{display:flex}
-.box{background:#2d1846;border:1px solid var(--line);border-radius:18px;padding:18px;width:min(360px,100%);text-align:center;animation:rise .25s ease-out}
-@keyframes rise{from{transform:translateY(20px);opacity:.5}}
-.box h1{margin:0;font-size:26px} .box h2{margin:0 0 4px;font-size:22px}
-.box p{color:var(--sub);font-size:13.5px;line-height:1.6;margin:6px 0}
-.box ul{text-align:left;font-size:13px;line-height:1.7;padding-left:18px;color:#f0e2f7}
-.box button{width:100%;border:0;border-radius:12px;padding:12px;font:900 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:var(--yel);color:#2a1640}
-.box .team{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:8px 0}.box .team span{font-size:26px;line-height:1;white-space:nowrap}.box .team small{font-size:12px;color:var(--yel);vertical-align:top}
-.box .big{font:900 40px ui-monospace,Menlo,monospace;color:var(--yel)}
-.pop{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:900 28px -apple-system,sans-serif;pointer-events:none;z-index:4;animation:popup 1s ease-out forwards;text-shadow:0 3px 10px rgba(0,0,0,.6);white-space:nowrap}
+/* 시너지 칩 */
+.syn{display:flex;gap:var(--ui-s1);min-height:var(--ui-s6);align-items:center;justify-content:center;flex-wrap:wrap;touch-action:manipulation}
+.syn span{height:var(--ui-s6);display:inline-flex;align-items:center;padding:0 var(--ui-s2);border-radius:999px;background:var(--ui-surface);font:700 var(--ui-t1)/1 var(--ui-font);color:var(--ui-muted);white-space:nowrap;opacity:.55;cursor:pointer}
+.syn span.on{opacity:1;color:var(--ui-text);box-shadow:inset 0 0 0 2px var(--ui-good)}
+/* 아래 버튼 줄: 주 버튼(뽑기) 하나 + 아이콘 버튼 */
+.btns{display:flex;gap:var(--ui-s2)}
+.btns #drop{flex:1;min-width:0;padding:0 var(--ui-s3)}
+#drop.spin{background:var(--ui-bad);color:#fff}
+#drop b{font-variant-numeric:tabular-nums}
+.btns .ui-btn.icon{min-height:calc(var(--ui-touch) + 8px);width:calc(var(--ui-touch) + 4px);background:var(--ui-surface)}
+#spd b{font:700 var(--ui-t3)/1 var(--ui-font);font-variant-numeric:tabular-nums}
+#mis .ui-badge{background:var(--ui-surface2);color:var(--ui-text);box-shadow:var(--ui-shadow1)}
+#mis .ui-badge[hidden]{display:none}
+/* 첫 판 손짓 (한 번에 하나) */
+#tip{position:fixed;z-index:8;left:50%;top:calc(max(var(--ui-s2),env(safe-area-inset-top)) + var(--ui-s7) + var(--ui-s3));transform:translateX(-50%);width:max-content;max-width:calc(100% - var(--ui-s6));pointer-events:none;opacity:0;transition:opacity 195ms var(--ui-out)}
+#tip.on{opacity:1;transition:opacity 225ms var(--ui-in)}
+#tip .ui-icon{animation:nudge .7s var(--ui-in) infinite alternate}
+@keyframes nudge{to{transform:translateY(3px)}}
+/* 겹 화면 (시작·결과·보상·미션·확률표) */
+#ov{display:none}
+#ov.on{display:flex}
+.g-roster{display:flex;justify-content:center;gap:var(--ui-s1)}
+.g-roster .ui-em{width:var(--ui-s6);height:var(--ui-s6);font-size:var(--ui-t5)}
+.g-line{display:flex;align-items:center;justify-content:center;gap:var(--ui-s2);font-size:var(--ui-t3);line-height:1.5;color:var(--ui-muted);margin:0}
+.g-line .ui-icon{color:var(--ui-accent)}
+.g-team{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--ui-s2)}
+.g-team span{position:relative;width:var(--ui-s7);height:var(--ui-s7);display:grid;place-items:center;font-size:var(--ui-t5);line-height:1;background:var(--ui-surface2);border-radius:var(--ui-r2)}
+.g-team i{position:absolute;right:var(--ui-s1);bottom:var(--ui-s1);width:var(--ui-s2);height:var(--ui-s2);border-radius:50%}
+.g-opt{appearance:none;border:0;margin:0;width:100%;font:inherit;color:var(--ui-text);text-align:left;cursor:pointer;min-height:calc(var(--ui-touch) + 8px);touch-action:manipulation;transition:transform 90ms var(--ui-in)}
+.g-opt:active{transform:scale(.97)}
+.g-opt>.ui-icon{color:var(--ui-muted)}
+.g-opt .ui-em{width:var(--ui-s6);height:var(--ui-s6);font-size:var(--ui-t4)}
+.g-rw{display:inline-flex;align-items:center;gap:var(--ui-s1);font:700 var(--ui-t2)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap}
+.g-rw .ui-icon{width:16px;height:16px;color:var(--ui-muted)}
+.ui-item .ui-icon.ok{color:var(--ui-good)}
+.ui-item>.ui-icon{color:var(--ui-muted)}
+.g-sec{font:700 var(--ui-t2)/1.5 var(--ui-font);color:var(--ui-muted);margin:var(--ui-s2) 0 0}
+.g-tbl{background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s1) var(--ui-s4)}
+.g-tbl div{display:flex;align-items:center;gap:var(--ui-s2);min-height:40px;font-size:var(--ui-t2);line-height:1.25}
+.g-tbl div+div{box-shadow:inset 0 1px 0 var(--ui-line)}
+.g-tbl span{flex:1;display:flex;align-items:center;gap:var(--ui-s1)}
+.g-tbl .ui-icon{width:16px;height:16px;color:var(--ui-muted)}
+.g-tbl b{font-variant-numeric:tabular-nums}
+.pop{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:900 28px var(--ui-font);pointer-events:none;z-index:4;animation:popup 1s ease-out forwards;text-shadow:0 3px 10px rgba(0,0,0,.6);white-space:nowrap}
 @keyframes popup{0%{transform:translate(-50%,-50%) scale(.5);opacity:0}20%{transform:translate(-50%,-60%) scale(1.2);opacity:1}100%{transform:translate(-50%,-140%) scale(1);opacity:0}}
-/* 인형 카드 */
-.cardbg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(15,6,26,.55);z-index:7;padding:20px;touch-action:none}
+/* 새 인형 카드 */
+.cardbg{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:color-mix(in srgb,var(--ui-bg) 70%,transparent);z-index:7;padding:var(--ui-s5);touch-action:none}
 .cardbg.on{display:flex}
-.card{position:relative;width:min(300px,100%);background:linear-gradient(170deg,#4a2577,#25123a);border:2px solid var(--yel);border-radius:22px;padding:22px 18px 16px;text-align:center;box-shadow:0 0 0 4px rgba(255,216,77,.15),0 18px 40px rgba(0,0,0,.5);animation:cardin .5s cubic-bezier(.3,1.6,.6,1)}
-@keyframes cardin{from{transform:scale(.3) rotate(-8deg);opacity:0}}
-.card .ribbon{position:absolute;left:50%;top:-14px;transform:translateX(-50%);background:var(--pink);color:#fff;font:900 12px -apple-system,sans-serif;padding:5px 14px;border-radius:99px;letter-spacing:1px;white-space:nowrap}
-.card .cemo{width:92px;height:92px;margin:4px auto 8px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:inset -6px -8px 0 rgba(0,0,0,.18),0 6px 18px rgba(0,0,0,.4)}
-.card h3{margin:0;font-size:22px}
-.card .role{display:inline-block;vertical-align:middle;font-size:12px;background:rgba(255,255,255,.14);border-radius:99px;padding:2px 9px;margin-left:4px;color:var(--cyan)}
-.card p{margin:6px 0;color:var(--sub);font-size:13.5px}
-.card .sp{background:rgba(0,0,0,.28);border:1px solid rgba(255,216,77,.35);border-radius:14px;padding:10px;margin:10px 0 4px;font-size:13px;line-height:1.55;color:#f0e2f7}
-.card .sp b{color:var(--yel);font-size:15px}
-.card .hint{font-size:12.5px}
-.card button{width:100%;min-height:44px;border:0;border-radius:12px;font:900 15px -apple-system,sans-serif;margin-top:8px;background:var(--yel);color:#2a1640;cursor:pointer}
-.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 92px);transform:translateX(-50%);z-index:6;pointer-events:none;background:rgba(30,14,50,.92);border:1px solid rgba(255,216,77,.5);border-radius:14px;padding:8px 12px;font-size:13px;line-height:1.45;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,.4);animation:toast 2.2s ease-out forwards;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
-.toast b{color:var(--yel)}
-@keyframes toast{0%{opacity:0;transform:translate(-50%,-12px) scale(.9)}10%{opacity:1;transform:translate(-50%,0) scale(1)}85%{opacity:1}100%{opacity:0;transform:translate(-50%,-6px)}}
-.syn{display:flex;gap:4px;min-height:40px;align-items:center;justify-content:center;flex-wrap:wrap;margin:5px 0;touch-action:manipulation}
-.syn span{font-size:12px;line-height:1.2;padding:4px 6px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid var(--line);color:#8f7aa3;white-space:nowrap}
-.syn span.on{color:#2a1640;background:var(--yel);border-color:#fff;font-weight:900;box-shadow:0 0 10px rgba(255,216,77,.5)}
-.btns button.spd,.btns button.ic{flex:0 0 52px;background:#5a3a80;color:#fff;box-shadow:0 4px 0 #2a1640;font-size:14px;padding:13px 0}
-.up{position:fixed;left:50%;top:0;transform:translateX(-50%);width:min(360px,94vw);background:rgba(36,18,58,.97);border:1px solid var(--yel);border-radius:16px;padding:8px;z-index:6;display:none;box-shadow:0 10px 24px rgba(0,0,0,.5)}
-.up.on{display:block;animation:rise .2s ease-out}
-.up .hd{display:flex;align-items:center;gap:8px;font:900 16px -apple-system,sans-serif;margin:0 2px 6px}
-.up .hd i{font-style:normal;font-size:13px;padding:2px 8px;border-radius:99px;color:#1a0a2a}
-.up .hd .x{margin-left:auto;width:40px;height:40px;border:0;border-radius:10px;background:rgba(255,255,255,.1);color:#fff;font-size:16px}
-.up .row{display:flex;gap:6px}
-.up .row button{flex:1;min-height:44px;border:0;border-radius:11px;background:var(--yel);color:#2a1640;font:900 14px -apple-system,sans-serif}
-.up .row button:disabled{filter:grayscale(1) brightness(.6)}
-.up .row.sw{margin-top:0}.up .row.sw button{background:#5a3a80;color:#fff;font-size:20px;padding:0}
-.box table{width:100%;font-size:13px;border-collapse:collapse;color:#f0e2f7;text-align:left}.box td{padding:4px 2px;border-bottom:1px solid var(--line)}.box td:last-child{text-align:right;color:var(--yel);font-weight:900}
-.box .opt{display:flex;align-items:center;gap:10px;text-align:left;background:#3d2160;color:#fff;border:1px solid var(--line);min-height:56px}
-.box .opt b{font-size:26px}
-.btns button.spin{background:#ff5f6d;color:#fff;box-shadow:0 4px 0 #a01830}
+.card{position:relative;width:min(300px,100%);display:flex;flex-direction:column;align-items:center;gap:var(--ui-s3);padding:var(--ui-s6) var(--ui-s4) var(--ui-s4);text-align:center;box-shadow:var(--ui-shadow2)}
+.card>.ui-badge{position:absolute;left:50%;top:calc(-1 * var(--ui-s3));transform:translateX(-50%);height:var(--ui-s5);padding:0 var(--ui-s3);background:var(--ui-text);color:var(--ui-bg)}
+.card .cemo{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:56px;box-shadow:inset -6px -8px 0 rgba(0,0,0,.18),0 6px 18px rgba(0,0,0,.4)}
+.card .ui-h{display:flex;align-items:center;gap:var(--ui-s1)}
+.card .ui-line{width:100%;justify-content:center}
+.card .ui-line .ui-icon{color:var(--ui-accent)}
+.card .ui-line span{color:var(--ui-muted)}
+.card .ui-btn{width:100%}
+/* 인형 패널 (합성·레시피·바꾸기·판매) */
+.up{position:fixed;left:0;right:0;margin:0 auto;top:0;width:min(360px,calc(100vw - var(--ui-s4)));background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s2);z-index:6;display:none;box-shadow:var(--ui-shadow2);font-family:var(--ui-font);color:var(--ui-text)}
+.up.on{display:block;animation:ui-enter 225ms var(--ui-in) both}
+.up .hd{display:flex;align-items:center;gap:var(--ui-s2);padding-left:var(--ui-s2);margin-bottom:var(--ui-s2);font-size:var(--ui-t4);line-height:1}
+.up .hd i{font:700 var(--ui-t1)/1 var(--ui-font);font-style:normal;padding:6px var(--ui-s2);border-radius:999px;color:#1a0a2a}
+.up .hd .ui-btn{margin-left:auto}
+.up .row{display:flex;gap:var(--ui-s1)}
+.up .row .ui-btn{flex:1;min-width:0;padding:0 var(--ui-s1);gap:var(--ui-s1);font-size:var(--ui-t2);font-variant-numeric:tabular-nums}
+.up .row .ui-btn.nx{flex:0 0 40px}
+.up .row.sw .ui-btn{font-size:var(--ui-t4)}
+.up .row.sw .ui-btn.pct{font-size:var(--ui-t1);color:var(--ui-muted);opacity:1;background:transparent}
 </style>
 </head>
 <body>
+<!-- nhc-ui-kit:start -->
+<style id="nhc-ui-kit">
+/* NHC game-lab UI kit v1 (2026-11-27) — 게임 '밖' UI(시작·레벨·HUD·결과·안내·버튼·토스트) 공용 스타일
+   기준: research/2026-11-27_게임UI_정돈_기준.md 의 15규칙. 모든 클래스는 ui- 로 시작해 게임 자체 스타일과 섞이지 않는다
+   게임별로 바꿀 것은 :root 의 --ui-accent / --ui-on-accent 두 개뿐(게임 쪽 :root 가 항상 이긴다 — 키트 기본값은 :where 로 0점). 밝은 화면 게임은 <html class="ui-light"> */
+:where(:root){
+  /* 간격 4의 배수 7단계 */
+  --ui-s1:4px;--ui-s2:8px;--ui-s3:12px;--ui-s4:16px;--ui-s5:24px;--ui-s6:32px;--ui-s7:48px;
+  /* 글자 5단계 · 굵기 2개 */
+  --ui-t1:12px;--ui-t2:14px;--ui-t3:16px;--ui-t4:20px;--ui-t5:30px;
+  /* 반경 3단계 */
+  --ui-r1:8px;--ui-r2:12px;--ui-r3:20px;
+  /* 색 역할 (어두운 화면 기본) */
+  --ui-bg:#0f1218;--ui-surface:#1a1f29;--ui-surface2:#242a36;--ui-line:rgba(255,255,255,.08);
+  --ui-text:#f2f4f8;--ui-muted:#9aa3b2;--ui-accent:#ffc83d;--ui-on-accent:#1a1406;
+  --ui-good:#34c77b;--ui-bad:#ff5a5f;
+  --ui-shadow1:0 1px 2px rgba(0,0,0,.25),0 4px 12px rgba(0,0,0,.18);
+  --ui-shadow2:0 8px 32px rgba(0,0,0,.35);
+  --ui-in:cubic-bezier(0,0,.2,1);--ui-out:cubic-bezier(.4,0,1,1);
+  --ui-font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
+  --ui-touch:48px;
+}
+.ui-light{
+  --ui-bg:#f4f6f9;--ui-surface:#ffffff;--ui-surface2:#eef1f5;--ui-line:rgba(15,20,30,.08);
+  --ui-text:#161a22;--ui-muted:#5f6878;
+  --ui-shadow1:0 1px 2px rgba(15,20,30,.08),0 4px 12px rgba(15,20,30,.08);
+  --ui-shadow2:0 12px 32px rgba(15,20,30,.16);
+}
+.ui-warm{--ui-bg:#f7f1e8;--ui-surface:#fffdf9;--ui-surface2:#f0e8dc;--ui-line:rgba(60,40,20,.10);--ui-text:#2a2118;--ui-muted:#76695a}   /* 따뜻한 밝은 화면: ui-light 와 함께 */
+.ui-kid{--ui-touch:56px}
+.ui-kid .ui-btn,.ui-kid .ui-level{min-height:56px}
+
+/* 기본 스타일 지우기 (ui- 요소 안에서만) */
+.ui-screen,.ui-card,.ui-hud,.ui-toast,.ui-sheet{font-family:var(--ui-font);color:var(--ui-text);word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+.ui-screen *,.ui-hud *,.ui-sheet *{box-sizing:border-box}
+.ui-screen ul,.ui-sheet ul{list-style:none;margin:0;padding:0}
+.ui-num{font-variant-numeric:tabular-nums}
+
+/* 아이콘: <svg class="ui-icon"><use href="#i-play"/></svg> 또는 UI.icon("play") */
+.ui-icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+.ui-icon.lg{width:24px;height:24px}.ui-icon.xl{width:32px;height:32px}.ui-icon.sm{width:16px;height:16px;vertical-align:-3px}
+.ui-icon.fill{fill:currentColor}
+
+/* 화면(시작·결과·일시정지): 가운데 한 줄 기둥 */
+.ui-screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:var(--ui-s5);padding-top:max(var(--ui-s5),env(safe-area-inset-top));padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));background:var(--ui-bg);overflow:auto}
+.ui-screen.dim{background:color-mix(in srgb,var(--ui-bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ui-col{width:100%;max-width:360px;display:flex;flex-direction:column;gap:var(--ui-s4)}
+.ui-screen>.ui-col{margin-block:auto}   /* 짧으면 가운데, 길면 위에서부터 스크롤(위 잘림 없음) */
+.ui-center{text-align:center;align-items:center}
+.ui-hero{font-size:56px;line-height:1;width:72px;height:72px;display:grid;place-items:center;border-radius:var(--ui-r3);background:var(--ui-surface)}
+.ui-title{font-size:var(--ui-t5);font-weight:700;line-height:1.25;letter-spacing:-.02em;margin:0}
+.ui-h{font-size:var(--ui-t4);font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0}
+.ui-sub{font-size:var(--ui-t3);line-height:1.5;color:var(--ui-muted);margin:0}   /* 16: 제목30·버튼20/16과 합쳐 3단계 */
+.ui-cap{font-size:var(--ui-t1);line-height:1.5;color:var(--ui-muted);margin:0}
+.ui-row{display:flex;gap:var(--ui-s2);align-items:center}
+.ui-row>.ui-btn{flex:1}
+.ui-spacer{flex:1}
+
+/* 버튼: 주 버튼은 화면에 하나 */
+.ui-btn{appearance:none;border:0;margin:0;font:700 var(--ui-t3)/1 var(--ui-font);color:var(--ui-text);background:var(--ui-surface2);min-height:var(--ui-touch);padding:0 var(--ui-s5);border-radius:var(--ui-r2);display:inline-flex;align-items:center;justify-content:center;gap:var(--ui-s2);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform 90ms var(--ui-in),filter 90ms var(--ui-in)}
+.ui-btn:active{transform:scale(.96)}
+.ui-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
+.ui-btn.primary{background:var(--ui-accent);color:var(--ui-on-accent);box-shadow:var(--ui-shadow1);min-height:calc(var(--ui-touch) + 8px);font-size:var(--ui-t4)}
+.ui-btn.ghost{background:transparent;color:var(--ui-muted)}
+.ui-btn.icon{width:var(--ui-touch);padding:0;flex:none;position:relative}
+.ui-btn.icon>.ui-badge{position:absolute;top:-6px;right:-6px;margin:0}
+.ui-btn.round{border-radius:50%}
+.ui-btn:disabled,.ui-btn.off{opacity:.38;pointer-events:none}
+.ui-btn .ui-badge{margin-left:2px}
+.ui-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ui-bad);color:#fff;font:700 var(--ui-t1)/1 var(--ui-font);font-variant-numeric:tabular-nums}
+
+/* 카드 · 수치 */
+.ui-card{background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s4);box-shadow:var(--ui-shadow1)}
+.ui-card.flat{box-shadow:none;background:var(--ui-surface2)}
+.ui-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:var(--ui-s2)}
+.ui-stat{background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3);display:flex;flex-direction:column;gap:var(--ui-s1);min-width:0}
+.ui-stat b{font-size:clamp(var(--ui-t3),5vw,var(--ui-t4));font-weight:700;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ui-stat span{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25;display:flex;align-items:center;gap:var(--ui-s1)}
+.ui-big{font-size:48px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* 레벨 선택 격자 */
+.ui-levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:var(--ui-s2)}
+.ui-level{appearance:none;border:0;margin:0;aspect-ratio:1;border-radius:var(--ui-r2);background:var(--ui-surface2);color:var(--ui-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ui-s1);font:700 var(--ui-t4)/1 var(--ui-font);font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;transition:transform 90ms var(--ui-in)}
+.ui-level:active{transform:scale(.94)}
+.ui-level.cur{box-shadow:inset 0 0 0 2px var(--ui-text)}   /* 강조색은 주 버튼에만 → 지금 칸은 테두리로 */
+.ui-level.lock{color:var(--ui-muted);background:transparent;box-shadow:inset 0 0 0 1px var(--ui-line);pointer-events:none}
+.ui-level .ui-stars .ui-icon{width:10px;height:10px}
+
+/* 별 */
+.ui-stars{display:inline-flex;gap:2px;color:var(--ui-accent)}
+.ui-stars .off{color:var(--ui-line);opacity:1}
+.ui-light .ui-stars .off{color:rgba(15,20,30,.15)}
+.ui-stars.big .ui-icon{width:40px;height:40px}
+.ui-stars.big{gap:var(--ui-s2)}
+
+/* HUD: 위쪽 칩 줄 */
+.ui-hud{position:absolute;left:0;right:0;top:0;z-index:20;display:flex;gap:var(--ui-s2);align-items:center;padding:var(--ui-s3);padding-top:max(var(--ui-s3),env(safe-area-inset-top));pointer-events:none}
+.ui-hud>*{pointer-events:auto}
+.ui-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--ui-s3);border-radius:999px;background:color-mix(in srgb,var(--ui-surface) 86%,transparent);box-shadow:var(--ui-shadow1);font:700 var(--ui-t2)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ui-text)}
+.ui-chip .ui-icon{width:16px;height:16px;color:var(--ui-muted)}
+.ui-chip.accent .ui-icon{color:var(--ui-accent)}
+.ui-meter{height:6px;border-radius:999px;background:var(--ui-surface2);overflow:hidden}
+.ui-meter>i{display:block;height:100%;background:var(--ui-accent);border-radius:inherit;transition:width 200ms var(--ui-in)}
+
+/* 안내 카드(한 번에 하나) · 토스트 · 시트 */
+.ui-tip{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s3) var(--ui-s4);box-shadow:var(--ui-shadow2);font-size:var(--ui-t3);line-height:1.5;color:var(--ui-text);font-family:var(--ui-font)}
+.ui-tip .ui-icon{color:var(--ui-accent)}
+.ui-toast{position:fixed;left:50%;bottom:max(var(--ui-s6),env(safe-area-inset-bottom));z-index:80;transform:translate(-50%,8px);opacity:0;pointer-events:none;background:var(--ui-text);color:var(--ui-bg);padding:var(--ui-s3) var(--ui-s4);border-radius:var(--ui-r1);font:700 var(--ui-t2)/1.25 var(--ui-font);max-width:calc(100vw - 32px);width:max-content;text-align:center;transition:opacity 180ms var(--ui-in),transform 180ms var(--ui-in)}
+.ui-toast.on{opacity:1;transform:translate(-50%,0)}
+.ui-toast.top{bottom:auto;top:max(25%,env(safe-area-inset-top))}
+.ui-sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--ui-surface);border-radius:var(--ui-r3) var(--ui-r3) 0 0;padding:var(--ui-s5);padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));box-shadow:var(--ui-shadow2);transform:translateY(100%);transition:transform 195ms var(--ui-out)}
+.ui-sheet.on{transform:none;transition:transform 225ms var(--ui-in)}
+.ui-sheet:not(.on){box-shadow:none}
+.ui-scrim{position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity 195ms var(--ui-out)}
+.ui-scrim.on{opacity:1;pointer-events:auto;transition:opacity 225ms var(--ui-in)}
+.ui-list{display:flex;flex-direction:column;gap:var(--ui-s2)}
+.ui-list li{display:flex;align-items:center;gap:var(--ui-s3);font-size:var(--ui-t2);line-height:1.5}
+.ui-list li .ui-icon{color:var(--ui-muted)}
+.ui-em{width:28px;height:28px;display:inline-grid;place-items:center;font-size:20px;line-height:1;flex:none}
+
+/* 등장 모션 */
+.ui-enter{animation:ui-enter 225ms var(--ui-in) both}
+.ui-enter-2{animation:ui-enter 225ms var(--ui-in) 60ms both}
+.ui-enter-3{animation:ui-enter 225ms var(--ui-in) 120ms both}
+.ui-pop{animation:ui-pop 300ms var(--ui-in) both}
+@keyframes ui-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ui-pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.ui-enter,.ui-enter-2,.ui-enter-3,.ui-pop{animation:ui-fade 150ms linear both}.ui-btn,.ui-level{transition:none}}
+@keyframes ui-fade{from{opacity:0}to{opacity:1}}
+
+/* 화면 머리 · 목록 줄 · 아래 고정 · 단계 막대 · 한 줄 카드 (2026-11-27 G003 시범에서 추가) */
+.ui-head{display:flex;align-items:center;gap:var(--ui-s2);min-height:var(--ui-touch)}
+.ui-head>.ui-h{flex:1}
+.ui-item{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3)}
+.ui-item>.ui-grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-s1)}
+.ui-item b{font-size:var(--ui-t3);font-weight:700;line-height:1.25}
+.ui-item small{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25}
+.ui-item.lock{opacity:.5}
+.ui-line{display:flex;align-items:center;gap:var(--ui-s2);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3) var(--ui-s4);font-size:var(--ui-t3);line-height:1.25}
+.ui-line>.ui-grow{flex:1;color:var(--ui-muted)}
+.ui-line b{font-variant-numeric:tabular-nums}
+.ui-dock{position:sticky;bottom:0;padding-top:var(--ui-s3);background:linear-gradient(to bottom,transparent,var(--ui-bg) 40%)}
+.ui-pips{display:inline-flex;gap:3px}.ui-pips>i{width:14px;height:6px;border-radius:999px;background:var(--ui-line)}.ui-pips>i.on{background:var(--ui-text)}
+.ui-strike{text-decoration:line-through;text-decoration-thickness:3px;opacity:.6}
+.ui-good{color:var(--ui-good)}.ui-bad{color:var(--ui-bad)}
+
+/* 칩 보조 숫자(값/한도) · 첫 판 손짓 (v1.2) */
+.ui-chip small{font-weight:400;color:var(--ui-muted);margin-left:-4px}
+.ui-hand{position:absolute;z-index:40;width:44px;height:44px;margin:-6px 0 0 -14px;pointer-events:none;font-size:36px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transition:left 600ms var(--ui-in),top 600ms var(--ui-in),opacity 150ms linear}
+.ui-hand.tap{animation:ui-tap 900ms var(--ui-in) infinite}
+@keyframes ui-tap{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(6px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){.ui-hand,.ui-hand.tap{animation:none;transition:opacity 150ms linear}}
+
+/* v1.3 (G012 반영): 숨김, 줄 오른쪽 값, 작은 안내, 배지 색 */
+.ui-screen[hidden],.ui-sheet[hidden],.ui-tip[hidden],.ui-screen.hide,.ui-screen.off{display:none}
+.ui-item>.ui-val{font:700 var(--ui-t3)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.ui-tip.sm{font-size:var(--ui-t2);padding:var(--ui-s2) var(--ui-s3);gap:var(--ui-s2)}
+.ui-tip.sm b{font-weight:700}
+.ui-badge.good{background:var(--ui-good)}
+.ui-badge.muted{background:var(--ui-surface2);color:var(--ui-muted)}
+
+/* v1.4 (G021·G022 반영) */
+.ui-light .ui-screen.dim{background:rgba(20,28,40,.45)}
+.ui-levels.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.ui-btn.float{background:var(--ui-surface);box-shadow:var(--ui-shadow1)}
+.ui-chip .ui-stars .ui-icon{color:inherit}
+.ui-chip .ui-stars .off{color:var(--ui-line)}
+
+/* v1.5 (G002·G006 반영) */
+[hidden].ui-badge,[hidden].ui-chip,[hidden].ui-btn,[hidden].ui-item,[hidden].ui-line{display:none}
+button.ui-item{appearance:none;border:0;width:100%;text-align:left;color:var(--ui-text);font-family:var(--ui-font);cursor:pointer;transition:transform 90ms var(--ui-in)}
+button.ui-item:active{transform:scale(.98)}
+.ui-pips>i.bad{background:var(--ui-bad)}.ui-pips>i.good{background:var(--ui-good)}
+.ui-hud.static{position:static;padding:0}
+</style>
+<!-- Lucide icons (lucide-static 0.460.0) — ISC License. Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></symbol><symbol id="i-award" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526" /> <circle cx="12" cy="8" r="6" /></symbol><symbol id="i-book-open" viewBox="0 0 24 24"><path d="M12 7v14" /> <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" /></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /> <circle cx="7" cy="17" r="2" /> <path d="M9 17h6" /> <circle cx="17" cy="17" r="2" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol><symbol id="i-chevrons-up" viewBox="0 0 24 24"><path d="m17 11-5-5-5 5" /> <path d="m17 18-5-5-5 5" /></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" /></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" /></symbol><symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6" /> <path d="M18.09 10.37A6 6 0 1 1 10.34 18" /> <path d="M7 6h1v4" /> <path d="m16.71 13.88.7.71-2.82 2.82" /></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /> <line x1="4" x2="4" y1="22" y2="15" /></symbol><symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4" /> <path d="M3.34 19a10 10 0 1 1 17.32 0" /></symbol><symbol id="i-gavel" viewBox="0 0 24 24"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8" /> <path d="m16 16 6-6" /> <path d="m8 8 6-6" /> <path d="m9 7 8 8" /> <path d="m21 11-8-8" /></symbol><symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1" /> <path d="M12 8v13" /> <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /> <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" /></symbol><symbol id="i-graduation-cap" viewBox="0 0 24 24"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></symbol><symbol id="i-hammer" viewBox="0 0 24 24"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9" /> <path d="m18 15 4-4" /> <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5" /></symbol><symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /> <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /> <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /> <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></symbol><symbol id="i-handshake" viewBox="0 0 24 24"><path d="m11 17 2 2a1 1 0 1 0 3-3" /> <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" /> <path d="m21 3 1 11h-2" /> <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" /> <path d="M3 4h8" /></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22" /> <line x1="6" x2="6" y1="18" y2="11" /> <line x1="10" x2="10" y1="18" y2="11" /> <line x1="14" x2="14" y1="18" y2="11" /> <line x1="18" x2="18" y1="18" y2="11" /> <polygon points="12 2 20 7 4 7" /></symbol><symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /></symbol><symbol id="i-lock-open" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 9.9-1" /></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2" /> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12" /> <line x1="4" x2="20" y1="6" y2="6" /> <line x1="4" x2="20" y1="18" y2="18" /></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol><symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /> <circle cx="6" cy="18" r="3" /> <circle cx="18" cy="16" r="3" /></symbol><symbol id="i-newspaper" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /> <path d="M18 14h-8" /> <path d="M15 18h-5" /> <path d="M10 6h8v4h-8V6Z" /></symbol><symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1" /> <rect x="6" y="4" width="4" height="16" rx="1" /></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></symbol><symbol id="i-piggy-bank" viewBox="0 0 24 24"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z" /> <path d="M2 9v1c0 1.1.9 2 2 2h1" /> <path d="M16 11h.01" /></symbol><symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="M12 5v14" /></symbol><symbol id="i-pointer" viewBox="0 0 24 24"><path d="M22 14a8 8 0 0 1-8 8" /> <path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /> <path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1" /> <path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10" /> <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></symbol><symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" /></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" /> <circle cx="6" cy="12" r="3" /> <circle cx="18" cy="19" r="3" /> <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /> <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-soup" viewBox="0 0 24 24"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z" /> <path d="M7 21h10" /> <path d="M19.5 12 22 6" /> <path d="M16.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.73 1.62" /> <path d="M11.25 3c.27.1.8.53.74 1.36-.05.83-.93 1.2-.98 2.02-.06.78.33 1.24.72 1.62" /> <path d="M6.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.74 1.62" /></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /> <path d="M20 3v4" /> <path d="M22 5h-4" /> <path d="M4 17v2" /> <path d="M5 18H3" /></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" /> <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /> <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" /> <path d="M2 7h20" /> <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" /></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" /></symbol><symbol id="i-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /> <path d="M13 5v2" /> <path d="M13 17v2" /> <path d="M13 11v2" /></symbol><symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2" /> <line x1="12" x2="15" y1="14" y2="11" /> <circle cx="12" cy="14" r="8" /></symbol><symbol id="i-train-front" viewBox="0 0 24 24"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1" /> <path d="m9 15-1-1" /> <path d="m15 15 1-1" /> <path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z" /> <path d="m8 19-2 3" /> <path d="m16 19 2 3" /></symbol><symbol id="i-trending-down" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7" /> <polyline points="16 17 22 17 22 11" /></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /> <polyline points="16 7 22 7 22 13" /></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /> <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /> <path d="M4 22h16" /> <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /> <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /> <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></symbol><symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <path d="M16 3.13a4 4 0 0 1 0 7.75" /></symbol><symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /> <path d="M7 2v20" /> <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></symbol><symbol id="i-volume-2" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <path d="M16 9a5 5 0 0 1 0 6" /> <path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></symbol><symbol id="i-volume-x" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <line x1="22" x2="16" y1="9" y2="15" /> <line x1="16" x2="22" y1="9" y2="15" /></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></symbol></svg>
+<script>window.UI=window.UI||{};
+UI.icon=function(n,c){return '<svg class="ui-icon'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';};
+UI.stars=function(n,max,c){max=max||3;var s='<span class="ui-stars'+(c?' '+c:'')+'" aria-label="별 '+n+'/'+max+'">';for(var i=0;i<max;i++)s+='<svg class="ui-icon fill'+(i<n?'':' off')+'" aria-hidden="true"><use href="#i-star"/></svg>';return s+'</span>';};
+UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=document.createElement('div');t.id='ui-toast';t.className='ui-toast';t.setAttribute('role','status');document.body.appendChild(t);}t.textContent=m;t.classList.toggle('top',pos==='top');t.classList.add('on');clearTimeout(UI._tt);UI._tt=setTimeout(function(){t.classList.remove('on');},ms||2000);};</script>
+<!-- nhc-ui-kit:end -->
+
 <div id="app">
-  <div class="hud"><div>웨이브<b id="rd">0</b></div><div class="coin">코인<b id="cn">30</b></div><div>최고<b id="bst">-</b></div><div class="mutegap"></div></div>
+  <div class="g-top">
+    <span class="ui-chip" aria-label="웨이브"><svg class="ui-icon" aria-hidden="true"><use href="#i-flag"/></svg><b id="rd">0</b></span>
+    <span class="ui-chip accent" aria-label="코인"><svg class="ui-icon" aria-hidden="true"><use href="#i-coins"/></svg><b id="cn">30</b></span>
+    <span class="ui-chip" aria-label="최고 웨이브"><svg class="ui-icon" aria-hidden="true"><use href="#i-trophy"/></svg><b id="bst">-</b></span>
+    <span class="ui-spacer"></span>
+    <button class="ui-btn icon round" id="mute" aria-label="소리 켜기/끄기"><svg class="ui-icon" aria-hidden="true"><use href="#i-volume-2"/></svg></button>
+  </div>
   <div class="sign" id="sign">인형뽑기 군단</div>
   <canvas id="cv"></canvas>
   <div class="syn" id="syn"></div>
-  <div class="btns"><button id="drop">🎰 10🪙</button><button class="ic" id="mis" aria-label="미션">🎯</button><button class="ic" id="prob" aria-label="확률표">📊</button><button class="spd" id="spd">▶1</button></div>
-  <div class="tip" id="tip" style="display:none"></div>
+  <div class="btns"><button class="ui-btn primary" id="drop">뽑기</button><button class="ui-btn icon" id="mis" aria-label="미션"><svg class="ui-icon" aria-hidden="true"><use href="#i-target"/></svg><span class="ui-badge" id="misn" hidden>0</span></button><button class="ui-btn icon" id="prob" aria-label="확률표"><svg class="ui-icon" aria-hidden="true"><use href="#i-info"/></svg></button><button class="ui-btn icon" id="spd" aria-label="속도"><b id="spdn">×1</b></button></div>
 </div>
-<button class="mute" id="mute" aria-label="소리 켜기/끄기">🔊</button>
+<div class="ui-tip" id="tip" role="status"></div>
 <div class="up" id="up"></div>
-<div class="ov" id="ov"><div class="box" id="box"></div></div>
-<div class="cardbg" id="cardbg"><div class="card" id="card"></div></div>
+<div class="ui-screen dim" id="ov"><div class="ui-col" id="box"></div></div>
+<div class="cardbg" id="cardbg"><div class="card ui-card" id="card"></div></div>
 <script>
 "use strict";
 const q = new URLSearchParams(location.search), SELFTEST = q.has("selftest"), JUICE = !q.has("nojuice");
@@ -227,7 +424,8 @@ const BGM = {
     if (L >= 3 && [0, 3, 6, 10, 12].includes(i)) tone(root + 24 + ch[(i + bar) % 3], st * 2.4, "triangle", .04);
   },
 };
-function setMute(m) { save.mute = m; store.set(save); $("mute").textContent = m ? "🔇" : "🔊"; if (master) try { master.gain.setTargetAtTime(m ? 0 : .9, ac.currentTime, .02); } catch (e) {} }
+const I = (n, c) => UI.icon(n, c);
+function setMute(m) { save.mute = m; store.set(save); $("mute").innerHTML = I(m ? "volume-x" : "volume-2"); $("mute").setAttribute("aria-label", m ? "소리 켜기" : "소리 끄기"); if (master) try { master.gain.setTargetAtTime(m ? 0 : .9, ac.currentTime, .02); } catch (e) {} }
 function emit(ev, data = {}) { try { if (parent !== window) parent.postMessage({ type: "nhc-game", game: "G002", ev, data }, "*"); } catch (e) {} }
 let lastInputEmit = 0;
 addEventListener("pointerdown", () => { audio(); const t = Date.now(); if (t - lastInputEmit > 4000) { lastInputEmit = t; emit("input"); } }, true);
@@ -509,23 +707,41 @@ let cardOpen = false;
 function bigCard(type) {   // 처음 뽑은 종류: 이름 + 역할 아이콘 + 한 줄 필살기
   if (SELFTEST) return;
   const T = TYPES[type], S = SP[type];
-  $("card").innerHTML = `<div class="ribbon">NEW!</div><div class="cemo" style="background:radial-gradient(circle at 35% 30%,#fff,${T.col} 38%,${shade(T.col, -.35)})">${T.e}</div>
-    <h3>${T.name} ${T.ic}</h3><div class="sp"><b>⚡ ${S.name}</b> · ${S.short}</div><button id="cardok">좋아!</button>`;
-  $("cardbg").classList.add("on"); cardOpen = true; SFX.card();
+  $("card").innerHTML = `<span class="ui-badge">NEW</span><div class="cemo" style="background:radial-gradient(circle at 35% 30%,#fff,${T.col} 38%,${shade(T.col, -.35)})">${T.e}</div>
+    <h3 class="ui-h">${T.name}<span class="ui-em">${T.ic}</span></h3><p class="ui-cap">${T.role}</p><div class="ui-line">${I("zap")}<b>${S.name}</b><span>${S.short}</span></div><button class="ui-btn primary" id="cardok">좋아</button>`;
+  $("card").classList.remove("ui-pop"); void $("card").offsetWidth; $("card").classList.add("ui-pop"); $("cardbg").classList.add("on"); cardOpen = true; SFX.card();
   if (auto) setTimeout(closeCard, 1200);
 }
 function closeCard() { if (!cardOpen) return; cardOpen = false; $("cardbg").classList.remove("on"); }
 $("cardbg").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); closeCard(); });
-function toast(html) { if (SELFTEST) return; document.querySelectorAll(".toast").forEach(d => d.remove()); const d = document.createElement("div"); d.className = "toast"; d.innerHTML = html; document.body.appendChild(d); setTimeout(() => d.remove(), 2300); }
+function toast(msg) { if (SELFTEST) return; UI.toast(msg, 2200, "top"); }
+function ovOn() { const t = $("ui-toast"); if (t) t.classList.remove("on"); $("tip").classList.remove("on"); hintKey = ""; $("ov").classList.add("on"); }   // 겹 화면을 열 때 토스트·손짓은 거둔다   // 판 중 토스트는 위쪽 (공용 키트)
 const infoLine = t => `${TYPES[t].e}${TYPES[t].ic} ⚡<b>${SP[t].name}</b>`;
 
 function hud() {
   $("rd").textContent = run ? run.wave : 0; $("cn").textContent = run ? run.coins : E.start; $("bst").textContent = save.best || "-";
   const S = run && run.slot, d = $("drop");
   if (!run || scene !== "play") { d.disabled = true; return; }
-  if (S.state === "spin") { d.disabled = false; d.className = "spin"; d.textContent = `🛑 멈춰 ${S.n + 1}/3`; }
-  else { d.className = ""; const c = cost(run), full = run.units.length >= BOARD; d.disabled = S.state !== "idle" || full || (!run.tickets && run.coins < c); d.textContent = full ? "칸 가득" : run.tickets ? `🎟️ 공짜 ×${run.tickets}` : `🎰 ${c}🪙`; }
-  $("mis").textContent = `🎯${MISSIONS.filter(m => !m.hidden && run.done[m.id]).length}`;
+  let key, html;
+  if (S.state === "spin") { d.disabled = false; key = "s" + S.n; html = `${I("hand", "lg")}멈춤 <b>${S.n + 1}/3</b>`; }
+  else { const c = cost(run), full = run.units.length >= BOARD; d.disabled = S.state !== "idle" || full || (!run.tickets && run.coins < c); key = full ? "f" : run.tickets ? "t" + run.tickets : "c" + c;
+    html = full ? `${I("lock")}칸 가득` : run.tickets ? `${I("gift", "lg")}공짜 뽑기 <b>×${run.tickets}</b>` : `뽑기 ${I("coins")}<b>${c}</b>`; }
+  if (d.dataset.k !== key) { d.dataset.k = key; d.innerHTML = html; d.classList.toggle("spin", S.state === "spin"); }
+  const mn = MISSIONS.filter(m => !m.hidden && run.done[m.id]).length, b = $("misn"); if (b.textContent !== String(mn)) { b.textContent = mn; b.hidden = !mn; }
+  hint();
+}
+// 첫 판 손짓: 규칙 목록 대신 그때그때 한 줄 (처음 두 판만, 한 번에 하나)
+let hintKey = "";
+function hint() {
+  let k = "";
+  if (run && scene === "play" && !auto && !cardOpen && !paused && save.runs <= 2) {
+    const S = run.slot;
+    if (S.state === "idle" && !run.units.length) k = "pull";   // 릴 멈추기는 기계 안 '탭!' 표시가 알려 줌
+    else if (S.state === "idle" && !run.stats.merges && !run.stats.recipes && !(sel && sel.panel) && run.units.some(u => mergePartner(run, u))) k = "merge";
+  }
+  if (k === hintKey) return; hintKey = k; const t = $("tip");
+  if (k) t.innerHTML = { pull: `${I("pointer", "lg")}뽑기 버튼을 눌러요`, merge: `${I("chevrons-up", "lg")}같은 인형을 눌러 합성` }[k];
+  t.classList.toggle("on", !!k);
 }
 let synKey = "";
 function renderSyn() {
@@ -544,13 +760,13 @@ function onEvents() {
     else if (k === "near") { fx.near = 1; 0; }
     else if (k === "result") onResult(e);
     else if (k === "summon" || k === "merge") onSummon(e);
-    else if (k === "full") { toast(`칸 가득 ${TYPES[e.type].e} → +6🪙`); SFX.pair(); }
+    else if (k === "full") { toast(`칸 가득 ${TYPES[e.type].e} → 코인 +6`); SFX.pair(); }
     else if (k === "merged" || k === "recipe") { const u = ux(e.id); if (u) { SFX.merge(); u.pop = 1; fx.rings.push({ x: u.x, y: u.y, r: 44, t: 0, col: GCOL[e.star] }); puff(u.x, u.y, 26, { speed: 220, life: 1, r: 5, cols: ["#fff", GCOL[e.star]], star: true }); floatText(u.x, u.y - 34, k === "recipe" ? `📜 ${GRADE[e.star]}!` : e.changed ? `🎲 ${TYPES[e.type].e} ${GRADE[e.star]}!` : `${GRADE[e.star]}!`, GCOL[e.star], true, 17); if (e.star >= 4) { fx.flash = .4; shake(8); } } sel = null; }
     else if (k === "sell") { SFX.pair(); floatText(e.x, e.y - 20, `+${e.v}🪙`, "#ffd84d", true, 16); sel = null; }
     else if (k === "swap") { const u = ux(e.id); if (u) { (e.ok ? SFX.merge : SFX.blank)(); floatText(u.x, u.y - 34, e.ok ? `💱 ${TYPES[e.type].e}!` : "💱 실패", e.ok ? "#5fffc8" : "#ff8a8a", true, 16); u.pop = 1; } }
-    else if (k === "mission") { SFX.clear(); toast(`🎯 ${e.hidden ? "히든! " : ""}${e.name} ${e.rw.coins ? `+${e.rw.coins}🪙` : `🎟️×${e.rw.tickets}`}`); }
+    else if (k === "mission") { SFX.clear(); toast(`${e.hidden ? "히든 미션" : "미션 성공"} · ${e.rw.coins ? `코인 +${e.rw.coins}` : `뽑기권 ×${e.rw.tickets}`}`); }
     else if (k === "reward") showReward();
-    else if (k === "waveStart") { SFX.wave(e.boss); fx.banner = { txt: e.boss ? "BOSS WAVE" : `WAVE ${e.w}`, sub: e.boss ? "👑" : `👾×${waveSpec(e.w).length}`, t: 0, boss: e.boss, dur: e.boss ? 2 : 1.1 }; emit("level_start", { level: e.w }); BGM.boss = e.boss; if (e.boss) shake(10); $("sign").textContent = e.boss ? `👑 보스 ${e.w}` : `⚔️ 웨이브 ${e.w}`; }
+    else if (k === "waveStart") { SFX.wave(e.boss); fx.banner = { txt: e.boss ? "BOSS WAVE" : `WAVE ${e.w}`, sub: e.boss ? "👑" : `👾×${waveSpec(e.w).length}`, t: 0, boss: e.boss, dur: e.boss ? 2 : 1.1 }; emit("level_start", { level: e.w }); BGM.boss = e.boss; if (e.boss) shake(10); $("sign").textContent = e.boss ? `보스 웨이브 ${e.w}` : `웨이브 ${e.w}`; }
     else if (k === "waveClear") { SFX.clear(); fx.banner = { txt: "클리어!", sub: `+${e.bonus}🪙${isBoss(e.w) ? " · ❤️+2" : ""}`, t: 0, dur: 1.1, win: true }; emit("level_clear", { level: e.w }); save.best = Math.max(save.best, e.w); store.set(save); puff(180, 60, 30, { angle: Math.PI / 2, spread: 2, speed: 160, g: 200, life: 1.4, r: 4, cols: ["#ffd84d", "#ff5fa2", "#38e1ff", "#fff"], star: true }); $("sign").textContent = "다음 웨이브"; }
     else if (k === "hit") {
       // 같은 적의 연속 피해는 한 숫자로 합침, 위쪽 길은 아래로 띄움, 숫자가 많으면 큰 것만
@@ -621,24 +837,28 @@ function onSpHit(e) {
 
 // ───────── 장면 ─────────
 function startRun(seed) {
-  run = newRun(seed ?? (Date.now() % 1e6)); calcSyn(run); scene = "play"; sel = null; paused = false; speed = 1; $("spd").textContent = "▶1"; fx.parts = []; fx.floats = []; fx.flyers = []; fx.banner = { txt: "준비!", sub: "🎰 뽑아서 지키기", t: 0, dur: 2 };
+  run = newRun(seed ?? (Date.now() % 1e6)); calcSyn(run); scene = "play"; sel = null; paused = false; speed = 1; $("spdn").textContent = "×1"; fx.parts = []; fx.floats = []; fx.flyers = []; fx.banner = { txt: "준비!", sub: "🎰 뽑아서 지키기", t: 0, dur: 2 };
   save.runs++; store.set(save); $("ov").classList.remove("on"); synKey = ""; renderSyn(); hud(); BGM.start(false);
-  $("sign").textContent = "준비!"; $("tip").textContent = "릴을 탭해서 멈춰요";
+  $("sign").textContent = "준비!"; hintKey = "-";
 }
 function endRun() {
   if (scene !== "play") return; scene = "over"; BGM.stop(); sel = null; renderPanel();
   const r = run.wave - 1, best = r >= save.best && r > 0; save.best = Math.max(save.best, r); store.set(save);
-  $("box").innerHTML = `<h2>방어 실패</h2><div class="big">${r}</div><p>웨이브${best ? " · 🏆 최고!" : ""}</p>
-    <div class="team">${run.units.map(u => `<span>${TYPES[u.type].e}${u.star > 1 ? `<small style="color:${GCOL[u.star]}">${GRADE[u.star][0]}</small>` : ""}</span>`).join("") || "<span>🦾</span>"}</div>
-    <button id="again">한 판 더</button>`;
-  $("ov").classList.add("on"); $("again").onclick = () => startRun(); hud();
+  $("tip").classList.remove("on"); hintKey = "";
+  $("box").innerHTML = `<div class="ui-col ui-center ui-enter"><h2 class="ui-h">방어 실패</h2><div class="ui-big">${Math.max(0, r)}</div>
+      <p class="g-line">웨이브 · ${best ? `${I("trophy")}최고 기록` : `최고 ${save.best}`}</p></div>
+    ${run.units.length ? `<div class="g-team ui-enter-2" aria-label="남은 인형">${run.units.map(u => `<span>${TYPES[u.type].e}${u.star > 1 ? `<i style="background:${GCOL[u.star]}" aria-label="${GRADE[u.star]}"></i>` : ""}</span>`).join("")}</div>` : ""}
+    <div class="ui-col ui-enter-3"><button class="ui-btn primary" id="again">${I("rotate-ccw", "lg")}한 판 더</button></div>`;
+  ovOn(); $("again").onclick = () => startRun(); hud();
 }
 function menu() {
-  $("box").innerHTML = `<h1>🧸 인형뽑기 군단</h1><p>뽑아서, 합쳐서, 지켜라</p>
-    <ul><li>🎰 릴을 <b>탭</b>해서 멈추기</li><li>같은 인형 2개 → <b>합성</b></li><li>🚪에 닿으면 ❤️ 감소</li></ul>
-    <p style="font-size:24px;letter-spacing:4px">${KEYS.map(k => TYPES[k].e).join("")}</p>
-    <p>🏆 ${save.best || 0}</p><button id="go">시작</button>`;
-  $("ov").classList.add("on"); $("go").onclick = () => startRun();
+  scene = "menu";
+  $("box").innerHTML = `<div class="ui-col ui-center ui-enter"><div class="ui-hero" aria-hidden="true">🧸</div><h1 class="ui-title">인형뽑기 군단</h1><p class="ui-sub">뽑아서, 합쳐서, 지켜라</p></div>
+    <div class="g-roster ui-enter-2" aria-hidden="true">${KEYS.map(k => `<span class="ui-em">${TYPES[k].e}</span>`).join("")}</div>
+    ${save.best ? `<div class="ui-line ui-enter-2">${I("trophy")}<span class="ui-grow">최고 웨이브</span><b>${save.best}</b></div>` : ""}
+    <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)"><button class="ui-btn primary" id="go">${I("play", "lg")}시작</button>
+    <button class="ui-btn ghost" id="mprob">${I("info")}확률표</button></div>`;
+  ovOn(); $("go").onclick = () => startRun(); $("mprob").onclick = showProb;
 }
 
 // ───────── 인형 패널 (합성·레시피·바꾸기·판매) — 아이콘+숫자만 ─────────
@@ -648,9 +868,9 @@ function renderPanel() {
   if (!u) { if (el.classList.contains("on")) el.classList.remove("on"); panelKey = ""; swapOpen = false; return; }
   const mp = mergePartner(run, u), ro = recipeOptions(run, u), rc = ro.length ? ro[(sel.ri || 0) % ro.length] : null, key = [u.id, u.type, u.star, !!mp, rc && rc.map(x => x.id).join("-"), run.coins >= SWAP_COST, swapOpen].join();
   if (key === panelKey) return; panelKey = key;
-  el.innerHTML = `<div class="hd">${TYPES[u.type].e}${TYPES[u.type].ic} <i style="background:${GCOL[u.star]}">${GRADE[u.star]}</i><button class="x" data-a="x">✕</button></div>
-    ${swapOpen ? `<div class="row sw">${KEYS.filter(k => k !== u.type).map(k => `<button data-t="${k}">${TYPES[k].e}</button>`).join("")}<button disabled style="font-size:13px">${SWAP_P * 100}%</button></div>`
-      : `<div class="row"><button data-a="merge" ${mp ? "" : "disabled"}>⬆ 합성</button><button data-a="recipe" ${rc ? "" : "disabled"}>📜 ${rc ? rc.map(p => TYPES[p.type].e).join("") : "3종"}</button>${ro.length > 1 ? `<button data-a="rnext" style="flex:0 0 40px">🔄</button>` : ""}<button data-a="swap" ${run.coins >= SWAP_COST ? "" : "disabled"}>💱 ${SWAP_COST}</button><button data-a="sell" ${SELL[u.star] ? "" : "disabled"}>💰 +${SELL[u.star]}</button></div>`}`;
+  el.innerHTML = `<div class="hd"><span class="ui-em">${TYPES[u.type].e}</span><span class="ui-em">${TYPES[u.type].ic}</span><i style="background:${GCOL[u.star]}">${GRADE[u.star]}</i><button class="ui-btn icon" data-a="x" aria-label="닫기">${I("x")}</button></div>
+    ${swapOpen ? `<div class="row sw">${KEYS.filter(k => k !== u.type).map(k => `<button class="ui-btn" data-t="${k}" aria-label="${TYPES[k].name}로 바꾸기">${TYPES[k].e}</button>`).join("")}<button class="ui-btn pct" disabled>${SWAP_P * 100}%</button></div>`
+      : `<div class="row"><button class="ui-btn" data-a="merge" ${mp ? "" : "disabled"}>${I("chevrons-up", "sm")}합성</button><button class="ui-btn" data-a="recipe" aria-label="레시피" ${rc ? "" : "disabled"}>${I("puzzle", "sm")}${rc ? rc.map(p => TYPES[p.type].e).join("") : "3종"}</button>${ro.length > 1 ? `<button class="ui-btn nx" data-a="rnext" aria-label="다른 재료">${I("chevron-right", "sm")}</button>` : ""}<button class="ui-btn" data-a="swap" aria-label="바꾸기" ${run.coins >= SWAP_COST ? "" : "disabled"}>${I("repeat", "sm")}${SWAP_COST}</button><button class="ui-btn" data-a="sell" aria-label="판매" ${SELL[u.star] ? "" : "disabled"}>${I("coins", "sm")}+${SELL[u.star]}</button></div>`}`;
   // 슬롯과 겹치지 않게 필드 안, 고른 인형의 반대쪽 줄에 띄움
   const r = cv.getBoundingClientRect(), wy = u.y < 170 ? 238 : 4; el.style.top = (r.top + OY + wy * SC) + "px";
   el.classList.add("on");
@@ -664,33 +884,41 @@ $("up").addEventListener("pointerdown", e => {
   else if (a) inQ[a] = sel.id;
 });
 // 접어 둔 정보: 확률표·미션 (버튼을 눌렀을 때만 펼침)
-function box(html) { sel = null; renderPanel(); $("box").innerHTML = html + `<button id="bx">닫기</button>`; $("ov").classList.add("on"); paused = true; $("bx").onclick = () => { $("ov").classList.remove("on"); paused = false; }; }
+function box(title, chip, body) {   // 머리(제목·칩·닫기) + 내용. 시작 화면에서 열었으면 닫을 때 시작 화면으로
+  const back = scene === "menu"; sel = null; renderPanel();
+  $("box").innerHTML = `<div class="ui-head ui-enter"><h2 class="ui-h">${title}</h2>${chip}<button class="ui-btn icon" id="bx" aria-label="닫기">${I("x")}</button></div><div class="ui-col ui-enter-2" style="gap:var(--ui-s2)">${body}</div>`;
+  ovOn(); paused = true; $("bx").onclick = () => { $("ov").classList.remove("on"); paused = false; if (back) menu(); };
+}
 function showProb() {
   const pct = n => (n / NSYM * 100).toFixed(1) + "%";
-  box(`<h2>📊 확률표</h2><table>
-    <tr><td colspan="2"><b>릴 한 칸</b></td></tr><tr><td>🐻</td><td>${pct(3)}</td></tr><tr><td>🐰🦖🐱🐧🐙 각각</td><td>${pct(2)}</td></tr><tr><td>💨</td><td>${pct(3)}</td></tr>
-    <tr><td colspan="2"><b>결과 (아무 때나 멈출 때)</b></td></tr>${(() => { const c = { jackpot: 0, dust: 0, pair: 0, single: 0, blank: 0 }; for (const a of STRIP) for (const b of STRIP) for (const d of STRIP) c[slotKind(a, b, d)]++; const n = NSYM ** 3, f = k => (c[k] / n * 100).toFixed(1) + "%";
-      return `<tr><td>잭팟 → 희귀 +5🪙</td><td>${f("jackpot")}</td></tr><tr><td>페어 → 일반 +4🪙</td><td>${f("pair")}</td></tr><tr><td>단일 → 일반</td><td>${f("single")}</td></tr><tr><td>꽝 +4🪙</td><td>${f("blank")}</td></tr><tr><td>💨💨💨 +20🪙</td><td>${f("dust")}</td></tr>`; })()}
-    <tr><td colspan="2"><b>노려서 멈추면 더 올라감</b></td></tr>
-    <tr><td>⬆ 합성: 같은 종류 유지</td><td>${MERGE_SAME * 100}%</td></tr><tr><td>📜 레시피(같은 등급 3종)</td><td>100%</td></tr>
-    <tr><td>💱 바꾸기 (${SWAP_COST}🪙)</td><td>${SWAP_P * 100}%</td></tr><tr><td>💰 판매 일반·희귀·영웅·전설</td><td>${SELL.slice(1, 5).join("·")}</td></tr></table>`);
+  const tr = (l, v) => `<div><span>${l}</span><b>${v}</b></div>`, C = I("coins");
+  const c = { jackpot: 0, dust: 0, pair: 0, single: 0, blank: 0 }; for (const a of STRIP) for (const b of STRIP) for (const d of STRIP) c[slotKind(a, b, d)]++; const n = NSYM ** 3, f = k => (c[k] / n * 100).toFixed(1) + "%";
+  box("확률표", "", `<h3 class="g-sec">릴 한 칸</h3><div class="g-tbl">${tr("🐻", pct(3))}${tr("🐰🦖🐱🐧🐙 각각", pct(2))}${tr("💨", pct(3))}</div>
+    <h3 class="g-sec">아무 때나 멈출 때</h3><div class="g-tbl">${tr(`잭팟 · 희귀 ${C}+5`, f("jackpot"))}${tr(`페어 · 일반 ${C}+4`, f("pair"))}${tr("단일 · 일반", f("single"))}${tr(`꽝 ${C}+4`, f("blank"))}${tr(`💨💨💨 ${C}+20`, f("dust"))}</div>
+    <p class="ui-cap">노려서 멈추면 더 올라가요</p>
+    <h3 class="g-sec">인형 다루기</h3><div class="g-tbl">${tr(`${I("chevrons-up")}합성 · 같은 종류`, MERGE_SAME * 100 + "%")}${tr(`${I("puzzle")}레시피 · 같은 등급 3종`, "100%")}${tr(`${I("repeat")}바꾸기 · ${C}${SWAP_COST}`, SWAP_P * 100 + "%")}${tr(`${I("coins")}판매 일반~전설`, SELL.slice(1, 5).join("·"))}</div>`);
 }
 function slotKind(a, b, c) { if (a === b && b === c) return a === "blank" ? "dust" : "jackpot"; if (a === b || a === c || b === c) { const t = a === b || a === c ? a : b; return t === "blank" ? ([a, b, c].some(x => x !== "blank") ? "single" : "dust") : "pair"; } return b === "blank" ? "blank" : "single"; }
 function showMissions() {
-  box(`<h2>🎯 미션</h2><table>${MISSIONS.map(m => { const d = run && run.done[m.id]; return `<tr><td>${d ? "✅" : "⬜"} ${m.hidden && !d ? "❓ 히든" : m.name}${!d && m.prog && run ? ` (${m.prog(run)})` : ""}</td><td>${m.rw.coins ? m.rw.coins + "🪙" : "🎟️×" + m.rw.tickets}</td></tr>`; }).join("")}</table>`);
+  const dn = MISSIONS.filter(m => !m.hidden && run && run.done[m.id]).length, all = MISSIONS.filter(m => !m.hidden).length;
+  box("미션", `<span class="ui-chip" aria-label="완료한 미션">${I("target")}${dn}/${all}</span>`, MISSIONS.map(m => { const d = run && run.done[m.id], hid = m.hidden && !d;
+    return `<div class="ui-item">${d ? I("circle-check", "ok") : I(hid ? "lock" : "target")}<span class="ui-grow"><b>${hid ? "히든 미션" : m.name}</b>${!d && m.prog && run ? `<small>${m.prog(run)}</small>` : d ? "<small>완료</small>" : ""}</span>
+      <span class="g-rw">${m.rw.coins ? `${I("coins")}${m.rw.coins}` : `${I("gift")}×${m.rw.tickets}`}</span></div>`; }).join(""));
 }
 function showReward() {
   if (auto) return; sel = null; renderPanel();   // 봇은 로직에서 바로 고름
   const o = run.reward.opts, ic = { hero: "🌟", coins: "🪙", tickets: "🎟️", lives: "❤️", power: "💪" };
-  $("box").innerHTML = `<h2>👑 보상 고르기</h2>${o.map((x, i) => `<button class="opt" data-i="${i}"><b>${x.id === "hero" ? TYPES[x.type].e : ic[x.id]}</b>${x.id === "hero" ? "영웅 " + TYPES[x.type].name : x.id === "coins" ? "+" + x.v : x.id === "tickets" ? "뽑기권 ×3" : x.id === "lives" ? "목숨 +3" : "공격 +15%"}</button>`).join("")}`;
-  $("ov").classList.add("on"); SFX.card();
-  $("box").querySelectorAll(".opt").forEach(b => b.onclick = () => { inQ.pick = +b.dataset.i; $("ov").classList.remove("on"); });
+  const txt = x => x.id === "hero" ? [`영웅 ${TYPES[x.type].name}`, "영웅 등급 소환"] : x.id === "coins" ? ["코인 꾸러미", `코인 +${x.v}`] : x.id === "tickets" ? ["뽑기권 3장", "공짜 뽑기 3번"] : x.id === "lives" ? ["목숨 +3", "최대 10"] : ["전원 강화", "공격 +15%, 계속"];
+  $("box").innerHTML = `<div class="ui-col ui-center ui-enter"><div class="ui-hero ui-pop" aria-hidden="true">👑</div><h2 class="ui-h">보상 고르기</h2><p class="ui-sub">하나만 가져가요</p></div>
+    <div class="ui-col ui-enter-2" style="gap:var(--ui-s2)">${o.map((x, i) => { const [a, b] = txt(x); return `<button class="ui-item g-opt" data-i="${i}"><span class="ui-em">${x.id === "hero" ? TYPES[x.type].e : ic[x.id]}</span><span class="ui-grow"><b>${a}</b><small>${b}</small></span>${I("chevron-right")}</button>`; }).join("")}</div>`;
+  ovOn(); SFX.card();
+  $("box").querySelectorAll(".g-opt").forEach(b => b.onclick = () => { inQ.pick = +b.dataset.i; $("ov").classList.remove("on"); });
 }
 let paused = false;
 // ───────── 입력 ─────────
 function pressDraw() { if (!run || scene !== "play" || auto || cardOpen) return; const S = run.slot; if (sel && sel.panel) { sel = null; renderPanel(); } if (S.state === "spin") inQ.stop = true; else if (S.state === "idle") inQ.pull = true; }
 $("drop").addEventListener("pointerdown", e => { e.preventDefault(); pressDraw(); });
-$("spd").addEventListener("pointerdown", e => { e.preventDefault(); speed = speed % 3 + 1; $("spd").textContent = "▶" + speed; });
+$("spd").addEventListener("pointerdown", e => { e.preventDefault(); speed = speed % 3 + 1; $("spdn").textContent = "×" + speed; });
 $("prob").addEventListener("pointerdown", e => { e.preventDefault(); if (scene === "play" || scene === "menu") showProb(); });
 $("mis").addEventListener("pointerdown", e => { e.preventDefault(); if (scene === "play") showMissions(); });
 $("mute").addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); setMute(!save.mute); });

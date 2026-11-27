@@ -1,7 +1,7 @@
 /* NHC game-lab UI kit v1 (2026-11-27) — 게임 '밖' UI(시작·레벨·HUD·결과·안내·버튼·토스트) 공용 스타일
    기준: research/2026-11-27_게임UI_정돈_기준.md 의 15규칙. 모든 클래스는 ui- 로 시작해 게임 자체 스타일과 섞이지 않는다
-   게임별로 바꿀 것은 :root 의 --ui-accent / --ui-on-accent 두 개뿐. 밝은 화면 게임은 <html class="ui-light"> */
-:root{
+   게임별로 바꿀 것은 :root 의 --ui-accent / --ui-on-accent 두 개뿐(게임 쪽 :root 가 항상 이긴다 — 키트 기본값은 :where 로 0점). 밝은 화면 게임은 <html class="ui-light"> */
+:where(:root){
   /* 간격 4의 배수 7단계 */
   --ui-s1:4px;--ui-s2:8px;--ui-s3:12px;--ui-s4:16px;--ui-s5:24px;--ui-s6:32px;--ui-s7:48px;
   /* 글자 5단계 · 굵기 2개 */
@@ -24,7 +24,9 @@
   --ui-shadow1:0 1px 2px rgba(15,20,30,.08),0 4px 12px rgba(15,20,30,.08);
   --ui-shadow2:0 12px 32px rgba(15,20,30,.16);
 }
+.ui-warm{--ui-bg:#f7f1e8;--ui-surface:#fffdf9;--ui-surface2:#f0e8dc;--ui-line:rgba(60,40,20,.10);--ui-text:#2a2118;--ui-muted:#76695a}   /* 따뜻한 밝은 화면: ui-light 와 함께 */
 .ui-kid{--ui-touch:56px}
+.ui-kid .ui-btn,.ui-kid .ui-level{min-height:56px}
 
 /* 기본 스타일 지우기 (ui- 요소 안에서만) */
 .ui-screen,.ui-card,.ui-hud,.ui-toast,.ui-sheet{font-family:var(--ui-font);color:var(--ui-text);word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
@@ -38,14 +40,15 @@
 .ui-icon.fill{fill:currentColor}
 
 /* 화면(시작·결과·일시정지): 가운데 한 줄 기둥 */
-.ui-screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--ui-s5);padding-top:max(var(--ui-s5),env(safe-area-inset-top));padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));background:var(--ui-bg);overflow:auto}
+.ui-screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:var(--ui-s5);padding-top:max(var(--ui-s5),env(safe-area-inset-top));padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));background:var(--ui-bg);overflow:auto}
 .ui-screen.dim{background:color-mix(in srgb,var(--ui-bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .ui-col{width:100%;max-width:360px;display:flex;flex-direction:column;gap:var(--ui-s4)}
+.ui-screen>.ui-col{margin-block:auto}   /* 짧으면 가운데, 길면 위에서부터 스크롤(위 잘림 없음) */
 .ui-center{text-align:center;align-items:center}
 .ui-hero{font-size:56px;line-height:1;width:72px;height:72px;display:grid;place-items:center;border-radius:var(--ui-r3);background:var(--ui-surface)}
 .ui-title{font-size:var(--ui-t5);font-weight:700;line-height:1.25;letter-spacing:-.02em;margin:0}
 .ui-h{font-size:var(--ui-t4);font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0}
-.ui-sub{font-size:var(--ui-t2);line-height:1.5;color:var(--ui-muted);margin:0}
+.ui-sub{font-size:var(--ui-t3);line-height:1.5;color:var(--ui-muted);margin:0}   /* 16: 제목30·버튼20/16과 합쳐 3단계 */
 .ui-cap{font-size:var(--ui-t1);line-height:1.5;color:var(--ui-muted);margin:0}
 .ui-row{display:flex;gap:var(--ui-s2);align-items:center}
 .ui-row>.ui-btn{flex:1}
@@ -57,7 +60,8 @@
 .ui-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
 .ui-btn.primary{background:var(--ui-accent);color:var(--ui-on-accent);box-shadow:var(--ui-shadow1);min-height:calc(var(--ui-touch) + 8px);font-size:var(--ui-t4)}
 .ui-btn.ghost{background:transparent;color:var(--ui-muted)}
-.ui-btn.icon{width:var(--ui-touch);padding:0;flex:none}
+.ui-btn.icon{width:var(--ui-touch);padding:0;flex:none;position:relative}
+.ui-btn.icon>.ui-badge{position:absolute;top:-6px;right:-6px;margin:0}
 .ui-btn.round{border-radius:50%}
 .ui-btn:disabled,.ui-btn.off{opacity:.38;pointer-events:none}
 .ui-btn .ui-badge{margin-left:2px}
@@ -76,8 +80,7 @@
 .ui-levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:var(--ui-s2)}
 .ui-level{appearance:none;border:0;margin:0;aspect-ratio:1;border-radius:var(--ui-r2);background:var(--ui-surface2);color:var(--ui-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ui-s1);font:700 var(--ui-t4)/1 var(--ui-font);font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;transition:transform 90ms var(--ui-in)}
 .ui-level:active{transform:scale(.94)}
-.ui-level.cur{background:var(--ui-accent);color:var(--ui-on-accent)}
-.ui-level.cur .ui-stars{color:var(--ui-on-accent)}.ui-level.cur .ui-stars .off{color:var(--ui-on-accent);opacity:.25}
+.ui-level.cur{box-shadow:inset 0 0 0 2px var(--ui-text)}   /* 강조색은 주 버튼에만 → 지금 칸은 테두리로 */
 .ui-level.lock{color:var(--ui-muted);background:transparent;box-shadow:inset 0 0 0 1px var(--ui-line);pointer-events:none}
 .ui-level .ui-stars .ui-icon{width:10px;height:10px}
 
@@ -100,10 +103,14 @@
 /* 안내 카드(한 번에 하나) · 토스트 · 시트 */
 .ui-tip{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s3) var(--ui-s4);box-shadow:var(--ui-shadow2);font-size:var(--ui-t3);line-height:1.5;color:var(--ui-text);font-family:var(--ui-font)}
 .ui-tip .ui-icon{color:var(--ui-accent)}
-.ui-toast{position:fixed;left:50%;bottom:max(var(--ui-s6),env(safe-area-inset-bottom));z-index:80;transform:translate(-50%,8px);opacity:0;pointer-events:none;background:var(--ui-text);color:var(--ui-bg);padding:var(--ui-s3) var(--ui-s4);border-radius:var(--ui-r1);font:700 var(--ui-t2)/1.25 var(--ui-font);white-space:nowrap;transition:opacity 180ms var(--ui-in),transform 180ms var(--ui-in)}
+.ui-toast{position:fixed;left:50%;bottom:max(var(--ui-s6),env(safe-area-inset-bottom));z-index:80;transform:translate(-50%,8px);opacity:0;pointer-events:none;background:var(--ui-text);color:var(--ui-bg);padding:var(--ui-s3) var(--ui-s4);border-radius:var(--ui-r1);font:700 var(--ui-t2)/1.25 var(--ui-font);max-width:calc(100vw - 32px);width:max-content;text-align:center;transition:opacity 180ms var(--ui-in),transform 180ms var(--ui-in)}
 .ui-toast.on{opacity:1;transform:translate(-50%,0)}
+.ui-toast.top{bottom:auto;top:max(25%,env(safe-area-inset-top))}
 .ui-sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--ui-surface);border-radius:var(--ui-r3) var(--ui-r3) 0 0;padding:var(--ui-s5);padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));box-shadow:var(--ui-shadow2);transform:translateY(100%);transition:transform 195ms var(--ui-out)}
 .ui-sheet.on{transform:none;transition:transform 225ms var(--ui-in)}
+.ui-sheet:not(.on){box-shadow:none}
+.ui-scrim{position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity 195ms var(--ui-out)}
+.ui-scrim.on{opacity:1;pointer-events:auto;transition:opacity 225ms var(--ui-in)}
 .ui-list{display:flex;flex-direction:column;gap:var(--ui-s2)}
 .ui-list li{display:flex;align-items:center;gap:var(--ui-s3);font-size:var(--ui-t2);line-height:1.5}
 .ui-list li .ui-icon{color:var(--ui-muted)}
@@ -118,3 +125,48 @@
 @keyframes ui-pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.ui-enter,.ui-enter-2,.ui-enter-3,.ui-pop{animation:ui-fade 150ms linear both}.ui-btn,.ui-level{transition:none}}
 @keyframes ui-fade{from{opacity:0}to{opacity:1}}
+
+/* 화면 머리 · 목록 줄 · 아래 고정 · 단계 막대 · 한 줄 카드 (2026-11-27 G003 시범에서 추가) */
+.ui-head{display:flex;align-items:center;gap:var(--ui-s2);min-height:var(--ui-touch)}
+.ui-head>.ui-h{flex:1}
+.ui-item{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3)}
+.ui-item>.ui-grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-s1)}
+.ui-item b{font-size:var(--ui-t3);font-weight:700;line-height:1.25}
+.ui-item small{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25}
+.ui-item.lock{opacity:.5}
+.ui-line{display:flex;align-items:center;gap:var(--ui-s2);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3) var(--ui-s4);font-size:var(--ui-t3);line-height:1.25}
+.ui-line>.ui-grow{flex:1;color:var(--ui-muted)}
+.ui-line b{font-variant-numeric:tabular-nums}
+.ui-dock{position:sticky;bottom:0;padding-top:var(--ui-s3);background:linear-gradient(to bottom,transparent,var(--ui-bg) 40%)}
+.ui-pips{display:inline-flex;gap:3px}.ui-pips>i{width:14px;height:6px;border-radius:999px;background:var(--ui-line)}.ui-pips>i.on{background:var(--ui-text)}
+.ui-strike{text-decoration:line-through;text-decoration-thickness:3px;opacity:.6}
+.ui-good{color:var(--ui-good)}.ui-bad{color:var(--ui-bad)}
+
+/* 칩 보조 숫자(값/한도) · 첫 판 손짓 (v1.2) */
+.ui-chip small{font-weight:400;color:var(--ui-muted);margin-left:-4px}
+.ui-hand{position:absolute;z-index:40;width:44px;height:44px;margin:-6px 0 0 -14px;pointer-events:none;font-size:36px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transition:left 600ms var(--ui-in),top 600ms var(--ui-in),opacity 150ms linear}
+.ui-hand.tap{animation:ui-tap 900ms var(--ui-in) infinite}
+@keyframes ui-tap{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(6px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){.ui-hand,.ui-hand.tap{animation:none;transition:opacity 150ms linear}}
+
+/* v1.3 (G012 반영): 숨김, 줄 오른쪽 값, 작은 안내, 배지 색 */
+.ui-screen[hidden],.ui-sheet[hidden],.ui-tip[hidden],.ui-screen.hide,.ui-screen.off{display:none}
+.ui-item>.ui-val{font:700 var(--ui-t3)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.ui-tip.sm{font-size:var(--ui-t2);padding:var(--ui-s2) var(--ui-s3);gap:var(--ui-s2)}
+.ui-tip.sm b{font-weight:700}
+.ui-badge.good{background:var(--ui-good)}
+.ui-badge.muted{background:var(--ui-surface2);color:var(--ui-muted)}
+
+/* v1.4 (G021·G022 반영) */
+.ui-light .ui-screen.dim{background:rgba(20,28,40,.45)}
+.ui-levels.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.ui-btn.float{background:var(--ui-surface);box-shadow:var(--ui-shadow1)}
+.ui-chip .ui-stars .ui-icon{color:inherit}
+.ui-chip .ui-stars .off{color:var(--ui-line)}
+
+/* v1.5 (G002·G006 반영) */
+[hidden].ui-badge,[hidden].ui-chip,[hidden].ui-btn,[hidden].ui-item,[hidden].ui-line{display:none}
+button.ui-item{appearance:none;border:0;width:100%;text-align:left;color:var(--ui-text);font-family:var(--ui-font);cursor:pointer;transition:transform 90ms var(--ui-in)}
+button.ui-item:active{transform:scale(.98)}
+.ui-pips>i.bad{background:var(--ui-bad)}.ui-pips>i.good{background:var(--ui-good)}
+.ui-hud.static{position:static;padding:0}

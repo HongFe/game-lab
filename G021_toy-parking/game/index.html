@@ -1,78 +1,269 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" class="ui-light ui-kid">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#5bb8e8">
 <title>꼬마 주차요원</title>
 <style>
-:root{--sky:#5bb8e8;--sky2:#8fd3f4;--panel:#ffffff;--ink:#23324a;--sub:#6b7a90;--acc:#ffc533;--line:#d7e3ef}
+/* 게임 화면 색 + 공용 UI 키트 강조색(주 버튼·별에만). 게임 밖 UI는 키트 부품(ui-*)으로 */
+:root{--sky:#5bb8e8;--sky2:#8fd3f4;--ink:#23324a;--ui-accent:#ffc533;--ui-on-accent:#23324a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:linear-gradient(180deg,var(--sky) 0%,var(--sky2) 100%);color:var(--ink);
-  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overscroll-behavior:none;overflow:hidden}
+html,body{margin:0;height:100%;background:linear-gradient(180deg,var(--sky) 0%,var(--sky2) 100%);color:var(--ink);font-family:var(--ui-font);overscroll-behavior:none;overflow:hidden}
 body{display:flex;flex-direction:column;align-items:center;user-select:none;-webkit-user-select:none;touch-action:manipulation;
-  padding:max(8px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+  padding:max(var(--ui-s2),env(safe-area-inset-top)) max(var(--ui-s3),env(safe-area-inset-right)) max(var(--ui-s3),env(safe-area-inset-bottom)) max(var(--ui-s3),env(safe-area-inset-left))}
 #top,#bot,#wrap{width:100%;max-width:480px}
-#top{display:flex;align-items:center;gap:6px;height:52px}
-.ib{width:46px;height:46px;flex:0 0 46px;border:0;border-radius:14px;background:rgba(255,255,255,.92);font-size:22px;line-height:46px;padding:0;cursor:pointer;
-  box-shadow:0 3px 0 rgba(35,50,74,.18);color:var(--ink)}
-.ib:active,.big:active,.rb:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(35,50,74,.18)}
-#lvl{min-width:44px;height:46px;border-radius:14px;background:var(--ink);color:#fff;font-size:26px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 8px}
-.pill{height:40px;border-radius:20px;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;padding:0 10px;white-space:nowrap}
-#mv{flex:1}
-#goal{flex:1.4;font-size:15px} #goal b{color:#e8a300;letter-spacing:-1px;margin-right:4px}
-#wrap{position:relative;margin-top:8px;display:flex;justify-content:center}
-canvas{display:block;touch-action:none;border-radius:18px;box-shadow:0 8px 0 rgba(35,50,74,.22)}
-#bot{display:flex;gap:12px;margin-top:14px;justify-content:center}
-.big{flex:1;max-width:120px;height:62px;border:0;border-radius:18px;background:#fff;font-size:30px;cursor:pointer;box-shadow:0 4px 0 rgba(35,50,74,.2);padding:0}
-.big:disabled{opacity:.4}
-.ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;border-radius:18px;background:rgba(20,30,50,.45);z-index:5}
-.ov.on{display:flex}
-.box{background:#fff;border-radius:22px;padding:18px 16px 16px;width:min(300px,88%);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);animation:pop .28s cubic-bezier(.2,1.6,.4,1)}
-@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
-.stars{font-size:46px;letter-spacing:6px;height:60px;line-height:60px}
-.stars span{display:inline-block;color:#d9e1ea}
-.stars span.on{color:var(--acc);text-shadow:0 3px 0 #d19a0a;animation:starpop .4s cubic-bezier(.2,1.8,.4,1) both}
-@keyframes starpop{from{transform:scale(0) rotate(-40deg)}to{transform:scale(1)}}
-.line{font-size:22px;font-weight:800;margin:4px 0}
-.gain{font-size:17px;font-weight:800;color:#2e8a5c;background:#e6f8ee;border-radius:12px;padding:6px 8px;margin:8px 0 4px;white-space:nowrap}
-.gain:empty{display:none}
-.row{display:flex;gap:10px;margin-top:12px}
-.rb{flex:1;height:60px;border:0;border-radius:16px;font-size:24px;font-weight:900;cursor:pointer;background:#eef3f8;color:var(--ink);box-shadow:0 4px 0 rgba(35,50,74,.18)}
-.rb.pri{background:var(--acc);box-shadow:0 4px 0 #d19a0a}
-.card canvas,#newcar{display:block;margin:0 auto;box-shadow:none;border-radius:14px}
-.card .ico{font-size:30px;line-height:36px;font-weight:900;white-space:nowrap}
-.rb{white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px}
-.badge{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;height:34px;padding:0 5px;font-size:16px;font-weight:900;color:var(--ink)}
+/* 위: 메뉴 · 레벨 · 이동 · 별 목표 · 소리 (칩은 아이콘 + 숫자) */
+#top{display:flex;align-items:center;gap:var(--ui-s2);height:var(--ui-touch);flex:none}
+#top .ui-chip{height:40px;gap:var(--ui-s1);padding:0 var(--ui-s3) 0 var(--ui-s2);font-size:var(--ui-t4)}
+#top .ui-btn{flex:none}
+#top .ui-chip .ui-icon{width:20px;height:20px}
+#lvl{min-width:40px;justify-content:center;padding:0 var(--ui-s2);background:var(--ui-text);color:var(--ui-surface)}   /* 레벨 번호: 진한 칩 */
+#goal .ui-stars .ui-icon{width:14px;height:14px;color:var(--ui-accent)}
+#goal .ui-stars{gap:1px;margin-right:2px}
+@media (max-width:359px){body{padding-left:var(--ui-s2);padding-right:var(--ui-s2)}#top{gap:var(--ui-s1)}#top .ui-chip{font-size:var(--ui-t3);padding:0 var(--ui-s2)}#goal .ui-stars .ui-icon{width:12px;height:12px}}
+.g-sky{background:var(--ui-surface);box-shadow:var(--ui-shadow1)}
+#wrap{position:relative;margin-top:auto;display:flex;justify-content:center;flex:none}
+canvas{display:block;touch-action:none;border-radius:var(--ui-r3);box-shadow:0 8px 0 rgba(35,50,74,.22)}
+/* 아래: 되돌리기 · 처음부터 · 힌트 (56px 둥근 아이콘 버튼, 사이 24px) */
+#bot{display:flex;gap:var(--ui-s5);margin-top:var(--ui-s4);margin-bottom:auto;justify-content:center;flex:none}
+#bot .ui-btn .ui-icon,#top .ui-btn .ui-icon{width:24px;height:24px}
+/* 겹 화면: 키트 ui-screen(dim) + 카드. 켜고 끄기는 .on */
+.ov.ui-screen{display:none}.ov.ui-screen.on{display:flex}
+.ov .ui-card{width:100%}
+.ov.ui-screen.dim{background:color-mix(in srgb,var(--ink) 40%,transparent)}   /* 판이 비쳐 보이게 어둡게(밝은 키트 dim은 판이 하얗게 바램) */
+#resbox,#cardbox{animation:g-pop .3s var(--ui-in) both}
+@keyframes g-pop{0%{opacity:0;transform:scale(.7)}70%{opacity:1;transform:scale(1.04)}100%{transform:none}}
+#resbox .ui-stars .ui-icon{width:48px;height:48px}
+#resbox .ui-stars .ui-icon:not(.off){animation:g-star .4s cubic-bezier(.2,1.8,.4,1) both}
+#resbox .ui-stars .ui-icon:nth-child(1){animation-delay:.15s}#resbox .ui-stars .ui-icon:nth-child(2){animation-delay:.4s}#resbox .ui-stars .ui-icon:nth-child(3){animation-delay:.65s}
+@keyframes g-star{from{transform:scale(0) rotate(-40deg)}to{transform:none}}
+.g-moves{display:flex;align-items:center;justify-content:center;gap:var(--ui-s2);font-size:var(--ui-t5);font-weight:700;line-height:1}
+.g-moves .ui-icon{color:var(--ui-muted)}
+.g-gain{display:flex;align-items:center;justify-content:center;gap:var(--ui-s2);font-size:var(--ui-t4);font-weight:700;line-height:1;background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3) var(--ui-s4)}
+.g-gain .ui-icon{color:var(--ui-muted)}
+.g-gain .ui-icon.fill{color:var(--ui-accent)}
+#resbox .ui-row{gap:var(--ui-s5)}
+#ncwrap:empty{display:none}
+#resbox .ui-btn.primary{flex:1;font-size:var(--ui-t5);font-variant-numeric:tabular-nums}
+#resbox .ui-btn .ui-icon{width:24px;height:24px}
+.card canvas,#newcar{display:block;margin:0 auto;box-shadow:none;border-radius:var(--ui-r2)}
+.g-top{display:flex;justify-content:center;color:var(--ui-text)}
+.badge{display:inline-flex;align-items:center;justify-content:center;background:var(--ui-surface);border-radius:var(--ui-r1);height:36px;padding:0 var(--ui-s1);font:700 var(--ui-t3)/1 var(--ui-font);color:var(--ui-text)}
 .badge img{height:28px;display:block}
-.sh{display:inline-block;margin:0 2px}
-#sel .box{width:min(340px,94%);padding:12px}
-.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:8px}
-.grid button{height:52px;border:0;border-radius:12px;background:#eef3f8;font-size:18px;font-weight:900;color:var(--ink);cursor:pointer;padding:0;line-height:1.1}
-.grid button small{display:block;font-size:13px;color:#e8a300;letter-spacing:-1px}
-.grid button.cur{outline:3px solid var(--acc)}
-.grid button:disabled{opacity:.35}
-#selftest{position:fixed;left:0;top:0;right:0;bottom:0;overflow:auto;margin:0;background:#fff;color:#111;font-size:11px;padding:8px;z-index:9;white-space:pre}
+.badge .ui-icon{width:24px;height:24px}
+/* 레벨 고르기: 5칸 격자, 별, 자물쇠 */
+#sel .ui-levels{grid-template-columns:repeat(5,1fr)}
+#sel.ui-screen{padding-left:var(--ui-s3);padding-right:var(--ui-s3)}
+#sel .ui-level .ui-stars .ui-icon{width:12px;height:12px}
+#sel .ui-level.lock .ui-icon{width:20px;height:20px}
+#sel .ui-head .ui-chip{box-shadow:none;background:var(--ui-surface2);height:40px;font-size:var(--ui-t4)}
+#sel .ui-head .ui-chip .ui-icon{width:20px;height:20px;color:var(--ui-accent)}
+#selftest{position:fixed;left:0;top:0;right:0;bottom:0;overflow:auto;margin:0;background:#fff;color:#111;font-size:11px;padding:8px;z-index:90;white-space:pre}
 </style>
 </head>
 <body>
+<!-- nhc-ui-kit:start -->
+<style id="nhc-ui-kit">
+/* NHC game-lab UI kit v1 (2026-11-27) — 게임 '밖' UI(시작·레벨·HUD·결과·안내·버튼·토스트) 공용 스타일
+   기준: research/2026-11-27_게임UI_정돈_기준.md 의 15규칙. 모든 클래스는 ui- 로 시작해 게임 자체 스타일과 섞이지 않는다
+   게임별로 바꿀 것은 :root 의 --ui-accent / --ui-on-accent 두 개뿐(게임 쪽 :root 가 항상 이긴다 — 키트 기본값은 :where 로 0점). 밝은 화면 게임은 <html class="ui-light"> */
+:where(:root){
+  /* 간격 4의 배수 7단계 */
+  --ui-s1:4px;--ui-s2:8px;--ui-s3:12px;--ui-s4:16px;--ui-s5:24px;--ui-s6:32px;--ui-s7:48px;
+  /* 글자 5단계 · 굵기 2개 */
+  --ui-t1:12px;--ui-t2:14px;--ui-t3:16px;--ui-t4:20px;--ui-t5:30px;
+  /* 반경 3단계 */
+  --ui-r1:8px;--ui-r2:12px;--ui-r3:20px;
+  /* 색 역할 (어두운 화면 기본) */
+  --ui-bg:#0f1218;--ui-surface:#1a1f29;--ui-surface2:#242a36;--ui-line:rgba(255,255,255,.08);
+  --ui-text:#f2f4f8;--ui-muted:#9aa3b2;--ui-accent:#ffc83d;--ui-on-accent:#1a1406;
+  --ui-good:#34c77b;--ui-bad:#ff5a5f;
+  --ui-shadow1:0 1px 2px rgba(0,0,0,.25),0 4px 12px rgba(0,0,0,.18);
+  --ui-shadow2:0 8px 32px rgba(0,0,0,.35);
+  --ui-in:cubic-bezier(0,0,.2,1);--ui-out:cubic-bezier(.4,0,1,1);
+  --ui-font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
+  --ui-touch:48px;
+}
+.ui-light{
+  --ui-bg:#f4f6f9;--ui-surface:#ffffff;--ui-surface2:#eef1f5;--ui-line:rgba(15,20,30,.08);
+  --ui-text:#161a22;--ui-muted:#5f6878;
+  --ui-shadow1:0 1px 2px rgba(15,20,30,.08),0 4px 12px rgba(15,20,30,.08);
+  --ui-shadow2:0 12px 32px rgba(15,20,30,.16);
+}
+.ui-warm{--ui-bg:#f7f1e8;--ui-surface:#fffdf9;--ui-surface2:#f0e8dc;--ui-line:rgba(60,40,20,.10);--ui-text:#2a2118;--ui-muted:#76695a}   /* 따뜻한 밝은 화면: ui-light 와 함께 */
+.ui-kid{--ui-touch:56px}
+.ui-kid .ui-btn,.ui-kid .ui-level{min-height:56px}
+
+/* 기본 스타일 지우기 (ui- 요소 안에서만) */
+.ui-screen,.ui-card,.ui-hud,.ui-toast,.ui-sheet{font-family:var(--ui-font);color:var(--ui-text);word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+.ui-screen *,.ui-hud *,.ui-sheet *{box-sizing:border-box}
+.ui-screen ul,.ui-sheet ul{list-style:none;margin:0;padding:0}
+.ui-num{font-variant-numeric:tabular-nums}
+
+/* 아이콘: <svg class="ui-icon"><use href="#i-play"/></svg> 또는 UI.icon("play") */
+.ui-icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+.ui-icon.lg{width:24px;height:24px}.ui-icon.xl{width:32px;height:32px}.ui-icon.sm{width:16px;height:16px;vertical-align:-3px}
+.ui-icon.fill{fill:currentColor}
+
+/* 화면(시작·결과·일시정지): 가운데 한 줄 기둥 */
+.ui-screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:var(--ui-s5);padding-top:max(var(--ui-s5),env(safe-area-inset-top));padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));background:var(--ui-bg);overflow:auto}
+.ui-screen.dim{background:color-mix(in srgb,var(--ui-bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ui-col{width:100%;max-width:360px;display:flex;flex-direction:column;gap:var(--ui-s4)}
+.ui-screen>.ui-col{margin-block:auto}   /* 짧으면 가운데, 길면 위에서부터 스크롤(위 잘림 없음) */
+.ui-center{text-align:center;align-items:center}
+.ui-hero{font-size:56px;line-height:1;width:72px;height:72px;display:grid;place-items:center;border-radius:var(--ui-r3);background:var(--ui-surface)}
+.ui-title{font-size:var(--ui-t5);font-weight:700;line-height:1.25;letter-spacing:-.02em;margin:0}
+.ui-h{font-size:var(--ui-t4);font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0}
+.ui-sub{font-size:var(--ui-t3);line-height:1.5;color:var(--ui-muted);margin:0}   /* 16: 제목30·버튼20/16과 합쳐 3단계 */
+.ui-cap{font-size:var(--ui-t1);line-height:1.5;color:var(--ui-muted);margin:0}
+.ui-row{display:flex;gap:var(--ui-s2);align-items:center}
+.ui-row>.ui-btn{flex:1}
+.ui-spacer{flex:1}
+
+/* 버튼: 주 버튼은 화면에 하나 */
+.ui-btn{appearance:none;border:0;margin:0;font:700 var(--ui-t3)/1 var(--ui-font);color:var(--ui-text);background:var(--ui-surface2);min-height:var(--ui-touch);padding:0 var(--ui-s5);border-radius:var(--ui-r2);display:inline-flex;align-items:center;justify-content:center;gap:var(--ui-s2);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform 90ms var(--ui-in),filter 90ms var(--ui-in)}
+.ui-btn:active{transform:scale(.96)}
+.ui-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
+.ui-btn.primary{background:var(--ui-accent);color:var(--ui-on-accent);box-shadow:var(--ui-shadow1);min-height:calc(var(--ui-touch) + 8px);font-size:var(--ui-t4)}
+.ui-btn.ghost{background:transparent;color:var(--ui-muted)}
+.ui-btn.icon{width:var(--ui-touch);padding:0;flex:none;position:relative}
+.ui-btn.icon>.ui-badge{position:absolute;top:-6px;right:-6px;margin:0}
+.ui-btn.round{border-radius:50%}
+.ui-btn:disabled,.ui-btn.off{opacity:.38;pointer-events:none}
+.ui-btn .ui-badge{margin-left:2px}
+.ui-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ui-bad);color:#fff;font:700 var(--ui-t1)/1 var(--ui-font);font-variant-numeric:tabular-nums}
+
+/* 카드 · 수치 */
+.ui-card{background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s4);box-shadow:var(--ui-shadow1)}
+.ui-card.flat{box-shadow:none;background:var(--ui-surface2)}
+.ui-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:var(--ui-s2)}
+.ui-stat{background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3);display:flex;flex-direction:column;gap:var(--ui-s1);min-width:0}
+.ui-stat b{font-size:clamp(var(--ui-t3),5vw,var(--ui-t4));font-weight:700;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ui-stat span{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25;display:flex;align-items:center;gap:var(--ui-s1)}
+.ui-big{font-size:48px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* 레벨 선택 격자 */
+.ui-levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:var(--ui-s2)}
+.ui-level{appearance:none;border:0;margin:0;aspect-ratio:1;border-radius:var(--ui-r2);background:var(--ui-surface2);color:var(--ui-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ui-s1);font:700 var(--ui-t4)/1 var(--ui-font);font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;transition:transform 90ms var(--ui-in)}
+.ui-level:active{transform:scale(.94)}
+.ui-level.cur{box-shadow:inset 0 0 0 2px var(--ui-text)}   /* 강조색은 주 버튼에만 → 지금 칸은 테두리로 */
+.ui-level.lock{color:var(--ui-muted);background:transparent;box-shadow:inset 0 0 0 1px var(--ui-line);pointer-events:none}
+.ui-level .ui-stars .ui-icon{width:10px;height:10px}
+
+/* 별 */
+.ui-stars{display:inline-flex;gap:2px;color:var(--ui-accent)}
+.ui-stars .off{color:var(--ui-line);opacity:1}
+.ui-light .ui-stars .off{color:rgba(15,20,30,.15)}
+.ui-stars.big .ui-icon{width:40px;height:40px}
+.ui-stars.big{gap:var(--ui-s2)}
+
+/* HUD: 위쪽 칩 줄 */
+.ui-hud{position:absolute;left:0;right:0;top:0;z-index:20;display:flex;gap:var(--ui-s2);align-items:center;padding:var(--ui-s3);padding-top:max(var(--ui-s3),env(safe-area-inset-top));pointer-events:none}
+.ui-hud>*{pointer-events:auto}
+.ui-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--ui-s3);border-radius:999px;background:color-mix(in srgb,var(--ui-surface) 86%,transparent);box-shadow:var(--ui-shadow1);font:700 var(--ui-t2)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ui-text)}
+.ui-chip .ui-icon{width:16px;height:16px;color:var(--ui-muted)}
+.ui-chip.accent .ui-icon{color:var(--ui-accent)}
+.ui-meter{height:6px;border-radius:999px;background:var(--ui-surface2);overflow:hidden}
+.ui-meter>i{display:block;height:100%;background:var(--ui-accent);border-radius:inherit;transition:width 200ms var(--ui-in)}
+
+/* 안내 카드(한 번에 하나) · 토스트 · 시트 */
+.ui-tip{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s3) var(--ui-s4);box-shadow:var(--ui-shadow2);font-size:var(--ui-t3);line-height:1.5;color:var(--ui-text);font-family:var(--ui-font)}
+.ui-tip .ui-icon{color:var(--ui-accent)}
+.ui-toast{position:fixed;left:50%;bottom:max(var(--ui-s6),env(safe-area-inset-bottom));z-index:80;transform:translate(-50%,8px);opacity:0;pointer-events:none;background:var(--ui-text);color:var(--ui-bg);padding:var(--ui-s3) var(--ui-s4);border-radius:var(--ui-r1);font:700 var(--ui-t2)/1.25 var(--ui-font);max-width:calc(100vw - 32px);width:max-content;text-align:center;transition:opacity 180ms var(--ui-in),transform 180ms var(--ui-in)}
+.ui-toast.on{opacity:1;transform:translate(-50%,0)}
+.ui-toast.top{bottom:auto;top:max(25%,env(safe-area-inset-top))}
+.ui-sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--ui-surface);border-radius:var(--ui-r3) var(--ui-r3) 0 0;padding:var(--ui-s5);padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));box-shadow:var(--ui-shadow2);transform:translateY(100%);transition:transform 195ms var(--ui-out)}
+.ui-sheet.on{transform:none;transition:transform 225ms var(--ui-in)}
+.ui-sheet:not(.on){box-shadow:none}
+.ui-scrim{position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity 195ms var(--ui-out)}
+.ui-scrim.on{opacity:1;pointer-events:auto;transition:opacity 225ms var(--ui-in)}
+.ui-list{display:flex;flex-direction:column;gap:var(--ui-s2)}
+.ui-list li{display:flex;align-items:center;gap:var(--ui-s3);font-size:var(--ui-t2);line-height:1.5}
+.ui-list li .ui-icon{color:var(--ui-muted)}
+.ui-em{width:28px;height:28px;display:inline-grid;place-items:center;font-size:20px;line-height:1;flex:none}
+
+/* 등장 모션 */
+.ui-enter{animation:ui-enter 225ms var(--ui-in) both}
+.ui-enter-2{animation:ui-enter 225ms var(--ui-in) 60ms both}
+.ui-enter-3{animation:ui-enter 225ms var(--ui-in) 120ms both}
+.ui-pop{animation:ui-pop 300ms var(--ui-in) both}
+@keyframes ui-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ui-pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.ui-enter,.ui-enter-2,.ui-enter-3,.ui-pop{animation:ui-fade 150ms linear both}.ui-btn,.ui-level{transition:none}}
+@keyframes ui-fade{from{opacity:0}to{opacity:1}}
+
+/* 화면 머리 · 목록 줄 · 아래 고정 · 단계 막대 · 한 줄 카드 (2026-11-27 G003 시범에서 추가) */
+.ui-head{display:flex;align-items:center;gap:var(--ui-s2);min-height:var(--ui-touch)}
+.ui-head>.ui-h{flex:1}
+.ui-item{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3)}
+.ui-item>.ui-grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-s1)}
+.ui-item b{font-size:var(--ui-t3);font-weight:700;line-height:1.25}
+.ui-item small{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25}
+.ui-item.lock{opacity:.5}
+.ui-line{display:flex;align-items:center;gap:var(--ui-s2);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3) var(--ui-s4);font-size:var(--ui-t3);line-height:1.25}
+.ui-line>.ui-grow{flex:1;color:var(--ui-muted)}
+.ui-line b{font-variant-numeric:tabular-nums}
+.ui-dock{position:sticky;bottom:0;padding-top:var(--ui-s3);background:linear-gradient(to bottom,transparent,var(--ui-bg) 40%)}
+.ui-pips{display:inline-flex;gap:3px}.ui-pips>i{width:14px;height:6px;border-radius:999px;background:var(--ui-line)}.ui-pips>i.on{background:var(--ui-text)}
+.ui-strike{text-decoration:line-through;text-decoration-thickness:3px;opacity:.6}
+.ui-good{color:var(--ui-good)}.ui-bad{color:var(--ui-bad)}
+
+/* 칩 보조 숫자(값/한도) · 첫 판 손짓 (v1.2) */
+.ui-chip small{font-weight:400;color:var(--ui-muted);margin-left:-4px}
+.ui-hand{position:absolute;z-index:40;width:44px;height:44px;margin:-6px 0 0 -14px;pointer-events:none;font-size:36px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transition:left 600ms var(--ui-in),top 600ms var(--ui-in),opacity 150ms linear}
+.ui-hand.tap{animation:ui-tap 900ms var(--ui-in) infinite}
+@keyframes ui-tap{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(6px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){.ui-hand,.ui-hand.tap{animation:none;transition:opacity 150ms linear}}
+
+/* v1.3 (G012 반영): 숨김, 줄 오른쪽 값, 작은 안내, 배지 색 */
+.ui-screen[hidden],.ui-sheet[hidden],.ui-tip[hidden],.ui-screen.hide,.ui-screen.off{display:none}
+.ui-item>.ui-val{font:700 var(--ui-t3)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.ui-tip.sm{font-size:var(--ui-t2);padding:var(--ui-s2) var(--ui-s3);gap:var(--ui-s2)}
+.ui-tip.sm b{font-weight:700}
+.ui-badge.good{background:var(--ui-good)}
+.ui-badge.muted{background:var(--ui-surface2);color:var(--ui-muted)}
+
+/* v1.4 (G021·G022 반영) */
+.ui-light .ui-screen.dim{background:rgba(20,28,40,.45)}
+.ui-levels.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.ui-btn.float{background:var(--ui-surface);box-shadow:var(--ui-shadow1)}
+.ui-chip .ui-stars .ui-icon{color:inherit}
+.ui-chip .ui-stars .off{color:var(--ui-line)}
+
+/* v1.5 (G002·G006 반영) */
+[hidden].ui-badge,[hidden].ui-chip,[hidden].ui-btn,[hidden].ui-item,[hidden].ui-line{display:none}
+button.ui-item{appearance:none;border:0;width:100%;text-align:left;color:var(--ui-text);font-family:var(--ui-font);cursor:pointer;transition:transform 90ms var(--ui-in)}
+button.ui-item:active{transform:scale(.98)}
+.ui-pips>i.bad{background:var(--ui-bad)}.ui-pips>i.good{background:var(--ui-good)}
+.ui-hud.static{position:static;padding:0}
+</style>
+<!-- Lucide icons (lucide-static 0.460.0) — ISC License. Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></symbol><symbol id="i-award" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526" /> <circle cx="12" cy="8" r="6" /></symbol><symbol id="i-book-open" viewBox="0 0 24 24"><path d="M12 7v14" /> <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" /></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /> <circle cx="7" cy="17" r="2" /> <path d="M9 17h6" /> <circle cx="17" cy="17" r="2" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol><symbol id="i-chevrons-up" viewBox="0 0 24 24"><path d="m17 11-5-5-5 5" /> <path d="m17 18-5-5-5 5" /></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" /></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" /></symbol><symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6" /> <path d="M18.09 10.37A6 6 0 1 1 10.34 18" /> <path d="M7 6h1v4" /> <path d="m16.71 13.88.7.71-2.82 2.82" /></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /> <line x1="4" x2="4" y1="22" y2="15" /></symbol><symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4" /> <path d="M3.34 19a10 10 0 1 1 17.32 0" /></symbol><symbol id="i-gavel" viewBox="0 0 24 24"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8" /> <path d="m16 16 6-6" /> <path d="m8 8 6-6" /> <path d="m9 7 8 8" /> <path d="m21 11-8-8" /></symbol><symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1" /> <path d="M12 8v13" /> <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /> <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" /></symbol><symbol id="i-graduation-cap" viewBox="0 0 24 24"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></symbol><symbol id="i-hammer" viewBox="0 0 24 24"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9" /> <path d="m18 15 4-4" /> <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5" /></symbol><symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /> <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /> <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /> <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></symbol><symbol id="i-handshake" viewBox="0 0 24 24"><path d="m11 17 2 2a1 1 0 1 0 3-3" /> <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" /> <path d="m21 3 1 11h-2" /> <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" /> <path d="M3 4h8" /></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22" /> <line x1="6" x2="6" y1="18" y2="11" /> <line x1="10" x2="10" y1="18" y2="11" /> <line x1="14" x2="14" y1="18" y2="11" /> <line x1="18" x2="18" y1="18" y2="11" /> <polygon points="12 2 20 7 4 7" /></symbol><symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /></symbol><symbol id="i-lock-open" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 9.9-1" /></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2" /> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12" /> <line x1="4" x2="20" y1="6" y2="6" /> <line x1="4" x2="20" y1="18" y2="18" /></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol><symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /> <circle cx="6" cy="18" r="3" /> <circle cx="18" cy="16" r="3" /></symbol><symbol id="i-newspaper" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /> <path d="M18 14h-8" /> <path d="M15 18h-5" /> <path d="M10 6h8v4h-8V6Z" /></symbol><symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1" /> <rect x="6" y="4" width="4" height="16" rx="1" /></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></symbol><symbol id="i-piggy-bank" viewBox="0 0 24 24"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z" /> <path d="M2 9v1c0 1.1.9 2 2 2h1" /> <path d="M16 11h.01" /></symbol><symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="M12 5v14" /></symbol><symbol id="i-pointer" viewBox="0 0 24 24"><path d="M22 14a8 8 0 0 1-8 8" /> <path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /> <path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1" /> <path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10" /> <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></symbol><symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" /></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" /> <circle cx="6" cy="12" r="3" /> <circle cx="18" cy="19" r="3" /> <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /> <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-soup" viewBox="0 0 24 24"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z" /> <path d="M7 21h10" /> <path d="M19.5 12 22 6" /> <path d="M16.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.73 1.62" /> <path d="M11.25 3c.27.1.8.53.74 1.36-.05.83-.93 1.2-.98 2.02-.06.78.33 1.24.72 1.62" /> <path d="M6.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.74 1.62" /></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /> <path d="M20 3v4" /> <path d="M22 5h-4" /> <path d="M4 17v2" /> <path d="M5 18H3" /></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" /> <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /> <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" /> <path d="M2 7h20" /> <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" /></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" /></symbol><symbol id="i-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /> <path d="M13 5v2" /> <path d="M13 17v2" /> <path d="M13 11v2" /></symbol><symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2" /> <line x1="12" x2="15" y1="14" y2="11" /> <circle cx="12" cy="14" r="8" /></symbol><symbol id="i-train-front" viewBox="0 0 24 24"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1" /> <path d="m9 15-1-1" /> <path d="m15 15 1-1" /> <path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z" /> <path d="m8 19-2 3" /> <path d="m16 19 2 3" /></symbol><symbol id="i-trending-down" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7" /> <polyline points="16 17 22 17 22 11" /></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /> <polyline points="16 7 22 7 22 13" /></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /> <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /> <path d="M4 22h16" /> <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /> <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /> <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></symbol><symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <path d="M16 3.13a4 4 0 0 1 0 7.75" /></symbol><symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /> <path d="M7 2v20" /> <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></symbol><symbol id="i-volume-2" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <path d="M16 9a5 5 0 0 1 0 6" /> <path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></symbol><symbol id="i-volume-x" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <line x1="22" x2="16" y1="9" y2="15" /> <line x1="16" x2="22" y1="9" y2="15" /></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></symbol></svg>
+<script>window.UI=window.UI||{};
+UI.icon=function(n,c){return '<svg class="ui-icon'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';};
+UI.stars=function(n,max,c){max=max||3;var s='<span class="ui-stars'+(c?' '+c:'')+'" aria-label="별 '+n+'/'+max+'">';for(var i=0;i<max;i++)s+='<svg class="ui-icon fill'+(i<n?'':' off')+'" aria-hidden="true"><use href="#i-star"/></svg>';return s+'</span>';};
+UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=document.createElement('div');t.id='ui-toast';t.className='ui-toast';t.setAttribute('role','status');document.body.appendChild(t);}t.textContent=m;t.classList.toggle('top',pos==='top');t.classList.add('on');clearTimeout(UI._tt);UI._tt=setTimeout(function(){t.classList.remove('on');},ms||2000);};</script>
+<!-- nhc-ui-kit:end -->
+
 <div id="top">
-  <button class="ib" id="menu" aria-label="레벨">☰</button>
-  <div id="lvl">1</div>
-  <div class="pill" id="mv">🚗 0</div>
-  <div class="pill" id="goal"><b>★★★</b>🚗 1</div>
-  <button class="ib" id="snd" aria-label="소리">🔊</button>
+  <button class="ui-btn icon round g-sky" id="menu" aria-label="레벨"><svg class="ui-icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+  <div class="ui-chip" id="lvl" aria-label="레벨"></div>
+  <div class="ui-chip" id="mv" aria-label="이동"></div>
+  <span class="ui-spacer"></span>
+  <div class="ui-chip" id="goal" aria-label="별 3개 목표"></div>
+  <button class="ui-btn icon round g-sky" id="snd" aria-label="소리"></button>
 </div>
 <div id="wrap">
   <canvas id="cv" width="351" height="351"></canvas>
-  <div class="ov" id="card"><div class="box card" id="cardbox"></div></div>
-  <div class="ov" id="res"><div class="box" id="resbox"></div></div>
-  <div class="ov" id="sel"><div class="box" id="selbox"></div></div>
+  <div class="ov ui-screen dim" id="card"><div class="ui-col"><div class="ui-card card ui-col ui-center" id="cardbox"></div></div></div>
+  <div class="ov ui-screen dim" id="res"><div class="ui-col"><div class="ui-card ui-col ui-center" id="resbox"></div></div></div>
+  <div class="ov ui-screen dim" id="sel"><div class="ui-col" id="selbox"></div></div>
 </div>
 <div id="bot">
-  <button class="big" id="undo" aria-label="되돌리기">↩️</button>
-  <button class="big" id="reset" aria-label="처음부터">🔄</button>
-  <button class="big" id="hint" aria-label="힌트">💡</button>
+  <button class="ui-btn icon round g-sky" id="undo" aria-label="되돌리기"><svg class="ui-icon" aria-hidden="true"><use href="#i-undo-2"/></svg></button>
+  <button class="ui-btn icon round g-sky" id="reset" aria-label="처음부터"><svg class="ui-icon" aria-hidden="true"><use href="#i-rotate-ccw"/></svg></button>
+  <button class="ui-btn icon round g-sky" id="hint" aria-label="힌트"><svg class="ui-icon" aria-hidden="true"><use href="#i-lightbulb"/></svg></button>
 </div>
 
 <script>
@@ -303,11 +494,11 @@ addEventListener("pagehide", () => leave("quit"));
 function starsFor(mv, opt) { return mv <= opt ? 3 : mv <= opt + Math.max(2, Math.ceil(opt / 2)) ? 2 : 1; }
 function hud() {
   const lv = LEVELS[L];
-  $("lvl").textContent = L + 1;
-  $("mv").textContent = "🚗 " + moves;
-  $("goal").innerHTML = `<b>★★★</b>🚗 ${lv.opt_moves}`;
+  $("lvl").innerHTML = `<span class="ui-num">${L + 1}</span>`;
+  $("mv").innerHTML = `${UI.icon("car")}<span class="ui-num">${moves}</span>`;
+  $("goal").innerHTML = `${UI.stars(3, 3)}<span class="ui-num">${lv.opt_moves}</span>`;
   $("undo").disabled = !hist.length || cleared;
-  $("snd").textContent = save.mute ? "🔇" : "🔊";
+  $("snd").innerHTML = UI.icon(save.mute ? "volume-x" : "volume-2");
 }
 
 // ── 레벨 시작 카드: 새 규칙을 게임 속 차 그림으로 '보여 준다'(미니 시연 + 손짓, 글 없음). 탭하면 닫힘 ──
@@ -397,7 +588,7 @@ function drawDemo(t) {
 }
 function showCard(lv) {
   const d = DEMO[lv], sc = mkScene(d, 236, 210), [c, c2] = sceneCanvas(sc);
-  $("cardbox").innerHTML = d.top ? `<div class="ico">${d.top}</div>` : "";
+  $("cardbox").innerHTML = d.top === "🏁" ? `<div class="g-top">${UI.icon("flag", "xl")}</div>` : d.top ? `<div class="g-top">${d.top}</div>` : "";
   $("cardbox").appendChild(c);
   demo = { sc, c2, t0: performance.now() + 250, loop: 0, done: -1 };
   $("card").classList.add("on"); guide = null; tapSel = null;
@@ -408,7 +599,7 @@ $("card").addEventListener("pointerdown", e => {
 });
 function badgeHTML(lv) {
   const b = BADGE[lv]; if (!b) return "";
-  if (typeof b === "string") return `<span class="badge">${b}</span>`;
+  if (typeof b === "string") return `<span class="badge">${b === "🏁" ? UI.icon("flag") : b}</span>`;
   const sc = mkScene({ ...b, noBg: true }, 90, 30, .05), [c, c2] = sceneCanvas(sc);
   renderScene(c2, sc, sc.M.start.slice());
   return `<span class="badge"><img alt="" src="${c.toDataURL()}"></span>`;
@@ -435,7 +626,7 @@ function showHint(counted) {
 let S = 60, PAD = 10, BW = 351;
 function resize() {
   const wrapW = Math.min(480, $("wrap").clientWidth || 351);
-  const availH = innerHeight - 52 - 8 - 76 - 30;
+  const availH = innerHeight - 56 - 16 - 72 - 24;
   BW = Math.max(220, Math.min(wrapW, availH));
   const dpr = window.devicePixelRatio || 1, n = M ? M.n : 6;
   PAD = Math.round(BW * .03); S = (BW - PAD * 2) / n;
@@ -754,8 +945,8 @@ function win() {
   // 늘어난 것 한 가지: 새 차(그림) > 기록 단축 > 별
   let gain = "", newSkin = null;
   if (firstClear && skin) newSkin = skin.e;
-  else if (prevBest !== undefined && moves < prevBest) gain = `🚗 ${prevBest}번 → ${moves}번`;
-  else if (after > before) gain = `⭐ 별 ${before} → ${after}`;
+  else if (prevBest !== undefined && moves < prevBest) gain = `${UI.icon("car", "lg")}<span class="ui-num">${prevBest}</span>${UI.icon("arrow-right")}<span class="ui-num">${moves}</span>`;
+  else if (after > before) gain = `${UI.icon("star", "lg fill")}<span class="ui-num">${before}</span>${UI.icon("arrow-right")}<span class="ui-num">${after}</span>`;
   const sec = Math.round((performance.now() - t0play) / 1000);
   emit("level_clear", { level: L + 1, moves, min: lv.opt_moves, stars: st, hints, sec });
   window.__g021.lastResult = { level: L + 1, moves, stars: st, hints };
@@ -768,11 +959,11 @@ function win() {
 function showResult(st, gain, newSkin) {
   busy = false;
   const nx = L + 2, last = nx > LEVELS.length;
-  const pre = last ? "" : `▶ ${nx}${badgeHTML(nx)}`;
-  $("resbox").innerHTML = `<div class="stars">${[0, 1, 2].map(k => `<span class="${k < st ? "on" : ""}" style="animation-delay:${.15 + k * .25}s">★</span>`).join("")}</div>
+  const pre = last ? "" : `${UI.icon("play", "lg fill")}<span class="ui-num">${nx}</span>${badgeHTML(nx)}`;
+  $("resbox").innerHTML = `${UI.stars(st, 3, "big")}
     <div id="ncwrap"></div>
-    <div class="line">🚗 ${moves}</div><div class="gain">${gain}</div>
-    <div class="row"><button class="rb" id="again" aria-label="다시">🔄</button>${last ? `<button class="rb pri" id="tomenu" aria-label="레벨">☰</button>` : `<button class="rb pri" id="next" aria-label="다음">${pre}</button>`}</div>`;
+    <div class="g-moves">${UI.icon("car", "xl")}<span class="ui-num">${moves}</span></div>${gain ? `<div class="g-gain">${gain}</div>` : ""}
+    <div class="ui-row" style="width:100%"><button class="ui-btn icon round" id="again" aria-label="다시">${UI.icon("rotate-ccw")}</button>${last ? `<button class="ui-btn primary" id="tomenu" aria-label="레벨">${UI.icon("menu")}</button>` : `<button class="ui-btn primary" id="next" aria-label="다음">${pre}</button>`}</div>`;
   $("res").classList.add("on");
   newcar = null;
   if (newSkin) {   // 새 차: 글 대신 큰 그림
@@ -804,12 +995,13 @@ function openMenu() {
   if (busy) return;
   const btns = LEVELS.map((_, k) => {
     const s = save.stars[k] || 0, lock = k + 1 > save.unlocked && !q.has("level");
-    return `<button data-k="${k}" class="${k === L ? "cur" : ""}" ${lock ? "disabled" : ""}>${lock ? "🔒" : k + 1}<small>${s ? "★".repeat(s) : "&nbsp;"}</small></button>`;
+    return lock ? `<button data-k="${k}" class="ui-level lock" disabled aria-label="${k + 1} 잠김">${UI.icon("lock")}</button>`
+      : `<button data-k="${k}" class="ui-level${k === L ? " cur" : ""}" aria-label="${k + 1}, 별 ${s}">${k + 1}${UI.stars(s)}</button>`;
   }).join("");
-  $("selbox").innerHTML = `<div class="row" style="margin:0;justify-content:space-between;align-items:center"><span style="font-size:22px;font-weight:900">⭐ ${totalStars()}</span><button class="ib" id="selx" aria-label="닫기">✕</button></div><div class="grid">${btns}</div>`;
+  $("selbox").innerHTML = `<div class="ui-card ui-col"><div class="ui-head"><span class="ui-chip">${UI.icon("star", "fill")}<span class="ui-num">${totalStars()}</span></span><span class="ui-spacer"></span><button class="ui-btn icon round" id="selx" aria-label="닫기">${UI.icon("x")}</button></div><div class="ui-levels">${btns}</div></div>`;
   $("sel").classList.add("on"); guide = null;
   $("selx").onclick = () => $("sel").classList.remove("on");
-  $("selbox").querySelectorAll(".grid button").forEach(b => b.onclick = () => {
+  $("selbox").querySelectorAll(".ui-level").forEach(b => b.onclick = () => {
     const k = Number(b.dataset.k); sfx.tap();
     leave(k === L ? "reset" : "prev"); load(k, true);
   });

@@ -1,80 +1,296 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" class="ui-light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#f4efe6">
 <title>고양이 타자수</title>
 <style>
-:root{--bg:#f4efe6;--ink:#2b2633;--sub:#857c8f;--card:#fffdf8;--line:#e2d9ca;--acc:#ff8a3d;--ok:#2fae6b;--bad:#e5484d;--key:#fbf8f2;--key2:#d9d0c1;--blue:#3b6fe0}
+:root{--bg:#f4efe6;--ink:#2b2633;--sub:#857c8f;--card:#fffdf8;--line:#e2d9ca;--acc:#ff8a3d;--ok:#2fae6b;--bad:#e5484d;--key:#fbf8f2;--key2:#d9d0c1;--blue:#3b6fe0;
+  /* 공용 UI 키트 색 맞춤: 고양이 주황(흰 글자 대비 3:1 이상으로 한 톤 진하게) */
+  --ui-accent:#e8650f;--ui-on-accent:#fff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
-body{display:flex;flex-direction:column;align-items:center;padding:calc(10px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom))}
-.wrap{width:100%;max-width:480px;display:flex;flex-direction:column;gap:10px;position:relative}
-.top{display:flex;justify-content:space-between;align-items:center}
-.top h1{margin:0;font-size:17px} .top h1 small{display:block;font-size:11.5px;color:var(--sub);font-weight:600}
-.stars{font-size:15px;color:#f2b01e;letter-spacing:2px}
-.mail{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 4px 0 var(--line);overflow:hidden;position:relative}
-.mail .bar{display:flex;gap:6px;align-items:center;padding:7px 10px;background:#efe7da;font-size:11.5px;color:var(--sub)}
-.mail .bar i{width:9px;height:9px;border-radius:50%;background:#e6c8b0;display:inline-block}
-.mail .f{display:flex;gap:8px;padding:6px 12px;border-bottom:1px solid #f0e8dc;font-size:13px} .mail .f b{color:var(--sub);font-weight:600;width:44px}
-.subj{font:800 28px/1.2 ui-monospace,Menlo,monospace;padding:10px 12px 4px;min-height:52px;letter-spacing:2px;word-break:break-all}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--ui-font);overscroll-behavior:none;user-select:none;-webkit-user-select:none;word-break:keep-all}
+body{display:flex;flex-direction:column;align-items:center;padding:max(var(--ui-s3),env(safe-area-inset-top)) var(--ui-s3) max(var(--ui-s4),env(safe-area-inset-bottom))}
+.wrap{width:100%;max-width:480px;flex:1;display:flex;flex-direction:column;gap:var(--ui-s3);position:relative}
+.g-modes{margin-top:auto} /* 메일은 위, 고르기·키보드·버튼은 엄지 닿는 아래로 */
+/* ── 판 화면 위 줄: 칩 ── */
+.g-top .ui-chip{box-shadow:none;background:var(--card)}
+.g-top .ui-btn.icon{background:var(--card)}
+.g-lim{font-weight:400;color:var(--ui-muted)}
+.g-top .ui-chip .ui-em{width:20px;height:20px;font-size:var(--ui-t3)}
+#best .ui-stars .off{color:var(--key2)}
+/* ── 메일 창 (게임 그림) ── */
+.mail{background:var(--card);border-radius:var(--ui-r3);box-shadow:var(--ui-shadow1);overflow:hidden;position:relative}
+.mail .bar{display:flex;gap:var(--ui-s2);align-items:center;padding:var(--ui-s2) var(--ui-s3);background:#efe7da;font-size:var(--ui-t1);color:var(--sub)}
+.mail .bar i{width:var(--ui-s2);height:var(--ui-s2);border-radius:50%;background:#e6c8b0;display:inline-block}
+.mail .f{display:flex;gap:var(--ui-s2);padding:var(--ui-s2) var(--ui-s3);border-bottom:1px solid #f0e8dc;font-size:var(--ui-t2);line-height:1.5} .mail .f b{color:var(--sub);font-weight:400;width:48px;flex:none}
+.subj{font:700 28px/1.2 ui-monospace,Menlo,monospace;padding:var(--ui-s3);min-height:60px;letter-spacing:2px;word-break:break-all}
 .subj .c{display:inline-block;width:3px;height:26px;background:var(--blue);vertical-align:-4px;animation:blink 1s steps(1) infinite;margin-left:2px}
 @keyframes blink{50%{opacity:0}}
 .subj span.n{display:inline-block;animation:pop .25s ease-out}
 @keyframes pop{from{transform:translateY(-10px) scale(1.5);color:var(--acc)}}
-.goal{padding:0 12px 10px;font-size:12.5px;color:var(--sub)} .goal b{color:var(--ink);font-family:ui-monospace,Menlo,monospace;letter-spacing:1px}
 #kb{width:100%;display:block;touch-action:none}
-.ctl{display:flex;gap:8px}
-.ctl button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px 0;font:800 14px -apple-system,sans-serif;color:var(--ink);box-shadow:0 3px 0 var(--line);cursor:pointer}
-.ctl button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
-.ctl button.go{flex:1.6;background:var(--acc);border-color:#e27120;color:#fff;box-shadow:0 3px 0 #c45e15}
-.ctl button:disabled{opacity:.4}
-.fish{font-size:13px;color:var(--sub);text-align:center}
-.modes{display:flex;gap:8px}
-.modes button{flex:1;border:2px solid var(--line);background:var(--card);border-radius:12px;padding:7px 4px;font:800 13.5px -apple-system,sans-serif;color:var(--ink);cursor:pointer}
-.modes button small{display:block;font-size:10.5px;color:var(--sub);font-weight:600}
-.modes button.on{border-color:var(--acc);background:#fff3e8}
-#mJump.on{border-color:var(--blue);background:#eaf0ff}
-.modes button:disabled{opacity:.35}
-.modes b{display:inline-block;background:var(--blue);color:#fff;border-radius:999px;padding:0 6px;font-size:11px}
-.nav{display:flex;justify-content:space-between;font-size:12.5px;color:var(--sub)} .nav button{background:none;border:0;color:var(--sub);font:inherit;padding:4px 6px;cursor:pointer} .nav button:disabled{opacity:.3}
-.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(43,38,51,.45);padding:18px;z-index:5}
-.ov.on{display:flex}
-.box{background:var(--card);border-radius:18px;padding:18px;width:min(360px,100%);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);animation:rise .25s ease-out}
-@keyframes rise{from{transform:translateY(20px);opacity:.5}}
-.box h2{margin:0 0 4px} .box .big{font-size:34px;color:#f2b01e;letter-spacing:4px}
-.reply{background:#f3eee6;border-radius:12px;padding:10px 12px;margin:10px 0;text-align:left;font-size:14px}
-.reply small{display:block;color:var(--sub);font-size:11.5px;margin-bottom:3px}
-.box .sent{font:800 20px ui-monospace,Menlo,monospace;letter-spacing:2px}
-.box button{width:100%;border:0;border-radius:12px;padding:12px;font:800 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:#efe7da;color:var(--ink)}
-.box button.pri{background:var(--acc);color:#fff}
-.box ul{text-align:left;font-size:13.5px;line-height:1.7;padding-left:18px}
+/* ── 걷기/점프 고르기: 고른 쪽은 테두리 (강조색은 출발 버튼에만) ── */
+.ui-btn.g-mode{background:var(--card);box-shadow:var(--ui-shadow1)}
+.ui-btn.g-mode.on{box-shadow:inset 0 0 0 2px var(--ink)}
+.ui-btn#mJump.on{box-shadow:inset 0 0 0 2px var(--blue)}
+.g-mode .ui-badge{background:var(--blue)}
+.g-ctl .ui-btn:not(.primary){background:var(--card);box-shadow:var(--ui-shadow1)}
+#tipslot{min-height:var(--ui-touch);display:flex;flex-direction:column}
+#tipslot:empty{visibility:hidden}
+#tipslot .ui-tip{box-shadow:none;background:var(--card)}
+/* 첫 판 손짓 */
+.g-hand{position:absolute;left:0;top:0;z-index:4;pointer-events:none;color:var(--ink);filter:drop-shadow(0 2px 3px rgba(255,255,255,.9));display:none}
+.g-hand.on{display:block}
+.g-hand>i{display:block;animation:g-tap 1000ms var(--ui-in) infinite}
+@keyframes g-tap{0%,100%{transform:scale(1)}40%{transform:scale(.82)}}
+@media (prefers-reduced-motion:reduce){.g-hand>i{animation:none}}
+/* ── 겹 화면 (시작·결과·끝): 키트 ui-screen ── */
+#ov:not(.on){display:none}
+.ui-screen.dim{z-index:7}
+.g-word{font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em}
+.g-line{font-size:var(--ui-t3);line-height:1.5;color:var(--ui-muted);margin:0;display:flex;align-items:center;justify-content:center;gap:var(--ui-s2);flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.g-line b{color:var(--ui-text)}
+.g-reply{font-size:var(--ui-t3);line-height:1.5;margin:0;text-align:left;width:100%}
+.g-reply b{color:var(--ui-muted);margin-right:var(--ui-s2)}
+.g-acts{width:100%;gap:var(--ui-s2)}
+.ui-level .ui-stars .off{color:rgba(15,20,30,.15)}
+.ui-level.lock .ui-icon{width:var(--ui-t4);height:var(--ui-t4)}
+.g-scrim{position:fixed;inset:0;z-index:60;background:rgba(43,38,51,.45);opacity:0;pointer-events:none;transition:opacity 195ms var(--ui-out)}
+.g-scrim.on{opacity:1;pointer-events:auto;transition:opacity 225ms var(--ui-in)}
+.ui-sheet .ui-list{margin:var(--ui-s4) 0 var(--ui-s5)}
+.ui-sheet .ui-list li{font-size:var(--ui-t3)}
+.ui-sheet .ui-btn{width:100%}
+.ui-sheet:not(.on){box-shadow:none} /* 닫힌 시트 그림자가 화면 아래로 새지 않게 */
+.g-bs{font:700 var(--ui-t2)/1 ui-monospace,Menlo,monospace;color:#c2410c}
+/* 게임 연출 (그대로) */
 .shake{animation:shk .35s}
 @keyframes shk{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
-.plane{position:fixed;font-size:34px;z-index:6;pointer-events:none;animation:fly 1s ease-in forwards}
+.plane{position:fixed;font-size:34px;z-index:8;pointer-events:none;animation:fly 1s ease-in forwards}
 @keyframes fly{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(70vw,-60vh) rotate(-20deg) scale(.5);opacity:0}}
-.conf{position:fixed;width:8px;height:5px;z-index:6;pointer-events:none;animation:conf 1.2s ease-out forwards}
+.conf{position:fixed;width:8px;height:5px;z-index:8;pointer-events:none;animation:conf 1.2s ease-out forwards}
 @keyframes conf{to{transform:translate(var(--dx),var(--dy)) rotate(540deg);opacity:0}}
 </style>
 </head>
 <body>
+<!-- nhc-ui-kit:start -->
+<style id="nhc-ui-kit">
+/* NHC game-lab UI kit v1 (2026-11-27) — 게임 '밖' UI(시작·레벨·HUD·결과·안내·버튼·토스트) 공용 스타일
+   기준: research/2026-11-27_게임UI_정돈_기준.md 의 15규칙. 모든 클래스는 ui- 로 시작해 게임 자체 스타일과 섞이지 않는다
+   게임별로 바꿀 것은 :root 의 --ui-accent / --ui-on-accent 두 개뿐(게임 쪽 :root 가 항상 이긴다 — 키트 기본값은 :where 로 0점). 밝은 화면 게임은 <html class="ui-light"> */
+:where(:root){
+  /* 간격 4의 배수 7단계 */
+  --ui-s1:4px;--ui-s2:8px;--ui-s3:12px;--ui-s4:16px;--ui-s5:24px;--ui-s6:32px;--ui-s7:48px;
+  /* 글자 5단계 · 굵기 2개 */
+  --ui-t1:12px;--ui-t2:14px;--ui-t3:16px;--ui-t4:20px;--ui-t5:30px;
+  /* 반경 3단계 */
+  --ui-r1:8px;--ui-r2:12px;--ui-r3:20px;
+  /* 색 역할 (어두운 화면 기본) */
+  --ui-bg:#0f1218;--ui-surface:#1a1f29;--ui-surface2:#242a36;--ui-line:rgba(255,255,255,.08);
+  --ui-text:#f2f4f8;--ui-muted:#9aa3b2;--ui-accent:#ffc83d;--ui-on-accent:#1a1406;
+  --ui-good:#34c77b;--ui-bad:#ff5a5f;
+  --ui-shadow1:0 1px 2px rgba(0,0,0,.25),0 4px 12px rgba(0,0,0,.18);
+  --ui-shadow2:0 8px 32px rgba(0,0,0,.35);
+  --ui-in:cubic-bezier(0,0,.2,1);--ui-out:cubic-bezier(.4,0,1,1);
+  --ui-font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
+  --ui-touch:48px;
+}
+.ui-light{
+  --ui-bg:#f4f6f9;--ui-surface:#ffffff;--ui-surface2:#eef1f5;--ui-line:rgba(15,20,30,.08);
+  --ui-text:#161a22;--ui-muted:#5f6878;
+  --ui-shadow1:0 1px 2px rgba(15,20,30,.08),0 4px 12px rgba(15,20,30,.08);
+  --ui-shadow2:0 12px 32px rgba(15,20,30,.16);
+}
+.ui-warm{--ui-bg:#f7f1e8;--ui-surface:#fffdf9;--ui-surface2:#f0e8dc;--ui-line:rgba(60,40,20,.10);--ui-text:#2a2118;--ui-muted:#76695a}   /* 따뜻한 밝은 화면: ui-light 와 함께 */
+.ui-kid{--ui-touch:56px}
+.ui-kid .ui-btn,.ui-kid .ui-level{min-height:56px}
+
+/* 기본 스타일 지우기 (ui- 요소 안에서만) */
+.ui-screen,.ui-card,.ui-hud,.ui-toast,.ui-sheet{font-family:var(--ui-font);color:var(--ui-text);word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+.ui-screen *,.ui-hud *,.ui-sheet *{box-sizing:border-box}
+.ui-screen ul,.ui-sheet ul{list-style:none;margin:0;padding:0}
+.ui-num{font-variant-numeric:tabular-nums}
+
+/* 아이콘: <svg class="ui-icon"><use href="#i-play"/></svg> 또는 UI.icon("play") */
+.ui-icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+.ui-icon.lg{width:24px;height:24px}.ui-icon.xl{width:32px;height:32px}.ui-icon.sm{width:16px;height:16px;vertical-align:-3px}
+.ui-icon.fill{fill:currentColor}
+
+/* 화면(시작·결과·일시정지): 가운데 한 줄 기둥 */
+.ui-screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:var(--ui-s5);padding-top:max(var(--ui-s5),env(safe-area-inset-top));padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));background:var(--ui-bg);overflow:auto}
+.ui-screen.dim{background:color-mix(in srgb,var(--ui-bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ui-col{width:100%;max-width:360px;display:flex;flex-direction:column;gap:var(--ui-s4)}
+.ui-screen>.ui-col{margin-block:auto}   /* 짧으면 가운데, 길면 위에서부터 스크롤(위 잘림 없음) */
+.ui-center{text-align:center;align-items:center}
+.ui-hero{font-size:56px;line-height:1;width:72px;height:72px;display:grid;place-items:center;border-radius:var(--ui-r3);background:var(--ui-surface)}
+.ui-title{font-size:var(--ui-t5);font-weight:700;line-height:1.25;letter-spacing:-.02em;margin:0}
+.ui-h{font-size:var(--ui-t4);font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0}
+.ui-sub{font-size:var(--ui-t3);line-height:1.5;color:var(--ui-muted);margin:0}   /* 16: 제목30·버튼20/16과 합쳐 3단계 */
+.ui-cap{font-size:var(--ui-t1);line-height:1.5;color:var(--ui-muted);margin:0}
+.ui-row{display:flex;gap:var(--ui-s2);align-items:center}
+.ui-row>.ui-btn{flex:1}
+.ui-spacer{flex:1}
+
+/* 버튼: 주 버튼은 화면에 하나 */
+.ui-btn{appearance:none;border:0;margin:0;font:700 var(--ui-t3)/1 var(--ui-font);color:var(--ui-text);background:var(--ui-surface2);min-height:var(--ui-touch);padding:0 var(--ui-s5);border-radius:var(--ui-r2);display:inline-flex;align-items:center;justify-content:center;gap:var(--ui-s2);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform 90ms var(--ui-in),filter 90ms var(--ui-in)}
+.ui-btn:active{transform:scale(.96)}
+.ui-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
+.ui-btn.primary{background:var(--ui-accent);color:var(--ui-on-accent);box-shadow:var(--ui-shadow1);min-height:calc(var(--ui-touch) + 8px);font-size:var(--ui-t4)}
+.ui-btn.ghost{background:transparent;color:var(--ui-muted)}
+.ui-btn.icon{width:var(--ui-touch);padding:0;flex:none;position:relative}
+.ui-btn.icon>.ui-badge{position:absolute;top:-6px;right:-6px;margin:0}
+.ui-btn.round{border-radius:50%}
+.ui-btn:disabled,.ui-btn.off{opacity:.38;pointer-events:none}
+.ui-btn .ui-badge{margin-left:2px}
+.ui-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ui-bad);color:#fff;font:700 var(--ui-t1)/1 var(--ui-font);font-variant-numeric:tabular-nums}
+
+/* 카드 · 수치 */
+.ui-card{background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s4);box-shadow:var(--ui-shadow1)}
+.ui-card.flat{box-shadow:none;background:var(--ui-surface2)}
+.ui-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:var(--ui-s2)}
+.ui-stat{background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3);display:flex;flex-direction:column;gap:var(--ui-s1);min-width:0}
+.ui-stat b{font-size:clamp(var(--ui-t3),5vw,var(--ui-t4));font-weight:700;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ui-stat span{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25;display:flex;align-items:center;gap:var(--ui-s1)}
+.ui-big{font-size:48px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* 레벨 선택 격자 */
+.ui-levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:var(--ui-s2)}
+.ui-level{appearance:none;border:0;margin:0;aspect-ratio:1;border-radius:var(--ui-r2);background:var(--ui-surface2);color:var(--ui-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ui-s1);font:700 var(--ui-t4)/1 var(--ui-font);font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;transition:transform 90ms var(--ui-in)}
+.ui-level:active{transform:scale(.94)}
+.ui-level.cur{box-shadow:inset 0 0 0 2px var(--ui-text)}   /* 강조색은 주 버튼에만 → 지금 칸은 테두리로 */
+.ui-level.lock{color:var(--ui-muted);background:transparent;box-shadow:inset 0 0 0 1px var(--ui-line);pointer-events:none}
+.ui-level .ui-stars .ui-icon{width:10px;height:10px}
+
+/* 별 */
+.ui-stars{display:inline-flex;gap:2px;color:var(--ui-accent)}
+.ui-stars .off{color:var(--ui-line);opacity:1}
+.ui-light .ui-stars .off{color:rgba(15,20,30,.15)}
+.ui-stars.big .ui-icon{width:40px;height:40px}
+.ui-stars.big{gap:var(--ui-s2)}
+
+/* HUD: 위쪽 칩 줄 */
+.ui-hud{position:absolute;left:0;right:0;top:0;z-index:20;display:flex;gap:var(--ui-s2);align-items:center;padding:var(--ui-s3);padding-top:max(var(--ui-s3),env(safe-area-inset-top));pointer-events:none}
+.ui-hud>*{pointer-events:auto}
+.ui-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--ui-s3);border-radius:999px;background:color-mix(in srgb,var(--ui-surface) 86%,transparent);box-shadow:var(--ui-shadow1);font:700 var(--ui-t2)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ui-text)}
+.ui-chip .ui-icon{width:16px;height:16px;color:var(--ui-muted)}
+.ui-chip.accent .ui-icon{color:var(--ui-accent)}
+.ui-meter{height:6px;border-radius:999px;background:var(--ui-surface2);overflow:hidden}
+.ui-meter>i{display:block;height:100%;background:var(--ui-accent);border-radius:inherit;transition:width 200ms var(--ui-in)}
+
+/* 안내 카드(한 번에 하나) · 토스트 · 시트 */
+.ui-tip{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s3) var(--ui-s4);box-shadow:var(--ui-shadow2);font-size:var(--ui-t3);line-height:1.5;color:var(--ui-text);font-family:var(--ui-font)}
+.ui-tip .ui-icon{color:var(--ui-accent)}
+.ui-toast{position:fixed;left:50%;bottom:max(var(--ui-s6),env(safe-area-inset-bottom));z-index:80;transform:translate(-50%,8px);opacity:0;pointer-events:none;background:var(--ui-text);color:var(--ui-bg);padding:var(--ui-s3) var(--ui-s4);border-radius:var(--ui-r1);font:700 var(--ui-t2)/1.25 var(--ui-font);max-width:calc(100vw - 32px);width:max-content;text-align:center;transition:opacity 180ms var(--ui-in),transform 180ms var(--ui-in)}
+.ui-toast.on{opacity:1;transform:translate(-50%,0)}
+.ui-toast.top{bottom:auto;top:max(25%,env(safe-area-inset-top))}
+.ui-sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--ui-surface);border-radius:var(--ui-r3) var(--ui-r3) 0 0;padding:var(--ui-s5);padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));box-shadow:var(--ui-shadow2);transform:translateY(100%);transition:transform 195ms var(--ui-out)}
+.ui-sheet.on{transform:none;transition:transform 225ms var(--ui-in)}
+.ui-sheet:not(.on){box-shadow:none}
+.ui-scrim{position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity 195ms var(--ui-out)}
+.ui-scrim.on{opacity:1;pointer-events:auto;transition:opacity 225ms var(--ui-in)}
+.ui-list{display:flex;flex-direction:column;gap:var(--ui-s2)}
+.ui-list li{display:flex;align-items:center;gap:var(--ui-s3);font-size:var(--ui-t2);line-height:1.5}
+.ui-list li .ui-icon{color:var(--ui-muted)}
+.ui-em{width:28px;height:28px;display:inline-grid;place-items:center;font-size:20px;line-height:1;flex:none}
+
+/* 등장 모션 */
+.ui-enter{animation:ui-enter 225ms var(--ui-in) both}
+.ui-enter-2{animation:ui-enter 225ms var(--ui-in) 60ms both}
+.ui-enter-3{animation:ui-enter 225ms var(--ui-in) 120ms both}
+.ui-pop{animation:ui-pop 300ms var(--ui-in) both}
+@keyframes ui-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ui-pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.ui-enter,.ui-enter-2,.ui-enter-3,.ui-pop{animation:ui-fade 150ms linear both}.ui-btn,.ui-level{transition:none}}
+@keyframes ui-fade{from{opacity:0}to{opacity:1}}
+
+/* 화면 머리 · 목록 줄 · 아래 고정 · 단계 막대 · 한 줄 카드 (2026-11-27 G003 시범에서 추가) */
+.ui-head{display:flex;align-items:center;gap:var(--ui-s2);min-height:var(--ui-touch)}
+.ui-head>.ui-h{flex:1}
+.ui-item{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3)}
+.ui-item>.ui-grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-s1)}
+.ui-item b{font-size:var(--ui-t3);font-weight:700;line-height:1.25}
+.ui-item small{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25}
+.ui-item.lock{opacity:.5}
+.ui-line{display:flex;align-items:center;gap:var(--ui-s2);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3) var(--ui-s4);font-size:var(--ui-t3);line-height:1.25}
+.ui-line>.ui-grow{flex:1;color:var(--ui-muted)}
+.ui-line b{font-variant-numeric:tabular-nums}
+.ui-dock{position:sticky;bottom:0;padding-top:var(--ui-s3);background:linear-gradient(to bottom,transparent,var(--ui-bg) 40%)}
+.ui-pips{display:inline-flex;gap:3px}.ui-pips>i{width:14px;height:6px;border-radius:999px;background:var(--ui-line)}.ui-pips>i.on{background:var(--ui-text)}
+.ui-strike{text-decoration:line-through;text-decoration-thickness:3px;opacity:.6}
+.ui-good{color:var(--ui-good)}.ui-bad{color:var(--ui-bad)}
+
+/* 칩 보조 숫자(값/한도) · 첫 판 손짓 (v1.2) */
+.ui-chip small{font-weight:400;color:var(--ui-muted);margin-left:-4px}
+.ui-hand{position:absolute;z-index:40;width:44px;height:44px;margin:-6px 0 0 -14px;pointer-events:none;font-size:36px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transition:left 600ms var(--ui-in),top 600ms var(--ui-in),opacity 150ms linear}
+.ui-hand.tap{animation:ui-tap 900ms var(--ui-in) infinite}
+@keyframes ui-tap{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(6px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){.ui-hand,.ui-hand.tap{animation:none;transition:opacity 150ms linear}}
+
+/* v1.3 (G012 반영): 숨김, 줄 오른쪽 값, 작은 안내, 배지 색 */
+.ui-screen[hidden],.ui-sheet[hidden],.ui-tip[hidden],.ui-screen.hide,.ui-screen.off{display:none}
+.ui-item>.ui-val{font:700 var(--ui-t3)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.ui-tip.sm{font-size:var(--ui-t2);padding:var(--ui-s2) var(--ui-s3);gap:var(--ui-s2)}
+.ui-tip.sm b{font-weight:700}
+.ui-badge.good{background:var(--ui-good)}
+.ui-badge.muted{background:var(--ui-surface2);color:var(--ui-muted)}
+
+/* v1.4 (G021·G022 반영) */
+.ui-light .ui-screen.dim{background:rgba(20,28,40,.45)}
+.ui-levels.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.ui-btn.float{background:var(--ui-surface);box-shadow:var(--ui-shadow1)}
+.ui-chip .ui-stars .ui-icon{color:inherit}
+.ui-chip .ui-stars .off{color:var(--ui-line)}
+
+/* v1.5 (G002·G006 반영) */
+[hidden].ui-badge,[hidden].ui-chip,[hidden].ui-btn,[hidden].ui-item,[hidden].ui-line{display:none}
+button.ui-item{appearance:none;border:0;width:100%;text-align:left;color:var(--ui-text);font-family:var(--ui-font);cursor:pointer;transition:transform 90ms var(--ui-in)}
+button.ui-item:active{transform:scale(.98)}
+.ui-pips>i.bad{background:var(--ui-bad)}.ui-pips>i.good{background:var(--ui-good)}
+.ui-hud.static{position:static;padding:0}
+</style>
+<!-- Lucide icons (lucide-static 0.460.0) — ISC License. Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></symbol><symbol id="i-award" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526" /> <circle cx="12" cy="8" r="6" /></symbol><symbol id="i-book-open" viewBox="0 0 24 24"><path d="M12 7v14" /> <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" /></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /> <circle cx="7" cy="17" r="2" /> <path d="M9 17h6" /> <circle cx="17" cy="17" r="2" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol><symbol id="i-chevrons-up" viewBox="0 0 24 24"><path d="m17 11-5-5-5 5" /> <path d="m17 18-5-5-5 5" /></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" /></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" /></symbol><symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6" /> <path d="M18.09 10.37A6 6 0 1 1 10.34 18" /> <path d="M7 6h1v4" /> <path d="m16.71 13.88.7.71-2.82 2.82" /></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /> <line x1="4" x2="4" y1="22" y2="15" /></symbol><symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4" /> <path d="M3.34 19a10 10 0 1 1 17.32 0" /></symbol><symbol id="i-gavel" viewBox="0 0 24 24"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8" /> <path d="m16 16 6-6" /> <path d="m8 8 6-6" /> <path d="m9 7 8 8" /> <path d="m21 11-8-8" /></symbol><symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1" /> <path d="M12 8v13" /> <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /> <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" /></symbol><symbol id="i-graduation-cap" viewBox="0 0 24 24"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></symbol><symbol id="i-hammer" viewBox="0 0 24 24"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9" /> <path d="m18 15 4-4" /> <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5" /></symbol><symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /> <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /> <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /> <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></symbol><symbol id="i-handshake" viewBox="0 0 24 24"><path d="m11 17 2 2a1 1 0 1 0 3-3" /> <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" /> <path d="m21 3 1 11h-2" /> <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" /> <path d="M3 4h8" /></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22" /> <line x1="6" x2="6" y1="18" y2="11" /> <line x1="10" x2="10" y1="18" y2="11" /> <line x1="14" x2="14" y1="18" y2="11" /> <line x1="18" x2="18" y1="18" y2="11" /> <polygon points="12 2 20 7 4 7" /></symbol><symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /></symbol><symbol id="i-lock-open" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 9.9-1" /></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2" /> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12" /> <line x1="4" x2="20" y1="6" y2="6" /> <line x1="4" x2="20" y1="18" y2="18" /></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol><symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /> <circle cx="6" cy="18" r="3" /> <circle cx="18" cy="16" r="3" /></symbol><symbol id="i-newspaper" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /> <path d="M18 14h-8" /> <path d="M15 18h-5" /> <path d="M10 6h8v4h-8V6Z" /></symbol><symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1" /> <rect x="6" y="4" width="4" height="16" rx="1" /></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></symbol><symbol id="i-piggy-bank" viewBox="0 0 24 24"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z" /> <path d="M2 9v1c0 1.1.9 2 2 2h1" /> <path d="M16 11h.01" /></symbol><symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="M12 5v14" /></symbol><symbol id="i-pointer" viewBox="0 0 24 24"><path d="M22 14a8 8 0 0 1-8 8" /> <path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /> <path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1" /> <path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10" /> <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></symbol><symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" /></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" /> <circle cx="6" cy="12" r="3" /> <circle cx="18" cy="19" r="3" /> <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /> <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-soup" viewBox="0 0 24 24"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z" /> <path d="M7 21h10" /> <path d="M19.5 12 22 6" /> <path d="M16.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.73 1.62" /> <path d="M11.25 3c.27.1.8.53.74 1.36-.05.83-.93 1.2-.98 2.02-.06.78.33 1.24.72 1.62" /> <path d="M6.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.74 1.62" /></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /> <path d="M20 3v4" /> <path d="M22 5h-4" /> <path d="M4 17v2" /> <path d="M5 18H3" /></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" /> <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /> <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" /> <path d="M2 7h20" /> <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" /></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" /></symbol><symbol id="i-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /> <path d="M13 5v2" /> <path d="M13 17v2" /> <path d="M13 11v2" /></symbol><symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2" /> <line x1="12" x2="15" y1="14" y2="11" /> <circle cx="12" cy="14" r="8" /></symbol><symbol id="i-train-front" viewBox="0 0 24 24"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1" /> <path d="m9 15-1-1" /> <path d="m15 15 1-1" /> <path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z" /> <path d="m8 19-2 3" /> <path d="m16 19 2 3" /></symbol><symbol id="i-trending-down" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7" /> <polyline points="16 17 22 17 22 11" /></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /> <polyline points="16 7 22 7 22 13" /></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /> <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /> <path d="M4 22h16" /> <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /> <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /> <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></symbol><symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <path d="M16 3.13a4 4 0 0 1 0 7.75" /></symbol><symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /> <path d="M7 2v20" /> <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></symbol><symbol id="i-volume-2" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <path d="M16 9a5 5 0 0 1 0 6" /> <path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></symbol><symbol id="i-volume-x" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <line x1="22" x2="16" y1="9" y2="15" /> <line x1="16" x2="22" y1="9" y2="15" /></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></symbol></svg>
+<script>window.UI=window.UI||{};
+UI.icon=function(n,c){return '<svg class="ui-icon'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';};
+UI.stars=function(n,max,c){max=max||3;var s='<span class="ui-stars'+(c?' '+c:'')+'" aria-label="별 '+n+'/'+max+'">';for(var i=0;i<max;i++)s+='<svg class="ui-icon fill'+(i<n?'':' off')+'" aria-hidden="true"><use href="#i-star"/></svg>';return s+'</span>';};
+UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=document.createElement('div');t.id='ui-toast';t.className='ui-toast';t.setAttribute('role','status');document.body.appendChild(t);}t.textContent=m;t.classList.toggle('top',pos==='top');t.classList.add('on');clearTimeout(UI._tt);UI._tt=setTimeout(function(){t.classList.remove('on');},ms||2000);};</script>
+<!-- nhc-ui-kit:end -->
+
+<!-- G004 전용 아이콘 (Lucide mail, ISC) — 키트에 없어 여기 둔다 -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol></svg>
 <div class="wrap" id="wrap">
-  <div class="top"><h1>🐈 고양이 타자수<small id="lvl">메일 1</small></h1><div class="stars" id="best"></div></div>
+  <div class="ui-row g-top">
+    <button class="ui-btn icon" id="home" aria-label="메일 선택"><svg class="ui-icon" aria-hidden="true"><use href="#i-house"/></svg></button>
+    <span class="ui-chip" id="lvl" aria-label="메일 번호"></span>
+    <span class="ui-chip" id="fish" aria-label="놓은 간식"></span>
+    <span class="ui-spacer"></span>
+    <span id="best" aria-label="최고 기록"></span>
+  </div>
   <div class="mail" id="mail">
     <div class="bar"><i></i><i></i><i></i>&nbsp;새 메일</div>
     <div class="f"><b>받는 이</b>부장님</div>
     <div class="f"><b>미션</b><span id="mission"></span></div>
     <div class="subj" id="subj"><span class="c"></span></div>
-    <div class="goal">목표: <b id="goal"></b> · 간식은 <b id="maxT"></b>개까지</div>
   </div>
-  <div class="modes"><button id="mWalk" class="on">🐟 걸어가기<small>지나는 키 전부 입력</small></button><button id="mJump">🐭 뛰어오르기 <b id="jl">0</b><small>착지한 키만 입력</small></button></div>
+  <div class="ui-row g-modes"><button class="ui-btn g-mode on" id="mWalk"><span class="ui-em">🐟</span>걷기</button><button class="ui-btn g-mode" id="mJump"><span class="ui-em">🐭</span>점프<span class="ui-badge" id="jl">0</span></button></div>
   <canvas id="kb"></canvas>
-  <div class="fish" id="fish"></div>
-  <div class="ctl"><button id="undo">↶ 간식 빼기</button><button id="clear">비우기</button><button class="go" id="go">▶ 출발</button></div>
-  <div class="nav"><button id="prev">◀ 이전 메일</button><span>키를 탭해 간식을 순서대로 놓기</span><button id="next">다음 메일 ▶</button></div>
+  <div class="g-hand" id="hand"><i><svg class="ui-icon xl" aria-hidden="true"><use href="#i-pointer"/></svg></i></div>
+  <div id="tipslot"></div>
+  <div class="ui-row g-ctl"><button class="ui-btn icon" id="undo" aria-label="간식 빼기"><svg class="ui-icon" aria-hidden="true"><use href="#i-undo-2"/></svg></button><button class="ui-btn icon" id="clear" aria-label="비우기"><svg class="ui-icon" aria-hidden="true"><use href="#i-x"/></svg></button><button class="ui-btn primary" id="go"><svg class="ui-icon lg" aria-hidden="true"><use href="#i-play"/></svg>출발</button></div>
 </div>
-<div class="ov" id="ov"><div class="box" id="box"></div></div>
+<div class="ui-screen" id="ov"><div class="ui-col" id="box"></div></div>
+<div class="g-scrim" id="scrim"></div>
+<div class="ui-sheet" id="sheet" role="dialog" aria-label="하는 법">
+  <h2 class="ui-h">하는 법</h2>
+  <ul class="ui-list">
+    <li><span class="ui-em"><svg class="ui-icon" aria-hidden="true"><use href="#i-pointer"/></svg></span>키를 탭해 간식을 순서대로</li>
+    <li><span class="ui-em">🐟</span>걷기: 지나는 키 전부 입력</li>
+    <li><span class="ui-em">🐭</span>점프: 착지한 키만 입력</li>
+    <li><span class="ui-em g-bs">⌫</span>밟으면 한 글자 지움</li>
+  </ul>
+  <button class="ui-btn" id="sheetOk"><svg class="ui-icon" aria-hidden="true"><use href="#i-check"/></svg>알겠어요</button>
+</div>
 <script>
 "use strict";
 /*CORE_START*/
@@ -135,10 +351,10 @@ function lv() { return LEVELS[L]; }
 function load(n) {
   L = Math.max(0, Math.min(LEVELS.length - 1, n)); treats = []; running = false; typedShown = ""; parts = []; pressed = {};
   const k = KEYS[lv().start]; cat = { x: k.x, y: k.y, face: 1, bob: 0 };
-  $("lvl").textContent = `메일 ${L + 1} / ${LEVELS.length}`;
+  $("lvl").innerHTML = `${UI.icon("mail")}<span>${L + 1}<span class="g-lim">/${LEVELS.length}</span></span>`;
   $("mission").textContent = `“${lv().word}” 보내기` + (MEANING[lv().word] ? ` (${MEANING[lv().word]})` : "");
-  $("goal").textContent = lv().word; $("maxT").textContent = lv().opt + 1; mode = "walk";
-  const b = save.stars[L]; $("best").textContent = b ? "★".repeat(b) + "☆".repeat(3 - b) : "";
+  mode = "walk"; fin = false;
+  $("best").innerHTML = UI.stars(save.stars[L] || 0);
   $("ov").classList.remove("on"); renderSubj(); update(); emit("level_start", { level: L + 1 });
 }
 function renderSubj(newCh) {
@@ -149,12 +365,38 @@ function update() {
   preview = treats.length ? walk(lv().start, treats) : null;
   const max = lv().opt + 1, jl = lv().jumps - treats.filter(t => t.j).length;
   if (jl <= 0 && mode === "jump") mode = "walk";
-  $("fish").textContent = `간식 ${treats.length} / ${max}` + (treats.length === max ? " · 다 놓았어요" : "");
+  $("fish").innerHTML = `<span class="ui-em">🐟</span><span>${treats.length}<span class="g-lim">/${max}</span></span>`;
   $("mWalk").classList.toggle("on", mode === "walk"); $("mJump").classList.toggle("on", mode === "jump");
   $("mJump").disabled = jl <= 0 || running; $("jl").textContent = jl;
   $("mJump").style.display = lv().jumps ? "" : "none";
   $("go").disabled = running || !treats.length; $("undo").disabled = running || !treats.length; $("clear").disabled = running || !treats.length;
-  $("prev").disabled = running || L === 0; $("next").disabled = running || L + 1 >= Math.min(save.unlocked, LEVELS.length);
+  coach();
+}
+
+// ── 첫 판 손짓: 규칙 목록 대신 손가락이 다음에 누를 곳을 가리킨다 (메일 1). ⌫는 처음 나오는 메일에서 한 줄. 안내 카드는 한 번에 하나 ──
+const QS = new URLSearchParams(location.search), COACH = !QS.has("selftest") && !QS.has("autoplay");
+const BS_LV = LEVELS.findIndex(l => l.usesBS);
+let fin = false;
+function coach() {
+  const hand = $("hand"), slot = $("tipslot");
+  let msg = "", icon = "lightbulb", at = null;
+  if (COACH && !running && !fin && !$("ov").classList.contains("on")) {
+    if (L === 0 && save.unlocked <= 1) {
+      const sol = lv().sol, i = treats.length, same = treats.every((t, j) => sol[j] && t.k === sol[j].k && t.j === sol[j].j);
+      if (!same) { msg = "같은 키를 또 탭하면 빼기"; icon = "undo-2"; }
+      else if (i >= sol.length) { msg = "출발을 눌러 보내기"; icon = "play"; at = $("go"); }
+      else if (sol[i].j && mode !== "jump") { msg = "쥐를 고르면 폴짝 점프"; icon = "pointer"; at = $("mJump"); }
+      else { msg = sol[i].j ? "착지한 키만 입력돼요" : "키를 탭해 생선 놓기"; icon = "pointer"; at = { k: sol[i].k }; }
+    } else if (L === BS_LV && save.unlocked <= L + 1 && !treats.length) msg = "⌫를 밟으면 한 글자 지워요";
+  }
+  const html = msg ? `<div class="ui-tip ui-enter">${UI.icon(icon, "lg")}<span>${msg}</span></div>` : "";
+  if (slot.dataset.msg !== msg) { slot.innerHTML = html; slot.dataset.msg = msg; }
+  if (!at) { hand.classList.remove("on"); return; }
+  const w = $("wrap").getBoundingClientRect();
+  let x, y;
+  if (at.k !== undefined) { const b = kb.getBoundingClientRect(), k = KEYS[at.k]; x = b.left - w.left + X(k.x); y = b.top - w.top + Y(k.y); }
+  else { const b = at.getBoundingClientRect(); x = b.left - w.left + b.width * .3; y = b.top - w.top + b.height / 2; }
+  hand.style.left = (x - 10) + "px"; hand.style.top = (y - 2) + "px"; hand.classList.add("on");
 }
 
 // ───────── 그리기 ─────────
@@ -244,8 +486,9 @@ $("mJump").onclick = () => { mode = "jump"; SFX.place(1); update(); };
 $("undo").onclick = () => { if (!running && treats.length) { treats.pop(); SFX.remove(); update(); } };
 $("clear").onclick = () => { if (!running) { treats = []; SFX.remove(); update(); } };
 $("go").onclick = () => run();
-$("prev").onclick = () => load(L - 1);
-$("next").onclick = () => load(L + 1);
+$("home").onclick = () => menu();
+$("sheetOk").onclick = () => sheet(false);
+$("scrim").onclick = () => sheet(false);
 
 // ───────── 실행 ─────────
 const SPEED = 3.2; // 키/초
@@ -273,7 +516,7 @@ function stepRun(t) {
 }
 function finish() {
   const ok = typedShown === lv().word, used = treats.length, st = ok ? (used <= lv().opt ? 3 : 2) : 0;
-  update();
+  fin = true; update();
   if (ok) {
     save.stars[L] = Math.max(save.stars[L] || 0, st); save.unlocked = Math.max(save.unlocked, L + 2); store.set(save);
     SFX.win(); emit("level_clear", { level: L + 1, treats: used, stars: st });
@@ -281,29 +524,54 @@ function finish() {
       for (let i = 0; i < 26; i++) { const c = document.createElement("div"); c.className = "conf"; c.style.background = ["#ff8a3d", "#2fae6b", "#3b6fe0", "#f2b01e", "#e5677a"][i % 5]; c.style.left = "50%"; c.style.top = "30%"; c.style.setProperty("--dx", (Math.random() - .5) * 360 + "px"); c.style.setProperty("--dy", (Math.random() - .3) * 400 + "px"); document.body.appendChild(c); setTimeout(() => c.remove(), 1250); } }
     setTimeout(() => {
       const last = L + 1 >= LEVELS.length;
-      $("box").innerHTML = `<h2>전송 완료 ✉️</h2><div class="big">${"★".repeat(st)}${"☆".repeat(3 - st)}</div><div class="sent">${lv().word}</div>
-        <div class="reply"><small>부장님의 답장</small>${OK_REPLY[(L * 7 + used) % OK_REPLY.length]}</div>
-        <p style="font-size:12.5px;color:var(--sub)">간식 ${used}개 사용 · 최소 ${lv().opt}개${st < 3 ? " — 더 적게 풀 수 있어요!" : ""}</p>
-        <button onclick="load(L)">다시</button>${last ? '<button class="pri" onclick="ending()">🎉 끝</button>' : '<button class="pri" onclick="load(L+1)">다음 메일</button>'}`;
-      $("ov").classList.add("on");
+      overlay(`<div class="ui-col ui-center"><div class="ui-pop">${UI.stars(st, 3, "big")}</div><h2 class="ui-h ui-enter">전송 완료</h2><div class="ui-big g-word ui-enter">${lv().word}</div>
+        <p class="ui-card flat g-reply ui-enter-2"><b>부장님</b>${OK_REPLY[(L * 7 + used) % OK_REPLY.length]}</p>
+        <p class="g-line ui-enter-2"><span class="ui-em">🐟</span><b>${used}개</b> · 최소 ${lv().opt}개</p></div>
+        <div class="ui-row g-acts ui-enter-3">${btnIcon("home", "house", "메일 선택")}${btnIcon("again", "rotate-ccw", "다시")}${last
+          ? `<button class="ui-btn primary" data-a="end">마무리${UI.icon("arrow-right", "lg")}</button>`
+          : `<button class="ui-btn primary" data-a="next">다음 메일${UI.icon("arrow-right", "lg")}</button>`}</div>`, true);
     }, 700);
   } else {
     SFX.fail(); emit("fail", { level: L + 1, typed: typedShown });
     if (JUICE) { $("wrap").classList.add("shake"); setTimeout(() => $("wrap").classList.remove("shake"), 360); }
     setTimeout(() => {
       const r = BAD_REPLY[(L + typedShown.length) % BAD_REPLY.length].replace("{t}", typedShown || "(빈 메일)");
-      $("box").innerHTML = `<h2>앗, 오타 😿</h2><div class="sent" style="color:var(--bad)">${typedShown || "(빈 메일)"}</div><p style="font-size:13px;color:var(--sub)">목표: <b>${lv().word}</b></p>
-        <div class="reply"><small>부장님의 답장</small>${r}</div><button class="pri" onclick="retry()">간식 다시 놓기</button><button onclick="load(L)">처음부터</button>`;
-      $("ov").classList.add("on");
+      overlay(`<div class="ui-col ui-center"><h2 class="ui-h ui-enter">앗, 오타</h2><div class="ui-big g-word ui-bad ui-enter">${typedShown || "(빈 메일)"}</div>
+        <p class="g-line ui-enter">${UI.icon("target")}목표 <b class="g-word">${lv().word}</b></p>
+        <p class="ui-card flat g-reply ui-enter-2"><b>부장님</b>${r}</p></div>
+        <div class="ui-row g-acts ui-enter-3">${btnIcon("home", "house", "메일 선택")}${btnIcon("again", "rotate-ccw", "처음부터")}<button class="ui-btn primary" data-a="retry">${UI.icon("undo-2", "lg")}간식 고치기</button></div>`, true);
     }, 500);
   }
 }
-function retry() { $("ov").classList.remove("on"); const k = KEYS[lv().start]; cat.x = k.x; cat.y = k.y; typedShown = ""; renderSubj(); update(); }
-function ending() { $("box").innerHTML = `<h2>오늘 메일 끝! 🐈</h2><p>모든 메일을 보냈어요. 고양이는 이제 키보드 위에서 잡니다.</p><button class="pri" onclick="load(0)">처음 메일부터</button>`; }
+function retry() { $("ov").classList.remove("on"); fin = false; const k = KEYS[lv().start]; cat.x = k.x; cat.y = k.y; typedShown = ""; renderSubj(); update(); }
+function ending() {
+  overlay(`<div class="ui-col ui-center ui-enter"><div class="ui-hero" aria-hidden="true">🐈</div><h1 class="ui-title">오늘 메일 끝</h1><p class="ui-sub">고양이는 키보드에서 자요</p></div>
+    <div class="ui-row g-acts ui-enter-2">${btnIcon("home", "house", "메일 선택")}<button class="ui-btn primary" data-a="first">${UI.icon("rotate-ccw", "lg")}처음 메일부터</button></div>`, false);
+}
+const btnIcon = (a, icon, label) => `<button class="ui-btn icon" data-a="${a}" aria-label="${label}">${UI.icon(icon)}</button>`;
+function overlay(html, dim) {
+  const ov = $("ov"); ov.classList.toggle("dim", dim); $("box").innerHTML = html; ov.classList.add("on"); ov.scrollTop = 0; coach();
+  $("box").querySelectorAll("[data-a]").forEach(b => b.onclick = () => ({ home: menu, again: () => load(L), next: () => load(L + 1), retry, end: ending, first: () => load(0) })[b.dataset.a]());
+}
+// ── 시작 화면: 대표 그림 + 제목 + 한 줄 + 메일 격자 + 주 버튼 하나 (+ 하는 법) ──
+function menu() {
+  running = false; fin = false;
+  const cur = Math.min(save.unlocked, LEVELS.length) - 1;
+  const cells = LEVELS.map((l, i) => i < save.unlocked
+    ? `<button class="ui-level ${i === cur ? "cur" : ""}" data-l="${i}" aria-label="메일 ${i + 1}, 별 ${save.stars[i] || 0}">${i + 1}${UI.stars(save.stars[i] || 0)}</button>`
+    : `<button class="ui-level lock" disabled aria-label="메일 ${i + 1} 잠김">${UI.icon("lock")}</button>`).join("");
+  overlay(`<div class="ui-col ui-center ui-enter"><div class="ui-hero" aria-hidden="true">🐈</div><h1 class="ui-title">고양이 타자수</h1><p class="ui-sub">고양이 발로 메일 보내기</p></div>
+    <div class="ui-levels ui-enter-2">${cells}</div>
+    <div class="ui-row g-acts ui-enter-3"><button class="ui-btn primary" style="flex:1" id="start">${UI.icon("play", "lg")}메일 ${cur + 1} 시작</button><button class="ui-btn icon" id="helpBtn" aria-label="하는 법">${UI.icon("circle-help")}</button></div>`, false);
+  $("start").onclick = () => load(cur);
+  $("helpBtn").onclick = () => sheet(true);
+  $("box").querySelectorAll(".ui-level[data-l]").forEach(b => b.onclick = () => load(Number(b.dataset.l)));
+}
+function sheet(on) { $("sheet").classList.toggle("on", on); $("scrim").classList.toggle("on", on); }
 function loop(t) { if (running) stepRun(t); draw(t); requestAnimationFrame(loop); }
 
 // ───────── 시작 ─────────
-addEventListener("resize", () => { resize(); });
+addEventListener("resize", () => { resize(); coach(); });
 resize();
 const q = new URLSearchParams(location.search);
 if (q.has("selftest")) {
@@ -317,8 +585,8 @@ if (q.has("selftest")) {
   lv().sol.forEach((t, i) => setTimeout(() => { treats.push(t); SFX.place(treats.length); pressed[t.k] = performance.now(); update(); }, 500 + i * 450));
   setTimeout(run, 700 + lv().sol.length * 450);
 } else {
-  load(q.has("level") ? Number(q.get("level")) - 1 : Math.min(save.unlocked - 1, LEVELS.length - 1));
-  if (!save.seenHelp) { save.seenHelp = 1; store.set(save); $("box").innerHTML = `<h2>🐈 고양이 타자수</h2><ul><li>키를 탭해 🐟 간식을 <b>순서대로</b> 놓아요</li><li>🐟 생선: 고양이가 <b>직선으로 걸어가며</b> 밟은 키가 <b>전부</b> 입력돼요</li><li>🐭 쥐: 고양이가 <b>폴짝 뛰어서</b> 착지한 키만 입력돼요 (개수 제한)</li><li>⌫를 밟으면 한 글자 지워져요</li><li>목표 단어를 정확히 만들어 부장님께 보내기!</li></ul><button class="pri" onclick="document.getElementById('ov').classList.remove('on')">시작</button>`; $("ov").classList.add("on"); }
+  if (!save.seenHelp) { save.seenHelp = 1; store.set(save); } // 규칙은 첫 메일의 손짓으로 (예전 규칙 창 대신)
+  if (q.has("level")) load(Number(q.get("level")) - 1); else menu();
 }
 requestAnimationFrame(loop);
 </script>

@@ -6,95 +6,291 @@
 <meta name="theme-color" content="#1f2a3a">
 <title>맛집 새치기</title>
 <style>
-:root{--bg:#1f2a3a;--tx:#fff8ee;--sub:#b9c2d3;--acc:#ffb020;--red:#ff5a4f;--ok:#4fd18b;--panel:rgba(255,255,255,.08);--line:rgba(255,255,255,.15)}
+:root{--bg:#1f2a3a;--tx:#fff8ee;--sub:#b9c2d3;--acc:#ffb020;--red:#ff5a4f;--ok:#4fd18b;--ui-accent:#ffb020;--ui-on-accent:#2e1c00}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:var(--ui-font);overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none;word-break:keep-all}
 #app{position:fixed;inset:0;max-width:480px;margin:0 auto}
 canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-/* 상단 목표 (항상 표시) */
-.hud{position:absolute;left:10px;right:10px;top:calc(8px + env(safe-area-inset-top));display:flex;gap:6px;pointer-events:none;z-index:2}
-.goal{flex:1;background:rgba(15,20,30,.8);border:1px solid var(--line);border-radius:14px;padding:6px 10px;min-width:0}
-.goal .g1{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.goal .g1 b{font:900 15px ui-monospace,Menlo,monospace;color:var(--tx)}
-.goal .g1 .bw{color:var(--acc)}
-.goal .g2{font-size:15px;font-weight:900;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.goal .g2 b{font:900 20px ui-monospace,Menlo,monospace;color:var(--red)}
-.goal .g2.ok{color:var(--ok)}
-.goal.bump{animation:bump .35s cubic-bezier(.3,1.8,.6,1)}
+/* 위 칩 줄 (그릇·내 앞·경고) + 목표 한 줄 */
+.ui-hud.g-hud{flex-direction:column;align-items:stretch;pointer-events:none}
+.ui-hud.g-hud>*{pointer-events:none}
+.g-row{display:flex;gap:var(--ui-s2);align-items:center}
+.g-row .ui-chip .ui-em{width:var(--ui-s4);height:var(--ui-s4);font-size:var(--ui-t2)}
+.g-row .ui-chip b{font-weight:700}
+#bowl.low{color:var(--ui-bad)}
+.g-warn{display:inline-flex;gap:var(--ui-s1)}
+.g-warn i{width:var(--ui-s3);height:var(--ui-s3);border-radius:50%;box-shadow:inset 0 0 0 2px var(--ui-muted)}
+.g-warn i.on{background:var(--ui-bad);box-shadow:none}
+.g-need{align-self:flex-start;display:inline-flex;align-items:center;gap:var(--ui-s2);min-height:40px;padding:0 var(--ui-s4) 0 var(--ui-s3);border-radius:var(--ui-r2);background:color-mix(in srgb,var(--ui-surface) 92%,transparent);box-shadow:var(--ui-shadow1);font:700 var(--ui-t3)/1.25 var(--ui-font);color:var(--ui-text);white-space:nowrap}
+.g-need .ui-icon{color:var(--ui-muted)}
+#need{display:inline-flex;align-items:center;gap:var(--ui-s2)}
+.g-need b{color:var(--ui-bad);font-variant-numeric:tabular-nums}
+.g-need.ok{color:var(--ui-good)}
+.g-need.ok .ui-icon{color:var(--ui-good)}
+.g-need.bump{animation:bump 300ms var(--ui-in)}
 @keyframes bump{40%{transform:scale(1.05)}}
-.warnb{width:70px;flex:none;background:rgba(15,20,30,.8);border:1px solid var(--line);border-radius:14px;padding:6px 4px;text-align:center;font-size:12px;color:var(--sub)}
-.warnb b{display:block;font:900 17px ui-monospace,Menlo,monospace;color:var(--red);letter-spacing:1px;margin-top:3px}
-#hold{position:absolute;left:14px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));height:74px;border:0;border-radius:20px;background:linear-gradient(#ffcc5c,#ff9f1a);color:#3a2300;font:900 18px -apple-system,sans-serif;box-shadow:0 6px 0 #b86a00,0 10px 24px rgba(0,0,0,.35);touch-action:none;overflow:hidden;z-index:2}
-#hold small{display:block;font-size:12.5px;font-weight:700;opacity:.8}
-#hold .bar{position:absolute;left:0;bottom:0;height:7px;background:#3a2300;opacity:.55;width:0}
-#hold.on{transform:translateY(4px);box-shadow:0 2px 0 #b86a00;background:linear-gradient(#ffb020,#f08800)}
-#hold.danger{background:linear-gradient(#ff7a6b,#e0362b);color:#fff;box-shadow:0 6px 0 #8f1d15,0 10px 24px rgba(0,0,0,.35);animation:dz .18s infinite alternate}
-#hold.danger.on{box-shadow:0 2px 0 #8f1d15}
+/* 누르기 버튼 (게임의 주 버튼) */
+#hold{position:absolute;left:var(--ui-s4);right:var(--ui-s4);bottom:max(var(--ui-s4),env(safe-area-inset-bottom));height:72px;border:0;border-radius:var(--ui-r3);background:var(--ui-accent);color:var(--ui-on-accent);font:700 var(--ui-t4)/1.25 var(--ui-font);box-shadow:var(--ui-shadow1),0 4px 0 #b86a00;touch-action:none;overflow:hidden;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:transform 90ms var(--ui-in)}
+#holdT{display:inline-flex;align-items:center;gap:var(--ui-s2)}
+#hold small{display:block;font:400 var(--ui-t1)/1.25 var(--ui-font);opacity:.8}
+#hold .bar{position:absolute;left:0;bottom:0;height:6px;background:currentColor;opacity:.4;width:0}
+#hold.on{transform:translateY(3px) scale(.99);box-shadow:var(--ui-shadow1),0 1px 0 #b86a00;filter:brightness(.94)}
+#hold.danger{background:var(--ui-bad);color:#fff;box-shadow:var(--ui-shadow1),0 4px 0 #8f1d15;animation:dz .18s infinite alternate}
+#hold.danger.on{box-shadow:var(--ui-shadow1),0 1px 0 #8f1d15}
 @keyframes dz{to{filter:brightness(1.18)}}
-#hold.sus{background:linear-gradient(#ffe08a,#ffc44d)}
-#itemb{position:absolute;right:16px;bottom:calc(110px + env(safe-area-inset-bottom));width:68px;height:68px;border-radius:50%;border:3px dashed rgba(255,255,255,.25);background:rgba(15,20,30,.75);color:var(--tx);z-index:3;touch-action:none;padding:0;font:900 30px sans-serif;display:none;cursor:pointer}
-#itemb.on{display:block}
-#itemb.has{border:3px solid #fff;background:radial-gradient(#5b7bd6,#2c3f7a);box-shadow:0 0 0 4px rgba(255,176,32,.5),0 6px 14px rgba(0,0,0,.4);animation:ib .7s ease-in-out infinite alternate}
-#itemb.bad{background:radial-gradient(#ff6b5f,#a32018);box-shadow:0 0 0 4px rgba(255,90,79,.7)}
-#itemD{position:absolute;right:92px;bottom:calc(116px + env(safe-area-inset-bottom));max-width:150px;background:rgba(15,20,30,.85);border:1px solid var(--line);border-radius:10px;padding:5px 8px;font:700 12px/1.35 -apple-system,sans-serif;color:var(--tx);z-index:3;display:none;pointer-events:none}
-#itemD.on{display:block}
+#hold.sus{background:#ffd36b}
 #hold.blink{animation:dz .12s infinite alternate}
-#itemb small{position:absolute;left:50%;bottom:-18px;transform:translateX(-50%);white-space:nowrap;font:800 12px -apple-system,sans-serif;color:var(--tx);text-shadow:0 1px 2px #000}
-@keyframes ib{to{transform:scale(1.07)}}
 #hold:disabled{filter:grayscale(.8) brightness(.7)}
-/* 튜토리얼 코치 */
-#coach{position:absolute;left:12px;right:12px;top:calc(76px + env(safe-area-inset-top));z-index:3;display:none;background:#fff8ee;color:#2a1c06;border-radius:16px;padding:10px 12px 10px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-#coach.on{display:block;animation:rise .25s ease-out}
-#coach .top{display:flex;align-items:center;gap:8px}
-#coach .dots{flex:1;font-size:12px;font-weight:800;color:#9a7a3a;letter-spacing:2px}
-#coach #skip{border:0;background:#e9dcc4;color:#5a4320;border-radius:10px;font:800 12px -apple-system,sans-serif;min-height:40px;min-width:76px;padding:0 10px;cursor:pointer}
-#coach .msg{font-size:18px;font-weight:900;line-height:1.35;margin-top:2px}
-#coach .msg em{font-style:normal;color:#e0362b}
-#coach .msg.good{color:#1d8a52}
-#coach.pulse{animation:cp .4s cubic-bezier(.3,1.8,.6,1)}
-@keyframes cp{40%{transform:scale(1.04)}}
-#arrow{position:absolute;left:50%;bottom:calc(98px + env(safe-area-inset-bottom));transform:translateX(-50%);font-size:40px;z-index:3;display:none;pointer-events:none;animation:ar .5s ease-in-out infinite alternate;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+/* 아이템 버튼 (든 아이템 그림 + 이름) */
+#itemb{position:absolute;right:var(--ui-s4);bottom:calc(112px + env(safe-area-inset-bottom));width:64px;height:64px;border-radius:50%;border:0;background:color-mix(in srgb,var(--ui-surface) 86%,transparent);box-shadow:inset 0 0 0 2px var(--ui-line),var(--ui-shadow1);color:var(--ui-text);z-index:3;touch-action:none;padding:0;font:400 30px/1 var(--ui-font);display:none;cursor:pointer}
+#itemb.on{display:block}
+#itemb.has{background:var(--ui-surface2);box-shadow:inset 0 0 0 3px var(--ui-text),var(--ui-shadow2);animation:ib .7s var(--ui-in) infinite alternate}
+#itemb.bad{background:var(--ui-bad)}
+@keyframes ib{to{transform:scale(1.07)}}
+#itemb small{position:absolute;left:50%;bottom:calc(-1 * var(--ui-s5));transform:translateX(-50%);white-space:nowrap;font:700 var(--ui-t1)/1.5 var(--ui-font);color:var(--ui-text);text-shadow:0 1px 2px #000}
+#itemD{position:absolute;right:calc(64px + var(--ui-s6));bottom:calc(120px + env(safe-area-inset-bottom));max-width:160px;padding:var(--ui-s2) var(--ui-s3);border-radius:var(--ui-r2);background:var(--ui-surface);box-shadow:var(--ui-shadow1);font:400 var(--ui-t1)/1.5 var(--ui-font);color:var(--ui-text);z-index:3;display:none;pointer-events:none}
+#itemD.on{display:block}
+/* 연습 안내 카드 (한 번에 하나) */
+#coach{position:absolute;left:var(--ui-s3);right:var(--ui-s3);top:calc(max(var(--ui-s3),env(safe-area-inset-top)) + 96px);z-index:3;display:none;flex-direction:column;align-items:stretch;gap:var(--ui-s1);padding:var(--ui-s3) var(--ui-s3) var(--ui-s3) var(--ui-s4)}
+#coach.on{display:flex;animation:ui-enter 225ms var(--ui-in) both}
+#coach .top{display:flex;align-items:center;gap:var(--ui-s2)}
+#coach .dots{flex:1;display:flex;align-items:center;gap:var(--ui-s2);font:700 var(--ui-t1)/1 var(--ui-font);color:var(--ui-muted)}
+#coach #skip{min-height:40px;padding:0 var(--ui-s3);font-size:var(--ui-t2)}
+#coach .msg{font:700 var(--ui-t4)/1.25 var(--ui-font);color:var(--ui-muted)}
+#coach .msg em{font-style:normal;color:var(--ui-text)}
+#coach .msg.good,#coach .msg.good em{color:var(--ui-good)}
+#coach.pulse{animation:cp 300ms var(--ui-in)}
+@keyframes cp{40%{transform:scale(1.03)}}
+#arrow{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:3;display:none;pointer-events:none;color:#fff;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5));animation:ar .5s var(--ui-in) infinite alternate}
+#arrow .ui-icon{width:40px;height:40px;transform:rotate(180deg)}
 #arrow.on{display:block}
 @keyframes ar{to{transform:translate(-50%,10px)}}
-.ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,14,22,.68);padding:18px;z-index:5}
-.ov.on{display:flex}
-.box{background:#28344a;border:1px solid var(--line);border-radius:18px;padding:18px;width:min(360px,100%);text-align:center;animation:rise .25s ease-out;max-height:100%;overflow:auto}
-@keyframes rise{from{transform:translateY(20px);opacity:.5}}
-.box h1{margin:0;font-size:26px} .box h2{margin:0 0 4px;font-size:22px}
-.box p{color:var(--sub);font-size:13.5px;line-height:1.6;margin:6px 0}
-.box ul{text-align:left;font-size:13px;line-height:1.75;padding-left:18px;color:#eef2f8}
-.box button{width:100%;border:0;border-radius:12px;padding:12px;min-height:44px;font:900 15px -apple-system,sans-serif;margin-top:8px;cursor:pointer;background:var(--acc);color:#3a2300}
-.box button.sec{background:#3b4862;color:var(--tx)}
-.box .food{font-size:64px;animation:food .6s cubic-bezier(.3,1.6,.6,1)}
-@keyframes food{from{transform:scale(0) rotate(-30deg)}}
-.box .stars{font-size:30px;color:var(--acc);letter-spacing:4px}
-.list{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
-.list button{margin:0;padding:9px 6px;font-size:13px;background:#3b4862;color:var(--tx)}
-.list button.done{background:#3c5a4a} .list button:disabled{opacity:.35}
-.list small{display:block;font-size:12px;color:var(--acc)}
-.box .fi{font-size:40px;line-height:1.1;margin-top:6px}
-.box .feat{background:#1f2a3d;border-radius:12px;padding:6px 10px;margin-top:8px}
-.box .feat p{margin:2px 0}
-.box button.daily{background:#3a3020;border:1px solid #6b5520;color:#ffe3a8;font:800 13px -apple-system,sans-serif;text-align:left;padding:10px 12px}
-.dex{font-size:22px;letter-spacing:2px;margin-top:8px}
-.dex .no{filter:grayscale(1) brightness(.4)}
-.next{background:#1f2a3d;border-radius:12px;padding:8px 10px;margin-top:8px;font-size:13px;color:var(--sub);text-align:left}
-.score{font:900 26px ui-monospace,Menlo,monospace;color:#fff8ee}
+/* 겹 화면 (시작·결과·새 손님·도감) */
+#ov{display:none}
+#ov.on{display:flex}
+.ui-levels.g-shops{grid-template-columns:repeat(5,1fr)}
+.g-shops .ui-level{position:relative}
+.g-shops .ui-level .ui-em{width:var(--ui-s6);height:var(--ui-s6);font-size:var(--ui-t5)}
+.g-shops .ui-level .ui-stars .off{color:var(--ui-muted);opacity:.35}
+.g-shops .ui-level.new .ui-stars{display:none}
+.g-today{position:absolute;top:calc(-1 * var(--ui-s1));right:calc(-1 * var(--ui-s1));width:var(--ui-s5);height:var(--ui-s5);border-radius:50%;display:grid;place-items:center;background:var(--ui-text);color:var(--ui-bg);box-shadow:var(--ui-shadow1)}
+.g-today .ui-icon{width:14px;height:14px}
+.g-line{display:flex;align-items:center;justify-content:center;gap:var(--ui-s2);font-size:var(--ui-t3);line-height:1.5;color:var(--ui-muted);margin:0}
+.g-line .ui-icon{color:var(--ui-muted)}
+.g-line b{color:var(--ui-text)}
+.ui-item>.ui-icon,.ui-line>.ui-icon{color:var(--ui-muted)}
+.ui-item>.ui-icon.ok{color:var(--ui-good)}
+.ui-item .ui-em,.ui-line .ui-em{width:var(--ui-s6);height:var(--ui-s6);font-size:var(--ui-t4)}
+.ui-item.no .ui-em{filter:grayscale(1);opacity:.4}
+.g-dim{opacity:.45;filter:grayscale(.6)}
+.g-rt{display:inline-flex;align-items:center;gap:var(--ui-s1);flex:none}
+.g-rt>.ui-icon{color:var(--ui-muted)}
+.g-rt>.ui-icon.ok{color:var(--ui-good)}
+.g-rt .ui-stars .off{color:var(--ui-muted);opacity:.35}
+.ui-tip span{flex:1}
 </style>
 </head>
 <body>
+<!-- nhc-ui-kit:start -->
+<style id="nhc-ui-kit">
+/* NHC game-lab UI kit v1 (2026-11-27) — 게임 '밖' UI(시작·레벨·HUD·결과·안내·버튼·토스트) 공용 스타일
+   기준: research/2026-11-27_게임UI_정돈_기준.md 의 15규칙. 모든 클래스는 ui- 로 시작해 게임 자체 스타일과 섞이지 않는다
+   게임별로 바꿀 것은 :root 의 --ui-accent / --ui-on-accent 두 개뿐(게임 쪽 :root 가 항상 이긴다 — 키트 기본값은 :where 로 0점). 밝은 화면 게임은 <html class="ui-light"> */
+:where(:root){
+  /* 간격 4의 배수 7단계 */
+  --ui-s1:4px;--ui-s2:8px;--ui-s3:12px;--ui-s4:16px;--ui-s5:24px;--ui-s6:32px;--ui-s7:48px;
+  /* 글자 5단계 · 굵기 2개 */
+  --ui-t1:12px;--ui-t2:14px;--ui-t3:16px;--ui-t4:20px;--ui-t5:30px;
+  /* 반경 3단계 */
+  --ui-r1:8px;--ui-r2:12px;--ui-r3:20px;
+  /* 색 역할 (어두운 화면 기본) */
+  --ui-bg:#0f1218;--ui-surface:#1a1f29;--ui-surface2:#242a36;--ui-line:rgba(255,255,255,.08);
+  --ui-text:#f2f4f8;--ui-muted:#9aa3b2;--ui-accent:#ffc83d;--ui-on-accent:#1a1406;
+  --ui-good:#34c77b;--ui-bad:#ff5a5f;
+  --ui-shadow1:0 1px 2px rgba(0,0,0,.25),0 4px 12px rgba(0,0,0,.18);
+  --ui-shadow2:0 8px 32px rgba(0,0,0,.35);
+  --ui-in:cubic-bezier(0,0,.2,1);--ui-out:cubic-bezier(.4,0,1,1);
+  --ui-font:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Segoe UI",sans-serif;
+  --ui-touch:48px;
+}
+.ui-light{
+  --ui-bg:#f4f6f9;--ui-surface:#ffffff;--ui-surface2:#eef1f5;--ui-line:rgba(15,20,30,.08);
+  --ui-text:#161a22;--ui-muted:#5f6878;
+  --ui-shadow1:0 1px 2px rgba(15,20,30,.08),0 4px 12px rgba(15,20,30,.08);
+  --ui-shadow2:0 12px 32px rgba(15,20,30,.16);
+}
+.ui-warm{--ui-bg:#f7f1e8;--ui-surface:#fffdf9;--ui-surface2:#f0e8dc;--ui-line:rgba(60,40,20,.10);--ui-text:#2a2118;--ui-muted:#76695a}   /* 따뜻한 밝은 화면: ui-light 와 함께 */
+.ui-kid{--ui-touch:56px}
+.ui-kid .ui-btn,.ui-kid .ui-level{min-height:56px}
+
+/* 기본 스타일 지우기 (ui- 요소 안에서만) */
+.ui-screen,.ui-card,.ui-hud,.ui-toast,.ui-sheet{font-family:var(--ui-font);color:var(--ui-text);word-break:keep-all;overflow-wrap:break-word;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+.ui-screen *,.ui-hud *,.ui-sheet *{box-sizing:border-box}
+.ui-screen ul,.ui-sheet ul{list-style:none;margin:0;padding:0}
+.ui-num{font-variant-numeric:tabular-nums}
+
+/* 아이콘: <svg class="ui-icon"><use href="#i-play"/></svg> 또는 UI.icon("play") */
+.ui-icon{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+.ui-icon.lg{width:24px;height:24px}.ui-icon.xl{width:32px;height:32px}.ui-icon.sm{width:16px;height:16px;vertical-align:-3px}
+.ui-icon.fill{fill:currentColor}
+
+/* 화면(시작·결과·일시정지): 가운데 한 줄 기둥 */
+.ui-screen{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:var(--ui-s5);padding-top:max(var(--ui-s5),env(safe-area-inset-top));padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));background:var(--ui-bg);overflow:auto}
+.ui-screen.dim{background:color-mix(in srgb,var(--ui-bg) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ui-col{width:100%;max-width:360px;display:flex;flex-direction:column;gap:var(--ui-s4)}
+.ui-screen>.ui-col{margin-block:auto}   /* 짧으면 가운데, 길면 위에서부터 스크롤(위 잘림 없음) */
+.ui-center{text-align:center;align-items:center}
+.ui-hero{font-size:56px;line-height:1;width:72px;height:72px;display:grid;place-items:center;border-radius:var(--ui-r3);background:var(--ui-surface)}
+.ui-title{font-size:var(--ui-t5);font-weight:700;line-height:1.25;letter-spacing:-.02em;margin:0}
+.ui-h{font-size:var(--ui-t4);font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0}
+.ui-sub{font-size:var(--ui-t3);line-height:1.5;color:var(--ui-muted);margin:0}   /* 16: 제목30·버튼20/16과 합쳐 3단계 */
+.ui-cap{font-size:var(--ui-t1);line-height:1.5;color:var(--ui-muted);margin:0}
+.ui-row{display:flex;gap:var(--ui-s2);align-items:center}
+.ui-row>.ui-btn{flex:1}
+.ui-spacer{flex:1}
+
+/* 버튼: 주 버튼은 화면에 하나 */
+.ui-btn{appearance:none;border:0;margin:0;font:700 var(--ui-t3)/1 var(--ui-font);color:var(--ui-text);background:var(--ui-surface2);min-height:var(--ui-touch);padding:0 var(--ui-s5);border-radius:var(--ui-r2);display:inline-flex;align-items:center;justify-content:center;gap:var(--ui-s2);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform 90ms var(--ui-in),filter 90ms var(--ui-in)}
+.ui-btn:active{transform:scale(.96)}
+.ui-btn:focus-visible{outline:2px solid var(--ui-accent);outline-offset:2px}
+.ui-btn.primary{background:var(--ui-accent);color:var(--ui-on-accent);box-shadow:var(--ui-shadow1);min-height:calc(var(--ui-touch) + 8px);font-size:var(--ui-t4)}
+.ui-btn.ghost{background:transparent;color:var(--ui-muted)}
+.ui-btn.icon{width:var(--ui-touch);padding:0;flex:none;position:relative}
+.ui-btn.icon>.ui-badge{position:absolute;top:-6px;right:-6px;margin:0}
+.ui-btn.round{border-radius:50%}
+.ui-btn:disabled,.ui-btn.off{opacity:.38;pointer-events:none}
+.ui-btn .ui-badge{margin-left:2px}
+.ui-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--ui-bad);color:#fff;font:700 var(--ui-t1)/1 var(--ui-font);font-variant-numeric:tabular-nums}
+
+/* 카드 · 수치 */
+.ui-card{background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s4);box-shadow:var(--ui-shadow1)}
+.ui-card.flat{box-shadow:none;background:var(--ui-surface2)}
+.ui-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:var(--ui-s2)}
+.ui-stat{background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3);display:flex;flex-direction:column;gap:var(--ui-s1);min-width:0}
+.ui-stat b{font-size:clamp(var(--ui-t3),5vw,var(--ui-t4));font-weight:700;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ui-stat span{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25;display:flex;align-items:center;gap:var(--ui-s1)}
+.ui-big{font-size:48px;font-weight:700;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+
+/* 레벨 선택 격자 */
+.ui-levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:var(--ui-s2)}
+.ui-level{appearance:none;border:0;margin:0;aspect-ratio:1;border-radius:var(--ui-r2);background:var(--ui-surface2);color:var(--ui-text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ui-s1);font:700 var(--ui-t4)/1 var(--ui-font);font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;transition:transform 90ms var(--ui-in)}
+.ui-level:active{transform:scale(.94)}
+.ui-level.cur{box-shadow:inset 0 0 0 2px var(--ui-text)}   /* 강조색은 주 버튼에만 → 지금 칸은 테두리로 */
+.ui-level.lock{color:var(--ui-muted);background:transparent;box-shadow:inset 0 0 0 1px var(--ui-line);pointer-events:none}
+.ui-level .ui-stars .ui-icon{width:10px;height:10px}
+
+/* 별 */
+.ui-stars{display:inline-flex;gap:2px;color:var(--ui-accent)}
+.ui-stars .off{color:var(--ui-line);opacity:1}
+.ui-light .ui-stars .off{color:rgba(15,20,30,.15)}
+.ui-stars.big .ui-icon{width:40px;height:40px}
+.ui-stars.big{gap:var(--ui-s2)}
+
+/* HUD: 위쪽 칩 줄 */
+.ui-hud{position:absolute;left:0;right:0;top:0;z-index:20;display:flex;gap:var(--ui-s2);align-items:center;padding:var(--ui-s3);padding-top:max(var(--ui-s3),env(safe-area-inset-top));pointer-events:none}
+.ui-hud>*{pointer-events:auto}
+.ui-chip{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 var(--ui-s3);border-radius:999px;background:color-mix(in srgb,var(--ui-surface) 86%,transparent);box-shadow:var(--ui-shadow1);font:700 var(--ui-t2)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ui-text)}
+.ui-chip .ui-icon{width:16px;height:16px;color:var(--ui-muted)}
+.ui-chip.accent .ui-icon{color:var(--ui-accent)}
+.ui-meter{height:6px;border-radius:999px;background:var(--ui-surface2);overflow:hidden}
+.ui-meter>i{display:block;height:100%;background:var(--ui-accent);border-radius:inherit;transition:width 200ms var(--ui-in)}
+
+/* 안내 카드(한 번에 하나) · 토스트 · 시트 */
+.ui-tip{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface);border-radius:var(--ui-r3);padding:var(--ui-s3) var(--ui-s4);box-shadow:var(--ui-shadow2);font-size:var(--ui-t3);line-height:1.5;color:var(--ui-text);font-family:var(--ui-font)}
+.ui-tip .ui-icon{color:var(--ui-accent)}
+.ui-toast{position:fixed;left:50%;bottom:max(var(--ui-s6),env(safe-area-inset-bottom));z-index:80;transform:translate(-50%,8px);opacity:0;pointer-events:none;background:var(--ui-text);color:var(--ui-bg);padding:var(--ui-s3) var(--ui-s4);border-radius:var(--ui-r1);font:700 var(--ui-t2)/1.25 var(--ui-font);max-width:calc(100vw - 32px);width:max-content;text-align:center;transition:opacity 180ms var(--ui-in),transform 180ms var(--ui-in)}
+.ui-toast.on{opacity:1;transform:translate(-50%,0)}
+.ui-toast.top{bottom:auto;top:max(25%,env(safe-area-inset-top))}
+.ui-sheet{position:fixed;left:0;right:0;bottom:0;z-index:70;background:var(--ui-surface);border-radius:var(--ui-r3) var(--ui-r3) 0 0;padding:var(--ui-s5);padding-bottom:max(var(--ui-s5),env(safe-area-inset-bottom));box-shadow:var(--ui-shadow2);transform:translateY(100%);transition:transform 195ms var(--ui-out)}
+.ui-sheet.on{transform:none;transition:transform 225ms var(--ui-in)}
+.ui-sheet:not(.on){box-shadow:none}
+.ui-scrim{position:fixed;inset:0;z-index:69;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity 195ms var(--ui-out)}
+.ui-scrim.on{opacity:1;pointer-events:auto;transition:opacity 225ms var(--ui-in)}
+.ui-list{display:flex;flex-direction:column;gap:var(--ui-s2)}
+.ui-list li{display:flex;align-items:center;gap:var(--ui-s3);font-size:var(--ui-t2);line-height:1.5}
+.ui-list li .ui-icon{color:var(--ui-muted)}
+.ui-em{width:28px;height:28px;display:inline-grid;place-items:center;font-size:20px;line-height:1;flex:none}
+
+/* 등장 모션 */
+.ui-enter{animation:ui-enter 225ms var(--ui-in) both}
+.ui-enter-2{animation:ui-enter 225ms var(--ui-in) 60ms both}
+.ui-enter-3{animation:ui-enter 225ms var(--ui-in) 120ms both}
+.ui-pop{animation:ui-pop 300ms var(--ui-in) both}
+@keyframes ui-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ui-pop{0%{opacity:0;transform:scale(.6)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.ui-enter,.ui-enter-2,.ui-enter-3,.ui-pop{animation:ui-fade 150ms linear both}.ui-btn,.ui-level{transition:none}}
+@keyframes ui-fade{from{opacity:0}to{opacity:1}}
+
+/* 화면 머리 · 목록 줄 · 아래 고정 · 단계 막대 · 한 줄 카드 (2026-11-27 G003 시범에서 추가) */
+.ui-head{display:flex;align-items:center;gap:var(--ui-s2);min-height:var(--ui-touch)}
+.ui-head>.ui-h{flex:1}
+.ui-item{display:flex;align-items:center;gap:var(--ui-s3);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3)}
+.ui-item>.ui-grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--ui-s1)}
+.ui-item b{font-size:var(--ui-t3);font-weight:700;line-height:1.25}
+.ui-item small{font-size:var(--ui-t1);color:var(--ui-muted);line-height:1.25}
+.ui-item.lock{opacity:.5}
+.ui-line{display:flex;align-items:center;gap:var(--ui-s2);background:var(--ui-surface2);border-radius:var(--ui-r2);padding:var(--ui-s3) var(--ui-s4);font-size:var(--ui-t3);line-height:1.25}
+.ui-line>.ui-grow{flex:1;color:var(--ui-muted)}
+.ui-line b{font-variant-numeric:tabular-nums}
+.ui-dock{position:sticky;bottom:0;padding-top:var(--ui-s3);background:linear-gradient(to bottom,transparent,var(--ui-bg) 40%)}
+.ui-pips{display:inline-flex;gap:3px}.ui-pips>i{width:14px;height:6px;border-radius:999px;background:var(--ui-line)}.ui-pips>i.on{background:var(--ui-text)}
+.ui-strike{text-decoration:line-through;text-decoration-thickness:3px;opacity:.6}
+.ui-good{color:var(--ui-good)}.ui-bad{color:var(--ui-bad)}
+
+/* 칩 보조 숫자(값/한도) · 첫 판 손짓 (v1.2) */
+.ui-chip small{font-weight:400;color:var(--ui-muted);margin-left:-4px}
+.ui-hand{position:absolute;z-index:40;width:44px;height:44px;margin:-6px 0 0 -14px;pointer-events:none;font-size:36px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transition:left 600ms var(--ui-in),top 600ms var(--ui-in),opacity 150ms linear}
+.ui-hand.tap{animation:ui-tap 900ms var(--ui-in) infinite}
+@keyframes ui-tap{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(6px) scale(.9)}}
+@media (prefers-reduced-motion:reduce){.ui-hand,.ui-hand.tap{animation:none;transition:opacity 150ms linear}}
+
+/* v1.3 (G012 반영): 숨김, 줄 오른쪽 값, 작은 안내, 배지 색 */
+.ui-screen[hidden],.ui-sheet[hidden],.ui-tip[hidden],.ui-screen.hide,.ui-screen.off{display:none}
+.ui-item>.ui-val{font:700 var(--ui-t3)/1 var(--ui-font);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+.ui-tip.sm{font-size:var(--ui-t2);padding:var(--ui-s2) var(--ui-s3);gap:var(--ui-s2)}
+.ui-tip.sm b{font-weight:700}
+.ui-badge.good{background:var(--ui-good)}
+.ui-badge.muted{background:var(--ui-surface2);color:var(--ui-muted)}
+
+/* v1.4 (G021·G022 반영) */
+.ui-light .ui-screen.dim{background:rgba(20,28,40,.45)}
+.ui-levels.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.ui-btn.float{background:var(--ui-surface);box-shadow:var(--ui-shadow1)}
+.ui-chip .ui-stars .ui-icon{color:inherit}
+.ui-chip .ui-stars .off{color:var(--ui-line)}
+
+/* v1.5 (G002·G006 반영) */
+[hidden].ui-badge,[hidden].ui-chip,[hidden].ui-btn,[hidden].ui-item,[hidden].ui-line{display:none}
+button.ui-item{appearance:none;border:0;width:100%;text-align:left;color:var(--ui-text);font-family:var(--ui-font);cursor:pointer;transition:transform 90ms var(--ui-in)}
+button.ui-item:active{transform:scale(.98)}
+.ui-pips>i.bad{background:var(--ui-bad)}.ui-pips>i.good{background:var(--ui-good)}
+.ui-hud.static{position:static;padding:0}
+</style>
+<!-- Lucide icons (lucide-static 0.460.0) — ISC License. Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></symbol><symbol id="i-award" viewBox="0 0 24 24"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526" /> <circle cx="12" cy="8" r="6" /></symbol><symbol id="i-book-open" viewBox="0 0 24 24"><path d="M12 7v14" /> <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" /></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" /></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /> <circle cx="7" cy="17" r="2" /> <path d="M9 17h6" /> <circle cx="17" cy="17" r="2" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol><symbol id="i-chevrons-up" viewBox="0 0 24 24"><path d="m17 11-5-5-5 5" /> <path d="m17 18-5-5-5 5" /></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m9 12 2 2 4-4" /></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /> <path d="M12 17h.01" /></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="m15 9-6 6" /> <path d="m9 9 6 6" /></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" /></symbol><symbol id="i-coins" viewBox="0 0 24 24"><circle cx="8" cy="8" r="6" /> <path d="M18.09 10.37A6 6 0 1 1 10.34 18" /> <path d="M7 6h1v4" /> <path d="m16.71 13.88.7.71-2.82 2.82" /></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" /></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /> <line x1="4" x2="4" y1="22" y2="15" /></symbol><symbol id="i-gauge" viewBox="0 0 24 24"><path d="m12 14 4-4" /> <path d="M3.34 19a10 10 0 1 1 17.32 0" /></symbol><symbol id="i-gavel" viewBox="0 0 24 24"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8" /> <path d="m16 16 6-6" /> <path d="m8 8 6-6" /> <path d="m9 7 8 8" /> <path d="m21 11-8-8" /></symbol><symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1" /> <path d="M12 8v13" /> <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /> <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" /></symbol><symbol id="i-graduation-cap" viewBox="0 0 24 24"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></symbol><symbol id="i-hammer" viewBox="0 0 24 24"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9" /> <path d="m18 15 4-4" /> <path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5" /></symbol><symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /> <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" /> <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" /> <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></symbol><symbol id="i-handshake" viewBox="0 0 24 24"><path d="m11 17 2 2a1 1 0 1 0 3-3" /> <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" /> <path d="m21 3 1 11h-2" /> <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" /> <path d="M3 4h8" /></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22" /> <line x1="6" x2="6" y1="18" y2="11" /> <line x1="10" x2="10" y1="18" y2="11" /> <line x1="14" x2="14" y1="18" y2="11" /> <line x1="18" x2="18" y1="18" y2="11" /> <polygon points="12 2 20 7 4 7" /></symbol><symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /></symbol><symbol id="i-lock-open" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 9.9-1" /></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" /></symbol><symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2" /> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z" /> <path d="M15 5.764v15" /> <path d="M9 3.236v15" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12" /> <line x1="4" x2="20" y1="6" y2="6" /> <line x1="4" x2="20" y1="18" y2="18" /></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol><symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13" /> <circle cx="6" cy="18" r="3" /> <circle cx="18" cy="16" r="3" /></symbol><symbol id="i-newspaper" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" /> <path d="M18 14h-8" /> <path d="M15 18h-5" /> <path d="M10 6h8v4h-8V6Z" /></symbol><symbol id="i-pause" viewBox="0 0 24 24"><rect x="14" y="4" width="4" height="16" rx="1" /> <rect x="6" y="4" width="4" height="16" rx="1" /></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" /></symbol><symbol id="i-piggy-bank" viewBox="0 0 24 24"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z" /> <path d="M2 9v1c0 1.1.9 2 2 2h1" /> <path d="M16 11h.01" /></symbol><symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="M12 5v14" /></symbol><symbol id="i-pointer" viewBox="0 0 24 24"><path d="M22 14a8 8 0 0 1-8 8" /> <path d="M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2" /> <path d="M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1" /> <path d="M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10" /> <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" /></symbol><symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z" /></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" /></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3" /> <circle cx="6" cy="12" r="3" /> <circle cx="18" cy="19" r="3" /> <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /> <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></symbol><symbol id="i-soup" viewBox="0 0 24 24"><path d="M12 21a9 9 0 0 0 9-9H3a9 9 0 0 0 9 9Z" /> <path d="M7 21h10" /> <path d="M19.5 12 22 6" /> <path d="M16.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.73 1.62" /> <path d="M11.25 3c.27.1.8.53.74 1.36-.05.83-.93 1.2-.98 2.02-.06.78.33 1.24.72 1.62" /> <path d="M6.25 3c.27.1.8.53.75 1.36-.06.83-.93 1.2-1 2.02-.05.78.34 1.24.74 1.62" /></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /> <path d="M20 3v4" /> <path d="M22 5h-4" /> <path d="M4 17v2" /> <path d="M5 18H3" /></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" /></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" /> <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /> <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" /> <path d="M2 7h20" /> <path d="M22 7v3a2 2 0 0 1-2 2a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7" /></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" /></symbol><symbol id="i-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /> <path d="M13 5v2" /> <path d="M13 17v2" /> <path d="M13 11v2" /></symbol><symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2" /> <line x1="12" x2="15" y1="14" y2="11" /> <circle cx="12" cy="14" r="8" /></symbol><symbol id="i-train-front" viewBox="0 0 24 24"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1" /> <path d="m9 15-1-1" /> <path d="m15 15 1-1" /> <path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z" /> <path d="m8 19-2 3" /> <path d="m16 19 2 3" /></symbol><symbol id="i-trending-down" viewBox="0 0 24 24"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7" /> <polyline points="16 17 22 17 22 11" /></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /> <polyline points="16 7 22 7 22 13" /></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /> <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /> <path d="M4 22h16" /> <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /> <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /> <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" /></symbol><symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <path d="M16 3.13a4 4 0 0 1 0 7.75" /></symbol><symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /> <path d="M7 2v20" /> <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></symbol><symbol id="i-volume-2" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <path d="M16 9a5 5 0 0 1 0 6" /> <path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></symbol><symbol id="i-volume-x" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <line x1="22" x2="16" y1="9" y2="15" /> <line x1="16" x2="22" y1="9" y2="15" /></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></symbol></svg>
+<script>window.UI=window.UI||{};
+UI.icon=function(n,c){return '<svg class="ui-icon'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>';};
+UI.stars=function(n,max,c){max=max||3;var s='<span class="ui-stars'+(c?' '+c:'')+'" aria-label="별 '+n+'/'+max+'">';for(var i=0;i<max;i++)s+='<svg class="ui-icon fill'+(i<n?'':' off')+'" aria-hidden="true"><use href="#i-star"/></svg>';return s+'</span>';};
+UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=document.createElement('div');t.id='ui-toast';t.className='ui-toast';t.setAttribute('role','status');document.body.appendChild(t);}t.textContent=m;t.classList.toggle('top',pos==='top');t.classList.add('on');clearTimeout(UI._tt);UI._tt=setTimeout(function(){t.classList.remove('on');},ms||2000);};</script>
+<!-- nhc-ui-kit:end -->
+
 <div id="app">
   <canvas id="cv"></canvas>
-  <div class="hud">
-    <div class="goal" id="goal"><div class="g1">그릇 <b class="bw" id="bowl">-</b>개 남음 / 내 앞 <b id="ahead">-</b>명</div><div class="g2" id="need">-</div></div>
-    <div class="warnb">경고<b id="warn">○○○</b></div>
+  <div class="ui-hud g-hud">
+    <div class="g-row">
+      <span class="ui-chip" aria-label="남은 그릇"><span class="ui-em" id="foodE">🍜</span><b id="bowl">-</b></span>
+      <span class="ui-chip" aria-label="내 앞 사람"><svg class="ui-icon" aria-hidden="true"><use href="#i-users"/></svg><b id="ahead">-</b></span>
+      <span class="ui-spacer"></span>
+      <span class="ui-chip" aria-label="경고" id="warnc"><svg class="ui-icon" aria-hidden="true"><use href="#i-triangle-alert"/></svg><span class="g-warn" id="warn"></span></span>
+    </div>
+    <div class="g-need" id="goal"><span id="need"></span></div>
   </div>
-  <div id="coach"><div class="top"><div class="dots" id="dots">연습 1/4</div><button id="skip">건너뛰기</button></div><div class="msg" id="cmsg"></div></div>
-  <div id="arrow">👇</div>
-  <button id="hold"><span id="holdT">🤫 살금살금</span><small id="holdS">누르고 있기 · ❗ 뜨면 손 떼기</small><span class="bar" id="bar"></span></button>
+  <div id="coach" class="ui-tip"><div class="top"><div class="dots" id="dots"></div><button class="ui-btn ghost" id="skip">건너뛰기</button></div><div class="msg" id="cmsg"></div></div>
+  <div id="arrow"><svg class="ui-icon" aria-hidden="true"><use href="#i-pointer"/></svg></div>
+  <button id="hold"><span id="holdT"><svg class="ui-icon" aria-hidden="true"><use href="#i-hand"/></svg>살금살금</span><small id="holdS">누르고 있기 · ❗ 뜨면 손 떼기</small><span class="bar" id="bar"></span></button>
   <button id="itemb" aria-label="아이템 쓰기"><span id="itemE"></span><small id="itemN">빈 손</small></button>
   <div id="itemD"></div>
-  <div class="ov" id="ov"><div class="box" id="box"></div></div>
+  <div class="ui-screen dim" id="ov"><div class="ui-col" id="box"></div></div>
 </div>
 <script>
 "use strict";
@@ -367,36 +563,36 @@ function tutTick(L, hold, ev) {
   if (U.ph === "tele" && U.n && !watchers(L).includes(U.n)) { U.n.st = "fwd"; U.n.t = 0; U.ph = "wait"; U.t = 0; U.n = null; }
   L.noPass = (U.s === 1 || U.s === 2) && U.ph !== "wait";
   if (U.s === 0) {
-    tutSay(U, hold ? "좋아요, 계속 꾹~ 앞사람을 <em>살금살금</em> 지나가는 중" : "👇 아래 버튼을 <em>꾹 누르고 있어</em> 보세요");
-    if (L.passed >= 1) { tutSay(U, "한 명 앞질렀다! 👍 누르면 앞으로 가요", true); ev && ev("tgood"); U.okT = 1.3; tutGo(L, 1); }
+    tutSay(U, hold ? "좋아요, 계속 <em>꾹</em>" : "아래 버튼을 <em>꾹 누르고</em> 있어요");
+    if (L.passed >= 1) { tutSay(U, "한 명 앞질렀다!", true); ev && ev("tgood"); U.okT = 1.3; tutGo(L, 1); }
   } else if (U.s === 1) {
     if (U.ph === "wait") {
-      tutSay(U, "다시 꾹 눌러서 앞으로… <em>앞사람</em>을 잘 보세요");
+      tutSay(U, "다시 꾹… <em>앞사람</em>을 봐요");
       if (L.cool <= 0 && U.t > .3 && ((hold && L.prog >= .2 && L.prog < .6) || U.t > 3)) { U.n = tutForce(L, ev, 1.7); U.ph = "tele"; U.c0 = L.caughtN; }
-    } else if (U.ph === "tele") tutSay(U, "<em>❗ 떴다! 지금 손 떼요!</em> 곧 뒤돌아봐요");
+    } else if (U.ph === "tele") tutSay(U, "<em>❗ 떴다! 손 떼요!</em>");
     else if (U.ph === "look") {
-      if (L.caughtN > U.c0) { U.seen = true; tutSay(U, "앗, 들켰다! <em>두 칸 뒤로</em> 밀렸어요. 다시 해 봐요"); }
-      else tutSay(U, "째려보는 중… <em>가만히!</em> 레이저에 걸리면 들켜요");
+      if (L.caughtN > U.c0) { U.seen = true; tutSay(U, "들켰다! <em>두 칸 뒤로</em>. 다시!"); }
+      else tutSay(U, "째려보는 중… <em>가만히!</em>");
       if (U.n.st === "fwd") {
         if (L.caughtN > U.c0) { U.ph = "wait"; U.t = 0; }
-        else { tutSay(U, "완벽! 안 들켰어요 😎 ❗ 보이면 손 떼기", true); ev && ev("tgood"); U.okT = 1.4; tutGo(L, U.seen ? 3 : 2); }
+        else { tutSay(U, "완벽! ❗ 보이면 손 떼기", true); ev && ev("tgood"); U.okT = 1.4; tutGo(L, U.seen ? 3 : 2); }
       }
     }
   } else if (U.s === 2) {
     if (U.ph === "wait") {
-      tutSay(U, "들키면 어떻게 될까? 이번엔 <em>❗ 떠도 계속 누르고</em> 있어 보세요");
+      tutSay(U, "이번엔 <em>❗ 떠도 계속 꾹</em>");
       if (L.cool <= 0 && U.t > .8 && ((hold && L.prog >= .2) || U.t > 3.5)) { U.n = tutForce(L, ev, 1.0); U.ph = "tele"; U.c0 = L.caughtN; }
     } else if (U.ph === "tele") tutSay(U, "<em>❗</em> 그래도 계속 꾹~");
     else if (U.ph === "look") {
-      if (L.caughtN > U.c0) { tutSay(U, "들키면 <em>두 칸 뒤로 + 경고 1개</em>. 경고 3번이면 쫓겨나요!", true); U.okT = 2.4; tutGo(L, 3); }
-      else { tutSay(U, "돌아봤을 때 누르고 있어야 해요 — <em>꾹!</em>"); if (U.n.st === "fwd") { U.ph = "wait"; U.t = 0; if ((U.tries = (U.tries || 0) + 1) >= 2) { tutSay(U, "손 떼기는 완벽! 들키면 <em>두 칸 뒤로 + 경고</em>, 3번이면 쫓겨나요", true); U.okT = 2.4; tutGo(L, 3); } } }
+      if (L.caughtN > U.c0) { tutSay(U, "들키면 <em>두 칸 뒤로 + 경고</em>", true); U.okT = 2.4; tutGo(L, 3); }
+      else { tutSay(U, "돌아볼 때 <em>누르고</em> 있어 봐요"); if (U.n.st === "fwd") { U.ph = "wait"; U.t = 0; if ((U.tries = (U.tries || 0) + 1) >= 2) { tutSay(U, "들키면 <em>두 칸 뒤로 + 경고</em>", true); U.okT = 2.4; tutGo(L, 3); } } }
     }
   } else if (U.s === 3) {
     if (!U.ran) { U.ran = true; tutRun(L); }
-    if (L.over === "win") { U.done = true; tutSay(U, "입장 성공! 이제 진짜 맛집으로 🍜", true); ev && ev("tdone"); return; }
-    if (L.over) { tutSay(U, "아깝다, 재료 소진! 한 번 더 🙏"); U.okT = 1.2; L.caughtN++; tutRun(L); return; }
+    if (L.over === "win") { U.done = true; tutSay(U, "입장 성공! 이제 진짜 맛집으로", true); ev && ev("tdone"); return; }
+    if (L.over) { tutSay(U, "아깝다, 재료 소진! 한 번 더"); U.okT = 1.2; L.caughtN++; tutRun(L); return; }
     const k = needPass(L);
-    tutSay(U, k > 0 ? `마지막! 그릇이 떨어지기 전에 들어가기 — <em>${k}명 더</em> 앞질러요 ☝` : "이제 기다리면 먹어요! 위의 목표가 <em>초록</em>이 됐죠?", k === 0);
+    tutSay(U, k > 0 ? `<em>${k}명 더</em> 앞지르면 입장` : "이제 기다리면 <em>입장!</em>", k === 0);
   }
 }
 // 튜토리얼 봇: 2단계(일부러 들키기)만 계속 누르고, 나머지는 반응형 봇
@@ -414,22 +610,22 @@ const CAUGHT_TXT = ["새치기 하지 마세요!", "저기요?!", "줄 서세요
 function onEv(k, n) {
   if (k === "tele") { SFX.tele(); if (n) n.popT = 0; }
   else if (k === "look") { if (n && L && watchers(L).includes(n)) { SFX.look(); n.popT = 0; if (JUICE) fx.pops.push({ id: n.id, t: 0, txt: "휙!" }); } }
-  else if (k === "enter") { SFX.enter(); if (L && !L.tut && L.bowls <= 2 && L.bowls > 0 && L.lastCall !== L.bowls) { L.lastCall = L.bowls; banner(`🔥 그릇 ${L.bowls}개 남았다!`, "#d93a30", 1.6); SFX.heart(); } }
+  else if (k === "enter") { SFX.enter(); if (L && !L.tut && L.bowls <= 2 && L.bowls > 0 && L.lastCall !== L.bowls) { L.lastCall = L.bowls; banner(`그릇 ${L.bowls}개 남았다!`, "#d93a30", 1.6); SFX.heart(); } }
   else if (k === "sneak") { if (Math.random() < .12) SFX.step(); }
   else if (k === "pass") { fx.combo++; SFX.pass(L.combo || fx.combo); buzz(8); puff(W / 2, H * .62, 8, "#fff8"); bumpGoal(); if (L.combo >= 2 && JUICE) fx.pops.push({ id: 99, t: 0, txt: `콤보 x${L.combo}!`, col: "#ffcc5c", dy: -60 }); }
-  else if (k === "pickup" || k === "gift") { SFX.item(); buzz(15); const I = ITEMS[n]; banner(`${I.e} ${I.name} ${k === "gift" ? "보상! (연속 새치기)" : "주웠다!"} — ${I.desc}`, "#4f7bd6", 3.2); puff(W - 50, H - 140, 12, "#ffcc5c"); }
+  else if (k === "pickup" || k === "gift") { SFX.item(); buzz(15); const I = ITEMS[n]; banner(`${I.e} ${I.name} ${k === "gift" ? "· 연속 새치기 보상" : "주웠다"}`, "#4f7bd6", 2.4); puff(W - 50, H - 140, 12, "#ffcc5c"); }
   else if (k === "use") {
     SFX.use(); const I = ITEMS[n], say = { call: "여보세요? 네~ 네~", hat: "(아무도 못 알아봄)", candy: "사탕 드실래요? 🍬", vest: "배달이요~! 🦺", shout: "저기 연예인이다!!" }[n];
     banner(`${I.e} ${I.name}!`, "#4f7bd6", 1.6); fx.pops.push({ id: 99, t: 0, txt: say, col: "#fff", dy: -70 });
     if (n === "shout" && L) { fx.shake = 6; L.line.forEach((x, i) => { if (!x.me && Math.abs(i - meIdx(L)) < 6 && i % 2) fx.pops.push({ id: x.id, t: -.1 * (i % 3), txt: "어디어디?", col: "#ffcc5c", dy: -40 }); }); }
   }
-  else if (k === "blocked") { SFX.phew(); fx.flash = .15; banner("📱 “아 제가 지금 통화 중이라…” — 들킴 1번 무효!", "#3f8f8a", 2.2); }
+  else if (k === "blocked") { SFX.phew(); fx.flash = .15; banner("📱 통화 중이라… 들킴 1번 무효", "#3f8f8a", 2.2); }
   else if (k === "drop") { SFX.drop(); }
-  else if (k === "bosstele") { SFX.boss(); banner("👨‍🍳 사장님이 나온다! 곧 줄을 훑어봐요 — 멈춰!", "#d93a30", 1.6); }
+  else if (k === "bosstele") { SFX.boss(); banner("👨‍🍳 사장님이 나온다! 멈춰", "#d93a30", 1.6); }
   else if (k === "bosslook") { SFX.look(); fx.shake = 5; }
-  else if (k === "rain") { SFX.rain(); banner("☔ 소나기! 다들 우산 보느라 못 봐요 — 지금이야!", "#2f6fb0", 2.4); }
-  else if (k === "rainend") { SFX.tele(); banner("🌤 비 그침 — 다들 두리번 (?) 조심!", "#b07a20", 1.8); }
-  else if (k === "app") { SFX.app(); banner("📲 웨이팅 앱 알림 — 앞에 한 분이 줄을 떠났어요!", "#3c8a5a", 2.2); puff(W / 2, H * .35, 14, "#4fd18b"); }
+  else if (k === "rain") { SFX.rain(); banner("☔ 소나기! 지금이야", "#2f6fb0", 2.4); }
+  else if (k === "rainend") { SFX.tele(); banner("비 그침 · 두리번(?) 조심", "#b07a20", 1.8); }
+  else if (k === "app") { SFX.app(); banner("📲 앞에 한 분이 줄을 떠났어요", "#3c8a5a", 2.2); puff(W / 2, H * .35, 14, "#4fd18b"); }
   else if (k === "caught") {
     SFX.caught(); fx.combo = 0; fx.shake = 16; fx.allLook = 1.7; fx.flash = .35; if (JUICE) fx.stop = .09;
     // 줄 전체가 돌아보고 여기저기서 한마디
@@ -448,19 +644,21 @@ function onEv(k, n) {
 function puff(x, y, n, col) { if (!JUICE) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = 40 + Math.random() * 80; fx.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .5, max: .5, r: 2 + Math.random() * 3, col }); } }
 function bumpGoal() { if (!JUICE) return; const g = $("goal"); g.classList.remove("bump"); void g.offsetWidth; g.classList.add("bump"); }
 function resetFx() { fx.bubbles = []; fx.parts = []; fx.pops = []; fx.allLook = 0; fx.combo = 0; fx.flash = 0; fx.banner = null; }
-function banner(txt, col, sec = 2) { fx.banner = { txt, col, t: 0, sec }; }
-const HABIT = { office: "휴대폰 보느라 거의 안 돌아봐요", kid: "자주 돌아봐요. ❗가 아주 짧아요", granny: "❗는 길게 뜨지만, 한번 보면 오래 봐요", uncle: "자주, 오래 봐요. 제일 무서운 손님", phone: "폰만 봐요. 절대 안 돌아봐요 — 마음 놓고 지나가요", sens: "툭하면 돌아봐요. 대신 금방 다시 앞을 봐요" };
+function banner(txt, col, sec = 2) { if (auto) return; UI.toast(txt, sec * 1000, "top"); }   // 판 중 알림: 공용 키트 토스트(위쪽, 한 번에 하나)
+const I = (n, c) => UI.icon(n, c);
+function ovOn() { const t = $("ui-toast"); if (t) t.classList.remove("on"); $("ov").classList.add("on"); }   // 겹 화면을 열 때 판 중 토스트는 거둔다
+const HABIT = { office: "거의 안 돌아봐요", kid: "자주 봐요 · ❗가 짧아요", granny: "❗는 길게, 보면 오래", uncle: "자주, 오래 봐요", phone: "절대 안 돌아봐요", sens: "툭하면 봐요 · 금방 돌아섬" };
 const FEAT = {
-  items: ["🎁", "아이템", `줄 옆에 떨어진 아이템은 <b>그 사람을 앞지르면</b> 주워요(7초 뒤 사라짐). 연속 ${COMBO_GIFT}명 새치기해도 하나! 오른쪽 동그란 버튼으로 써요.<br>${ITEM_KEYS.map(k => `${ITEMS[k].e} ${ITEMS[k].name}`).join(" · ")}`],
-  dg: ["🤨", "두 번 보기", "돌아본 뒤 머리 옆에 <b style=\"color:#ffb020\">?</b>가 뜨면 곧 <b>아주 짧은 ❗</b>로 다시 봐요. <b>?가 사라질 때까지 기다리기!</b>"],
-  boss: ["👨‍🍳", "사장님 감시", "가게 문에 <b>❗</b>가 뜨면 1초 뒤 사장님이 <b>줄 전체</b>를 훑어봐요. 그때 움직이면 들켜요"],
-  couple: ["💞", "커플", "한 명이 돌아보면 <b>둘이 같이</b> 돌아봐요"],
-  rain: ["☔", "소나기", "비가 오면 다들 우산 보느라 <b>2.5초 못 봐요</b> — 기회! 그친 뒤엔 다들 두리번(?)"],
-  app: ["📲", "웨이팅 앱 알림", "가끔 앞사람이 알림 받고 <b>줄을 떠나요</b>"],
+  items: ["🎁", "아이템", `앞지르면 줍기 · 연속 ${COMBO_GIFT}명이면 선물`],
+  dg: ["🤨", "두 번 보기", "? 뜨면 곧 짧게 다시 봐요"],
+  boss: ["👨‍🍳", "사장님 감시", "문에 ❗ → 1초 뒤 줄 전체 봐요"],
+  couple: ["💞", "커플", "한 명이 보면 둘 다 봐요"],
+  rain: ["☔", "소나기", "비 오면 2.5초 못 봐요"],
+  app: ["📲", "웨이팅 앱 알림", "앞사람이 줄을 떠나요"],
 };
 const featsOf = S => [...Object.keys(S.mix), ...["dg", "boss", "couple", "rain", "app"].filter(k => S[k]), ...(S.it ? ["items"] : [])];
 function newGuests(n) { const before = new Set(["office", "kid"]); SHOPS.slice(0, n).forEach(S => featsOf(S).forEach(k => before.add(k))); return featsOf(SHOPS[n]).filter(k => !before.has(k) && !(save.met || {})[k]); }
-const featHtml = k => { const [e, name, txt] = TYPES[k] ? [TYPES[k].e, TYPES[k].name, HABIT[k]] : FEAT[k]; return `<div class="feat"><div class="fi">${e}</div><p><b style="color:#fff8ee;font-size:16px">${name}</b><br>${txt}</p></div>`; };
+const featHtml = k => { const [e, name, txt] = TYPES[k] ? [TYPES[k].e, TYPES[k].name, HABIT[k]] : FEAT[k]; return `<div class="ui-item"><span class="ui-em">${e}</span><span class="ui-grow"><b>${name}</b><small>${txt}</small></span>${k === "items" ? `<span class="g-rt" aria-hidden="true">${ITEM_KEYS.map(i => ITEMS[i].e).join("")}</span>` : ""}</div>`; };
 // 오늘의 맛집: 날짜로 고르는 해금된 가게 하나 · 깨면 도장(연속 일수)
 const dayKey = (d = new Date()) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 function dailyIdx() {   // 하루 동안 고정 (그날 처음 고른 값을 저장)
@@ -474,12 +672,14 @@ function start(n, seed, seen) {
   const ng = auto || seen ? [] : newGuests(n);
   if (ng.length) {   // 새 손님·새 규칙 첫 등장: 안내 카드
     mode = "menu"; L = null; resetHud(); coach(false);
-    $("box").innerHTML = `<h2>${SHOPS[n].food} ${SHOPS[n].name} — 새로 나와요!</h2>${ng.map(featHtml).join("")}<button id="go">줄 서기</button>`;
-    $("ov").classList.add("on"); save.met = Object.assign({}, save.met); ng.forEach(k => save.met[k] = 1); store.set(save); $("go").onclick = () => start(n, seed, true); return;
+    $("box").innerHTML = `<div class="ui-col ui-center ui-enter"><div class="ui-hero" aria-hidden="true">${SHOPS[n].food}</div><h2 class="ui-h">${SHOPS[n].name}</h2><p class="ui-sub">새 손님이 나와요</p></div>
+      <div class="ui-col ui-enter-2" style="gap:var(--ui-s2)">${ng.map(featHtml).join("")}</div>
+      <div class="ui-col ui-enter-3"><button class="ui-btn primary" id="go">${I("play", "lg")}줄 서기</button></div>`;
+    ovOn(); save.met = Object.assign({}, save.met); ng.forEach(k => save.met[k] = 1); store.set(save); $("go").onclick = () => start(n, seed, true); return;
   }
   li = n; L = newLevel(n, seed ?? (Date.now() % 1e6)); mode = "play"; holding = false; camY = posY(meIdx(L)); resetFx();
   coach(false); $("ov").classList.remove("on"); emit("level_start", { level: n + 1 });
-  banner(`${SHOPS[n].food} ${SHOPS[n].name} · ${SHOPS[n].ch ? "🏅 " + SHOPS[n].ch.t : ""}`, "#3b4862", 2.2);
+  banner(`${SHOPS[n].food} ${SHOPS[n].name}${SHOPS[n].ch ? " · 도전: " + SHOPS[n].ch.t : ""}`, "#3b4862", 2.2);
 }
 function startTut() {
   li = -1; L = newTut(); mode = "play"; holding = false; camY = posY(meIdx(L)); resetFx();
@@ -489,16 +689,18 @@ function endTut(skipped) {
   if (!auto) { save.tut = 1; store.set(save); } coach(false); mode = "done"; holding = false; $("hold").classList.remove("on");
   if (skipped) return menu();
   setTimeout(() => {
-    $("box").innerHTML = `<h2>연습 끝! 🎉</h2><div class="food">🍢</div><p><b>꾹 누르기</b> = 살금살금 앞으로<br><b>❗ 보이면 손 떼기</b> = 안 들킴<br>들키면 두 칸 뒤로 + 경고</p><p>위의 <b>“최소 N명 앞질러야 먹음”</b>을 0으로 만들면 먹을 수 있어요.</p><button id="go">첫 가게 줄 서기</button><button class="sec" id="mn">가게 목록</button>`;
-    $("ov").classList.add("on"); $("go").onclick = () => start(0); $("mn").onclick = menu;
+    $("box").innerHTML = `<div class="ui-col ui-center ui-enter"><div class="ui-hero ui-pop" aria-hidden="true">${TUT_SHOP.food}</div><h2 class="ui-h">연습 끝</h2></div>
+      <div class="ui-card flat ui-enter-2"><ul class="ui-list"><li>${I("hand")}꾹 누르면 앞으로</li><li>${I("triangle-alert")}❗ 보이면 손 떼기</li><li>${I("circle-x")}들키면 두 칸 뒤로</li><li>${I("target")}위 숫자를 0으로</li></ul></div>
+      <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)"><button class="ui-btn primary" id="go">${I("play", "lg")}첫 가게 줄 서기</button><button class="ui-btn ghost" id="mn">${I("house")}가게 목록</button></div>`;
+    ovOn(); $("go").onclick = () => start(0); $("mn").onclick = menu;
   }, 600);
 }
 function coach(on) { $("coach").classList.toggle("on", on); if (!on) $("arrow").classList.remove("on"); }
 function finish(win, why) {
   mode = "done"; holding = false; $("hold").classList.remove("on", "danger", "sus", "blink"); $("itemb").classList.remove("on"); $("itemD").classList.remove("on");
-  $("holdT").textContent = "🤫 살금살금"; $("holdS").textContent = "누르고 있기 · ❗ 뜨면 손 떼기"; $("hold").disabled = true; const need = $("need"); need.className = "g2"; need.textContent = win ? "🚪 입장!" : why === "kicked" ? "🚪 쫓겨남" : "😭 재료 소진"; lastNeed = -9;
+  setHold("i"); $("hold").disabled = true; setNeed(win ? "flag" : "circle-x", win ? "입장!" : why === "kicked" ? "쫓겨남" : "재료 소진", win); lastNeed = -9;
   const S = SHOPS[li], nx = SHOPS[li + 1];
-  const nextHtml = nx ? `<div class="next">다음 가게 <b style="color:#fff8ee">${nx.food} ${nx.name}</b><br>${nx.desc}</div>` : `<div class="next">🎉 모든 맛집 정복! 별 3개·🏅 도전 과제를 모아 보세요</div>`;
+  const nextHtml = nx ? `<div class="ui-line"><span class="ui-grow">다음 가게</span><span class="ui-em">${nx.food}</span><b>${nx.name}</b></div>` : `<div class="ui-line">${I("trophy")}<span class="ui-grow">모든 맛집 정복</span></div>`;
   if (win) {
     const st = 3 - L.strikes, score = L.score + L.bowls * 100 + st * 150, ch = chDone(S, L), today = li === dailyIdx() && !(save.daily || {})[dayKey()];
     const best = (save.best || {})[li] || 0, first = !(save.dex || {})[li];
@@ -509,49 +711,64 @@ function finish(win, why) {
       store.set(save);
     }
     SFX.win(); emit("level_clear", { level: li + 1, strikes: L.strikes, passed: L.passed, score });
-    setTimeout(() => { $("box").innerHTML = `<h2>입장 성공!</h2><div class="food">${S.food}</div><div class="stars">${"★".repeat(st)}${"☆".repeat(3 - st)}</div>
-      <div class="score">${score}점</div><p>${score > best ? "🆕 최고 점수!" : `최고 ${best}점`} · 최대 콤보 ${L.maxCombo} · 아이템 ${L.itemsUsed}번</p>
-      <p>${ch ? "🏅 도전 과제 성공: " : "🏅 도전 과제: "}${S.ch.t}${ch ? " ✔" : ""}</p>
-      ${first ? `<p style="color:#ffcc5c">📖 맛집 도감에 ${S.food} ${S.name} 등록! (${Object.keys(save.dex || {}).length}/${SHOPS.length})</p>` : ""}
-      ${today ? `<p style="color:#ffcc5c">📅 오늘의 맛집 도장 꽝! (연속 ${streak()}일)</p>` : ""}
-      ${nextHtml}<button id="nx">${nx ? `${nx.food} 다음 가게` : "가게 목록"}</button><button class="sec" id="rt">다시 (점수·🏅 도전)</button>`;
-      $("ov").classList.add("on"); $("nx").onclick = () => nx ? start(li + 1) : menu(); $("rt").onclick = () => start(li); }, 700);
+    setTimeout(() => { $("box").innerHTML = `<div class="ui-col ui-center ui-enter"><div class="ui-hero ui-pop" aria-hidden="true">${S.food}</div>${UI.stars(st, 3, "big")}<h2 class="ui-h">입장 성공</h2>
+        <div class="ui-big">${score}</div><p class="g-line">${score > best ? `${I("trophy")}<b>최고 점수</b>` : `최고 ${best}`}</p></div>
+      <div class="ui-col ui-enter-2" style="gap:var(--ui-s2)"><div class="ui-item">${I(ch ? "circle-check" : "award", ch ? "ok" : "")}<span class="ui-grow"><b>${S.ch.t}</b><small>${ch ? "도전 과제 성공" : "도전 과제"}</small></span></div>
+      ${first ? `<div class="ui-line">${I("book-open")}<span class="ui-grow">도감 등록</span><b>${Object.keys(save.dex || {}).length}/${SHOPS.length}</b></div>` : ""}
+      ${today ? `<div class="ui-line">${I("gift")}<span class="ui-grow">오늘의 도장</span><b>연속 ${streak()}일</b></div>` : ""}
+      ${nextHtml}</div>
+      <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)"><button class="ui-btn primary" id="nx">${nx ? `다음 가게${I("arrow-right", "lg")}` : `${I("house", "lg")}가게 목록`}</button>
+      <div class="ui-row"><button class="ui-btn" id="rt">${I("rotate-ccw")}다시</button>${nx ? `<button class="ui-btn icon" id="mn" aria-label="가게 목록">${I("house")}</button>` : ""}</div></div>`;
+      ovOn(); $("nx").onclick = () => nx ? start(li + 1) : menu(); $("rt").onclick = () => start(li); if (nx) $("mn").onclick = menu; }, 700);
   } else {
     SFX.lose(); emit("fail", { level: li + 1, why });
-    const TIPS = { sus: "🤨 ?가 뜬 사람은 곧 짧은 ❗로 다시 봐요. ?가 사라질 때까지 기다리기!", boss: "👨‍🍳 가게 문에 ❗가 뜨면 1초 안에 멈춰요.", couple: "💞 커플은 같이 돌아봐요. 한 명이 ❗면 둘 다 조심!", vest: "🦺 조끼는 표시된 두 명이 앞을 볼 때만 (버튼이 빨가면 기다리기)", look: "❗가 뜨면 바로 손 떼기! 남은 시간 링이 다 돌기 전에" };
+    const TIPS = { sus: "?가 사라질 때까지 기다리기", boss: "문에 ❗ 뜨면 1초 안에 멈추기", couple: "커플은 둘 다 돌아봐요", vest: "조끼 버튼이 빨가면 기다리기", look: "❗ 뜨면 바로 손 떼기" };
     const top = Object.entries(L.causes || {}).sort((a, b) => b[1] - a[1])[0];
-    const tip = why === "kicked" ? TIPS[top ? top[0] : "look"] : "⏱ 시간이 모자랐어요. ❗ 없을 때 과감하게! 소나기·연예인 때 몰아서 가기";
+    const tip = why === "kicked" ? TIPS[top ? top[0] : "look"] : "❗ 없을 때 과감하게 가기";
     const mk = L.minK ?? needPass(L), best = (save.best || {})[li] || 0;
-    const keep = `<div class="next">이번 판 ${L.score}점 · 최대 콤보 ${L.maxCombo}${best ? ` · 최고 ${best}점` : ""}<br>${mk > 0 && mk < 99 ? `가장 가까웠을 때 <b style="color:#ffcc5c">${mk}명만 더</b> 앞지르면 먹을 수 있었어요!` : "거의 다 왔어요!"}<br>🏅 ${S.ch.t}</div>`;
-    setTimeout(() => { $("box").innerHTML = `<h2>${why === "kicked" ? "쫓겨났다… 🚪" : "재료 소진 😭"}</h2><p>${why === "kicked" ? "경고 3번. 줄 서는 분들이 가만있지 않았어요." : `“오늘 ${S.name} 재료 다 떨어졌습니다~” 앞에 ${meIdx(L)}명이 남아 있었어요.`}</p><p>💡 ${tip}</p>${keep}
-      <button id="rt">바로 다시 줄 서기</button><button class="sec" id="mn">가게 목록</button>`; $("ov").classList.add("on"); $("rt").onclick = () => start(li); $("mn").onclick = menu; }, 500);
+    const close = mk > 0 && mk < 99;
+    setTimeout(() => { $("box").innerHTML = `<div class="ui-col ui-center ui-enter"><div class="ui-hero g-dim" aria-hidden="true">${S.food}</div><h2 class="ui-h">${why === "kicked" ? "쫓겨났다" : "재료 소진"}</h2>
+        ${close ? `<div class="ui-big">${mk}명</div><p class="ui-sub">더 앞지르면 먹었어요</p>` : `<p class="ui-sub">${why === "kicked" ? "경고 3번" : "거의 다 왔어요"}</p>`}</div>
+      <div class="ui-tip ui-enter-2">${I("lightbulb", "lg")}<span>${tip}</span></div>
+      <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)"><button class="ui-btn primary" id="rt">${I("rotate-ccw", "lg")}다시 줄 서기</button><button class="ui-btn ghost" id="mn">${I("house")}가게 목록</button></div>`;
+      ovOn(); $("rt").onclick = () => start(li); $("mn").onclick = menu; }, 500);
   }
 }
 function resetHud() {
-  $("bowl").textContent = "-"; $("ahead").textContent = "-"; $("warn").textContent = "○○○"; const need = $("need"); need.className = "g2"; need.textContent = "줄을 골라 주세요"; lastNeed = -9;
-  $("itemb").classList.remove("on"); $("itemD").classList.remove("on"); const h = $("hold"); h.classList.remove("on", "danger", "sus", "blink"); h.disabled = true; $("holdT").textContent = "🤫 살금살금"; $("holdS").textContent = "누르고 있기 · ❗ 뜨면 손 떼기"; $("bar").style.width = "0";
+  $("bowl").textContent = "-"; $("ahead").textContent = "-"; setWarn(0, false); setNeed("", "", false); lastNeed = -9;
+  $("itemb").classList.remove("on"); $("itemD").classList.remove("on"); const h = $("hold"); h.classList.remove("on", "danger", "sus", "blink"); h.disabled = true; setHold("i"); $("bar").style.width = "0";
 }
 function menu() {
   mode = "menu"; coach(false); L = null; holding = false; resetFx(); resetHud();
-  const di = dailyIdx(), dd = SHOPS[di], done = (save.daily || {})[dayKey()], nl = save.unlocked < SHOPS.length ? SHOPS[save.unlocked] : null;
-  $("box").innerHTML = `<h1>🍜 맛집 새치기</h1><p>그릇은 얼마 안 남았다. 앞사람이 <b>안 볼 때만</b> 꾹 눌러 앞으로!</p>
-    <button class="daily" id="dly">📅 오늘의 맛집: <b>${dd.food} ${dd.name}</b> ${done ? "— 도장 완료 ✔" : "— 깨면 도장!"}${streak() ? ` · 연속 ${streak()}일` : ""}</button>
-    <div class="list">${SHOPS.map((s, i) => { const lock = i + 1 > save.unlocked; return `<button ${lock ? "disabled" : ""} class="${save.stars[i] ? "done" : ""}" data-i="${i}">${lock ? (i === save.unlocked ? "❔ 다음 맛집" : "🔒 ???") : `${s.food} ${s.name}`}<small>${lock ? (i === save.unlocked ? s.name : "") : save.stars[i] ? `${"★".repeat(save.stars[i])}${(save.ch || {})[i] ? " 🏅" : ""} ${(save.best || {})[i] || ""}` : "도전"}</small></button>`; }).join("")}</div>
-    ${nl ? `<div class="next">다음 해금 <b style="color:#fff8ee">${nl.food} ${nl.name}</b> — ${nl.desc}</div>` : ""}
-    <div class="dex" title="맛집 도감">${SHOPS.map((s, i) => `<span class="${(save.dex || {})[i] ? "" : "no"}">${s.food}</span>`).join("")}</div><p style="margin:0">📖 맛집 도감 ${Object.keys(save.dex || {}).length}/${SHOPS.length} · 🏅 ${Object.keys(save.ch || {}).length}/${SHOPS.length}</p>
-    <button class="sec" id="tutb">📖 연습(튜토리얼) 다시 보기</button>`;
-  $("ov").classList.add("on"); $("box").querySelectorAll("[data-i]").forEach(b => b.onclick = () => start(+b.dataset.i)); $("tutb").onclick = startTut; $("dly").onclick = () => start(di);
+  const di = dailyIdx(), done = (save.daily || {})[dayKey()], open = Math.min(save.unlocked, SHOPS.length), sk = streak();
+  let cur = di; for (let i = 0; i < open; i++) if (!save.stars[i]) { cur = i; break; }   // 아직 못 깬 첫 가게, 다 깼으면 오늘의 맛집
+  const cells = SHOPS.map((s, i) => i >= open ? `<button class="ui-level lock" disabled aria-label="잠긴 가게">${I("lock")}</button>`
+    : `<button class="ui-level ${i === cur ? "cur" : ""} ${save.stars[i] ? "" : "new"}" data-i="${i}" aria-label="${s.name}, 별 ${save.stars[i] || 0}${i === di ? ", 오늘의 맛집" : ""}"><span class="ui-em">${s.food}</span>${UI.stars(save.stars[i] || 0)}${i === di && !done ? `<span class="g-today">${I("gift")}</span>` : ""}</button>`).join("");
+  $("box").innerHTML = `<div class="ui-col ui-center ui-enter"><div class="ui-hero" aria-hidden="true">🍜</div><h1 class="ui-title">맛집 새치기</h1><p class="ui-sub">안 볼 때만, 꾹 눌러 앞으로</p></div>
+    <div class="ui-levels g-shops ui-enter-2">${cells}</div>
+    <p class="g-line ui-enter-2">${I("gift")}오늘의 맛집 <b>${SHOPS[di].name}</b>${done ? ` · 도장 ${I("check")}` : ""}${sk ? ` · 연속 ${sk}일` : ""}</p>
+    <div class="ui-col ui-enter-3" style="gap:var(--ui-s2)"><button class="ui-btn primary" id="go">${I("play", "lg")}${SHOPS[cur].name} 줄 서기</button>
+    <div class="ui-row"><button class="ui-btn" id="dexb">${I("book-open")}도감</button><button class="ui-btn" id="tutb">${I("circle-help")}연습</button></div></div>`;
+  ovOn(); $("box").querySelectorAll("[data-i]").forEach(b => b.onclick = () => start(+b.dataset.i)); $("go").onclick = () => start(cur); $("tutb").onclick = startTut; $("dexb").onclick = showDex;
+}
+function showDex() {   // 맛집 도감: 먹어 본 가게 · 최고 점수 · 별 · 도전 과제
+  const dex = save.dex || {}, chs = save.ch || {};
+  $("box").innerHTML = `<div class="ui-head ui-enter"><button class="ui-btn icon" id="dexBack" aria-label="돌아가기">${I("chevron-left")}</button><h2 class="ui-h">맛집 도감</h2><span class="ui-chip" aria-label="도감">${I("book-open")}${Object.keys(dex).length}/${SHOPS.length}</span></div>
+    <div class="ui-col ui-enter-2" style="gap:var(--ui-s2)">${SHOPS.map((s, i) => dex[i]
+      ? `<div class="ui-item"><span class="ui-em">${s.food}</span><span class="ui-grow"><b>${s.name}</b><small>최고 ${(save.best || {})[i] || 0}</small></span><span class="g-rt">${UI.stars(save.stars[i] || 0)}${chs[i] ? I("award", "ok") : ""}</span></div>`
+      : `<div class="ui-item no"><span class="ui-em">${i < save.unlocked ? s.food : "?"}</span><span class="ui-grow"><b>${i < save.unlocked ? s.name : "???"}</b><small>아직 못 먹어 봄</small></span></div>`).join("")}</div>`;
+  ovOn(); $("dexBack").onclick = menu;
 }
 $("skip").onclick = e => { e.stopPropagation(); endTut(true); };
 $("skip").addEventListener("pointerdown", e => e.stopPropagation());
 
 // 입력: 버튼 또는 화면 어디든 누르고 있기
 let holdPid = null;
-const down = e => { actx(); if (mode !== "play" || auto) return; if (e.target.closest && (e.target.closest(".box") || e.target.closest("#coach") || e.target.closest("#itemb"))) return; e.preventDefault(); holding = true; holdPid = e.pointerId ?? null; $("hold").classList.add("on"); };
+const down = e => { actx(); if (mode !== "play" || auto) return; if (e.target.closest && (e.target.closest("#ov") || e.target.closest("#coach") || e.target.closest("#itemb"))) return; e.preventDefault(); holding = true; holdPid = e.pointerId ?? null; $("hold").classList.add("on"); };
 const up = e => { if (e && e.pointerId != null && holdPid != null && e.pointerId !== holdPid) return;   // 다른 손가락(아이템 탭)은 홀드를 풀지 않음
   holdPid = null; if (holding && L) { const ws = watchers(L); const soon = ws.some(n => n.st === "tele" && n.dur - n.t < .3); if (soon && L.prog > 0) { fx.phew = 1; SFX.phew(); SFX.heart(); } } holding = false; $("hold").classList.remove("on"); };
 $("hold").addEventListener("pointerdown", down); cv.addEventListener("pointerdown", down);
-function tapItem(e) { if (e) { e.preventDefault(); e.stopPropagation(); } actx(); if (mode !== "play" || !L || L.tut || auto) return; if (!L.item) { banner("빈 손 — 줄 옆 아이템을 앞질러서 주워요", "#3b4862", 1.6); return; } if (!useItem(L, onEv)) banner("지금은 못 써요", "#3b4862", 1); }
+function tapItem(e) { if (e) { e.preventDefault(); e.stopPropagation(); } actx(); if (mode !== "play" || !L || L.tut || auto) return; if (!L.item) { banner("빈 손 · 아이템은 앞질러서 줍기", "#3b4862", 1.6); return; } if (!useItem(L, onEv)) banner("지금은 못 써요", "#3b4862", 1); }
 $("itemb").addEventListener("pointerdown", tapItem);
 addEventListener("pointerup", up); addEventListener("pointercancel", up);
 addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault(); if (!holding) down(e); } if (e.code === "KeyE" || e.code === "ArrowUp") tapItem(e); }); addEventListener("keyup", e => { if (e.code === "Space") up(); });
@@ -726,22 +943,27 @@ function draw(t, dt) {
   const danger = ws.some(n => n.st === "tele") || (L.boss && L.boss.st === "tele"); if (danger && JUICE) { ctx.strokeStyle = `rgba(255,90,79,${.35 + .25 * Math.sin(t * 20)})`; ctx.lineWidth = 10; ctx.strokeRect(0, 0, W, H); }
 }
 let lastNeed = -1;
+// 누르기 버튼 상태: [아이콘, 큰 글, 작은 글] — 상태가 바뀔 때만 다시 그림
+const HOLD = { i: ["hand", "살금살금", "누르고 있기 · ❗ 뜨면 손 떼기"], he: ["eye-off", "곧 풀려요! 손 떼요", "풀리면 다시 들킬 수 있어요"], h: ["eye-off", "변장 중! 마음껏", "2초 동안 안 들켜요"],
+  bl: ["eye", "사장님이 봐요! 가만히", "누르고 있으면 들켜요"], bt: ["triangle-alert", "사장님 나온다! 손 떼요", "누르고 있으면 들켜요"], l: ["eye", "보고 있어요! 가만히", "누르고 있으면 들켜요"], t: ["triangle-alert", "손 떼요! 돌아봐요", "누르고 있으면 들켜요"],
+  c: ["circle-x", "들켰다…", "누르고 있기 · ❗ 뜨면 손 떼기"], r: ["sparkles", "소나기! 지금이야", "꾹 눌러서 쭉쭉"], q: ["sparkles", "지금이야! 딴 데 봐요", "꾹 눌러서 쭉쭉"], s: ["circle-help", "의심 중… 곧 또 봐요", "? 사라질 때까지 기다리기"] };
+function setHold(k) { const h = $("hold"); if (h.dataset.k === k) return; h.dataset.k = k; const [ic, t, sub] = HOLD[k]; $("holdT").innerHTML = I(ic, "lg") + t; $("holdS").textContent = sub; }
+function setNeed(ic, html, ok) { $("need").innerHTML = html ? (ic ? I(ic) : "") + `<span>${html}</span>` : ""; $("goal").classList.toggle("ok", !!ok); $("goal").style.visibility = html ? "" : "hidden"; }
+function setWarn(n, tut) { const k = tut ? "t" : String(n), w = $("warn"); if (w.dataset.k === k) return; w.dataset.k = k; $("warnc").style.display = tut ? "none" : ""; w.innerHTML = [0, 1, 2].map(i => `<i class="${i < n ? "on" : ""}"></i>`).join(""); $("warnc").setAttribute("aria-label", `경고 ${n}/3`); }
 function hud() {
   if (!L) return; const p = meIdx(L), k = needPass(L);
-  $("bowl").textContent = L.bowls; $("ahead").textContent = p; $("warn").textContent = L.tut ? "연습" : "✕".repeat(L.strikes) + "○".repeat(3 - L.strikes);
-  const need = $("need");
+  $("bowl").textContent = L.bowls; $("ahead").textContent = p; setWarn(L.strikes, !!L.tut); if ($("foodE").textContent !== L.shop.food) $("foodE").textContent = L.shop.food;
   const practice = L.tut && (L.tut.s < 3 || !L.tut.ran);
-  if (practice) { if (lastNeed !== -2) { need.className = "g2"; need.textContent = "🧪 연습 중 · 줄은 아직 안 움직여요"; lastNeed = -2; } }
-  else if (k * 2 + (p === 0) !== lastNeed) { need.className = "g2" + (k === 0 ? " ok" : ""); need.innerHTML = k === 0 ? (p === 0 ? "🚪 맨 앞! 곧 들어가요" : "✓ 이대로 기다리면 먹어요!") : `→ 최소 <b>${k}</b>명 앞질러야 먹음`; lastNeed = k * 2 + (p === 0); }
+  if (practice) { if (lastNeed !== -2) { setNeed("info", "연습 중 · 줄은 그대로", false); lastNeed = -2; } }
+  else if (k * 2 + (p === 0) !== lastNeed) { if (k === 0) setNeed(p === 0 ? "flag" : "circle-check", p === 0 ? "맨 앞! 곧 입장" : "이대로 기다리면 입장", true); else setNeed("target", `<b>${k}</b>명 더 앞지르기`, false); lastNeed = k * 2 + (p === 0); }
   $("bar").style.width = Math.round(L.prog * 100) + "%"; $("hold").disabled = mode !== "play" || L.cool > 0;
-  $("bowl").style.color = L.bowls <= p ? "#ff5a4f" : "";
+  $("bowl").classList.toggle("low", L.bowls <= p);
   const ws = watchers(L), hat = L.ef && L.ef.hat > 0, dz = mode === "play" && p > 0 && !hat && danger(L), boss = L.boss && L.boss.st !== "off";
   const sus = !dz && !hat && mode === "play" && p > 0 && ws.some(n => n.sus && n.st === "fwd");
   $("hold").classList.toggle("danger", dz); $("hold").classList.toggle("sus", sus);
   const hatEnding = hat && L.ef.hat < .5;
   $("hold").classList.toggle("sus", sus || hatEnding); $("hold").classList.toggle("blink", hatEnding);
-  const ht = hatEnding ? "🧢 곧 풀려요! 손 떼요" : hat ? "🧢 변장 중! 마음껏 가요" : dz ? (boss ? (L.boss.st === "look" ? "👨‍🍳 사장님이 봐요! 가만히" : "👨‍🍳 사장님 나온다! 손 떼요") : ws.some(n => n.st === "look") ? "👀 보고 있어요! 가만히" : "✋ 손 떼요! 돌아봐요") : L.cool > 0 ? "😳 들켰다…" : L.quiet > 0 ? (L.quietWhy === "rain" ? "☔ 지금이야! 다들 못 봐요" : "🤩 지금이야! 다들 딴 데 봐요") : sus ? "🤨 의심 중… 곧 또 봐요" : "🤫 살금살금";
-  if ($("holdT").textContent !== ht) { $("holdT").textContent = ht; $("holdS").textContent = hatEnding ? "풀리면 다시 들킬 수 있어요" : hat ? "2초 동안 들키지 않아요" : dz ? "누르고 있으면 들켜요" : L.quiet > 0 ? "꾹 눌러서 쭉쭉" : sus ? "? 사라질 때까지 기다리면 안전" : "누르고 있기 · ❗ 뜨면 손 떼기"; }
+  setHold(hatEnding ? "he" : hat ? "h" : dz ? (boss ? (L.boss.st === "look" ? "bl" : "bt") : ws.some(n => n.st === "look") ? "l" : "t") : L.cool > 0 ? "c" : L.quiet > 0 ? (L.quietWhy === "rain" ? "r" : "q") : sus ? "s" : "i");
   // 아이템 버튼
   const ib = $("itemb"), showI = !L.tut && mode === "play"; ib.classList.toggle("on", showI); ib.classList.toggle("has", !!L.item);
   const ie = L.item ? ITEMS[L.item].e : "", inm = L.item ? ITEMS[L.item].name : "빈 손";
@@ -752,7 +974,7 @@ function hud() {
   if (L.tut) {
     const U = L.tut;
     if (U.changed) { U.changed = false; $("cmsg").innerHTML = U.msg; $("cmsg").className = "msg" + (U.good ? " good" : ""); const c = $("coach"); if (JUICE) { c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse"); } }
-    $("dots").textContent = `연습 ${Math.min(U.s + 1, TUT_STEPS)}/${TUT_STEPS} ` + "●".repeat(U.s + 1) + "○".repeat(Math.max(0, TUT_STEPS - U.s - 1));
+    const dk = Math.min(U.s + 1, TUT_STEPS); if ($("dots").dataset.k !== String(dk)) { $("dots").dataset.k = dk; $("dots").innerHTML = `<span class="ui-pips">${Array.from({ length: TUT_STEPS }, (_, i) => `<i class="${i < dk ? "on" : ""}"></i>`).join("")}</span>연습 ${dk}/${TUT_STEPS}`; }
     $("arrow").classList.toggle("on", U.s === 0 && !holding && U.okT <= 0);
   }
 }
