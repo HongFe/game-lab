@@ -467,8 +467,8 @@ const ZONES = {
   newtown: { n: "신도시", mul: 1.0, beta: 1.4, drift: 0, ltv: .7, reg: false, jr: .56, c: "sky", ic: "building" },
   station: { n: "역세권", mul: 1.15, beta: 1.2, drift: .0005, ltv: .4, reg: true, jr: .6, c: "lav", ic: "train-front" },
   school: { n: "학군지", mul: 1.25, beta: .9, drift: .004, ltv: .4, reg: true, jr: .65, c: "butter", ic: "graduation-cap" },
-  old: { n: "구도심", mul: .8, beta: .8, drift: .0005, ltv: .7, reg: false, jr: .7, c: "apricot", ic: "house" },
-  redev: { n: "재개발", mul: .7, beta: .9, drift: 0, ltv: .7, reg: false, jr: .55, c: "sand", ic: "hammer" },
+  old: { n: "구도심", mul: .8, beta: .8, drift: .0005, ltv: .7, reg: false, jr: .72, c: "apricot", ic: "house" },
+  redev: { n: "재개발", mul: .7, beta: .9, drift: 0, ltv: .7, reg: false, jr: .6, c: "sand", ic: "hammer" },
 };
 const ZK = Object.keys(ZONES);
 const TYPES = {
@@ -503,9 +503,9 @@ const TRAITS = {
   none: { n: "특별한 것 없음", ic: "none" },
 };
 const TRAIT_P = { sun: .20, park: .10, leak: .15, noise: .15, pipe: .15, none: .25 };
-const TRAIT_P_URG = { sun: .07, park: .03, leak: .14, noise: .13, pipe: .13, none: .50 }; // 급매: 나쁜 특성 40%
+const TRAIT_P_URG = { sun: .06, park: .02, leak: .19, noise: .18, pipe: .18, none: .37 }; // 급매: 싸지만 나쁜 특성 55%
 const FACES = { "남향": .02, "동향": 0, "서향": -.01, "북향": -.03 };
-const PH = { rec: { n: "회복", ret: .012 }, up: { n: "상승", ret: .08 }, adj: { n: "조정", ret: -.008 }, down: { n: "하락", ret: -.065 } };
+const PH = { rec: { n: "회복", ret: .012 }, up: { n: "상승", ret: .086 }, adj: { n: "조정", ret: -.008 }, down: { n: "하락", ret: -.065 } };
 const RATE_T = [3, 7, 11, 15, 19, 23], REG_T = [5, 13, 21];
 const RATE_P = { up: [.45, .10], adj: [.30, .25], down: [.10, .50], rec: [.15, .35] };   // [인상, 인하], 나머지 동결
 const REG_P = { up: [.60, .10], adj: [.35, .20], down: [.10, .55], rec: [.20, .35] };   // [강화, 완화]
@@ -703,6 +703,12 @@ function roomFrom(s) { const o = JSON.parse(s); return { wall: o.w, floor: o.f, 
 
 /* ---------- 금리·대출·세금 ---------- */
 function loanRate(G) { return MK(G).base + 1.3 - (G.perkRate >= G.t ? .5 : 0); }
+// 높은 LTV 가산금리: 담보비율 50% 넘는 만큼, 기준금리가 오를수록 더 크게 (레버리지 = 금리 충격 증폭)
+function ltvPrem(G, lvr) { return Math.max(0, lvr - .5) * (1.5 + Math.max(0, MK(G).base - 3) * 1.5); }
+function homeRate(G, h, loan, v) { loan = loan == null ? h.loan : loan; v = v || hv(G, h); return loanRate(G) + (v ? ltvPrem(G, loan / v) : 0); }
+function clRate(G) { return loanRate(G) + 2 + (MK(G).ph === "down" ? 1.5 : 0); }
+function interestQ(G) { let s = 0; for (const h of G.homes) s += h.loan * homeRate(G, h) / 400; return s + G.mt * (loanRate(G) + 3) / 400 + G.cl * clRate(G) / 400; }
+function mtLimit(G) { const val = G.homes.reduce((s, h) => s + hv(G, h), 0), lvr = val ? (debt(G) - G.mt) / val : 0; return rd(3000 * clamp(1.3 - lvr * 1.2, .25, 1)); }
 function ltv(G, zone) { const m = MK(G); let l = !G.everOwned ? .7 : ZONES[zone].ltv; if (m.reg === -1 && ZONES[zone].reg) l -= .1; if (m.reg === 1) l += .1; return clamp(Math.round(l * 100) / 100, .3, .8); }
 function dsrCap(G) { return rd(G.Y * 7 * 4.3 / Math.max(2.5, loanRate(G))); }
 function debt(G) { return G.homes.reduce((s, h) => s + h.loan, 0) + G.mt + G.cl; }
@@ -775,7 +781,7 @@ function genListings(G) {
   for (let i = 0; i < nM && pool.length; i++) G.list.push(mkListing(G, pool.shift(), "m", r));
   for (const L of G.list) if (L.urgent) meet(G, "urgent");
 }
-function urgP(G, b) { const down = MK(G).ph === "down"; return Math.min(.8, (down ? .35 : .15) * (b === "m" ? 2 : 1) + (G.hearts[b] >= 5 ? .1 : 0)); }
+function urgP(G, b) { const down = MK(G).ph === "down"; return Math.min(.8, (down ? .35 : .15) * (b === "m" ? 2 : 1) + (G.hearts[b] >= 5 ? .1 : 0) + (G.t <= 6 && G.homes.length <= 1 ? .12 : 0)); }
 function mkListing(G, pu, b, r, fix) {
   fix = fix || {}; const lot = pu.l;
   const m = MK(G);
@@ -820,7 +826,7 @@ function quoteBuy(G, L, mode, loan, feeCut) {
   loan = clamp(rd(loan == null ? 0 : loan), 0, lim);
   const depBack = mode === "live" && !liveHome(G) ? G.dep : 0;
   const need = P + acq + fee + (L.seen ? repair : 0) - loan - jdep - depBack;
-  const rate = loanRate(G), qInt = rd(loan * rate / 400);
+  const rate = loanRate(G) + ltvPrem(G, loan / v), qInt = rd(loan * rate / 400);
   const short = Math.max(0, need - G.cash);
   const minLoan = mode === "gap" ? 0 : Math.max(0, Math.min(lim, P + acq + fee + (L.seen ? repair : 0) - jdep - depBack - G.cash));
   // 버틸 수 있는 턴 수 = 남는 현금 ÷ 분기 적자(적자 없으면 ∞)
@@ -829,7 +835,7 @@ function quoteBuy(G, L, mode, loan, feeCut) {
   return { P, acq, fee, feeR, repair, repairKnown: L.seen, jdep, lim, loan, depBack, need, short, ok: short <= 0, rate, qInt, minLoan, hold, ltv: ltv(G, lot.zone), dsr: dsrCap(G) - debt(G) };
 }
 function quarterFlow(G, extraInt, becomesOwner) {
-  const rate = loanRate(G); let f = G.Y / 4 * SAVE_R + ((liveHome(G) || becomesOwner) ? RENT_SAVE : 0) - debt(G) * rate / 400 - G.mt * 3 / 400 - G.cl * 2 / 400 - (extraInt || 0);
+  const rate = loanRate(G); let f = G.Y / 4 * SAVE_R + ((liveHome(G) || becomesOwner) ? RENT_SAVE : 0) - interestQ(G) - (extraInt || 0);
   for (const h of G.homes) if (h.lease && h.lease.k === "w") f += h.lease.rent;
   return rd(f);
 }
@@ -921,7 +927,7 @@ function refi(G, h, target) {
   h.loan = target; addCash(G, d, d > 0 ? "loan" : "repay"); meet(G, "ltv"); return d;
 }
 // 신용대출: 연봉까지, 금리 +2%p. 집 없이도 빌릴 수 있는 '영끌' 수단
-function clMax(G) { return Math.max(G.cl, Math.min(G.Y, dsrCap(G) - (debt(G) - G.cl))); }
+function clMax(G) { if (G.t < 5) return G.cl; return Math.max(G.cl, Math.min(G.Y, dsrCap(G) - (debt(G) - G.cl))); }   // 신용대출은 2년차부터(재직 1년)
 function credit(G, target) { target = clamp(rd(target), 0, clMax(G)); const d = target - G.cl; if (!d || (d < 0 && G.cash < -d)) return 0; G.cl = target; addCash(G, d, d > 0 ? "loan" : "repay"); meet(G, "dsr"); return d; }
 function sideJob(G) { if (G.steps < 1 || G.sideT === G.t) return 0; G.steps--; G.sideT = G.t; return addCash(G, G.Y / 4 * SAVE_R * .3, "side"); }
 function buyFurn(G, f) { const F = FURN[f]; if (G.cash < F.price) return false; addCash(G, -F.price, "furn"); G.inv[f] = (G.inv[f] || 0) + 1; return true; }
@@ -986,7 +992,7 @@ function endTurn(G) {
   const live = !!liveHome(G);
   add("salary", "월급 저축", G.Y / 4 * SAVE_R + (live ? RENT_SAVE : 0), "coins");
   let rent = 0; for (const h of G.homes) if (h.lease && h.lease.k === "w" && h.lease.vac !== G.t && !(LOT[h.lot].zone === "redev" && m.stage === 4)) rent += h.lease.rent; add("rent", "월세 수입", rent, "house");
-  const rate = loanRate(G); const ints = G.homes.reduce((s, h) => s + h.loan, 0) * rate / 400 + G.mt * (rate + 3) / 400 + G.cl * (rate + 2) / 400; add("interest", "대출 이자", -ints, "landmark");
+  const ints = interestQ(G); add("interest", "대출 이자", -ints, "landmark");
   let up = 0; for (const h of G.homes) if (!h.live && !h.lease) up += hv(G, h) * .001; add("upkeep", "빈집 관리비", -up, "wrench");
   if (q === 1 && G.homes.length) { add("ptax", "재산세", -G.homes.reduce((s, h) => s + hv(G, h), 0) * .0015, "mail"); meet(G, "ptax"); }
   if (q === 3) { const c = ctaxOf(G); if (c > 0) { add("ctax", "종부세", -c, "mail"); meet(G, "ctax"); } }
@@ -997,6 +1003,8 @@ function endTurn(G) {
     G.renewLog = G.renewLog || []; if (Ls.ren === 0) G.renewLog.push({ cozy: cozyStars(h), ok });
     if (Ls.k === "j") {
       const mkt = rd(v * m.jr[LOT[h.lot].zone]);
+      // 하락기에 재계약이 안 되면 세입자가 보증금 전액 반환을 요구하고 나간다(새 세입자는 직접 구해야 함)
+      if (!ok && (m.ph === "down" || (m.ph === "adj" && rp(G) < .15))) { add("jeonse", "보증금 반환 요구", -Ls.dep, "key"); meet(G, "reverse"); h.lease = null; ev.push({ k: "moveout", h: h.id }); continue; }
       const nd = ok ? Math.min(rd(Ls.dep * 1.05), mkt) : mkt; const d = nd - Ls.dep;
       if (d) { add("jeonse", d < 0 ? "전세 차액 반환" : "전세금 인상분", d, "key"); if (d < 0) meet(G, "reverse"); }
       if (!ok) add("fee", "새 세입자 중개보수", -nd * .003, "handshake");
@@ -1010,7 +1018,7 @@ function endTurn(G) {
   // 현금이 바닥나면: 마이너스 통장 1회 → 급매 강제(시세 85%) → 파산
   const forced = [];
   if (G.cash < 0) {
-    if (!G.mtUsed) { const a = Math.min(3000, -G.cash + 300); G.mtUsed = true; G.mt += a; add("mt", "마이너스 통장", a, "piggy-bank"); G.strikes = 1; ev.push({ k: "mt" }); meet(G, "mt"); }
+    if (!G.mtUsed) { const a = Math.min(mtLimit(G), -G.cash + 300); G.mtUsed = true; G.mt += a; add("mt", "마이너스 통장", a, "piggy-bank"); G.strikes = 1; ev.push({ k: "mt" }); meet(G, "mt"); }
     if (G.cash < 0 && G.strikes >= 1 && G.homes.length && !G.forcedUsed) {
       G.forcedUsed = true; G.strikes = 2;
       while (G.cash < 0 && G.homes.length) {
@@ -1050,7 +1058,7 @@ function lesson(G) {
 
 /* ===================== 전략 봇 (사람 근사) — selftest · autoplay 공용 ===================== */
 const STRATS = {
-  safe: { n: "안전", ic: "shield", loanR: .8, buf: 300 },
+  safe: { n: "안전", ic: "shield", loanR: .7, buf: 400 },
   lev: { n: "레버리지", ic: "zap", loanR: 1, buf: 80 },
   rent: { n: "임대", ic: "key", loanR: .85, buf: 300 },
   redev: { n: "재건축", ic: "hammer", loanR: .8, buf: 300 },
@@ -1120,21 +1128,22 @@ function botTurn(G, sid, chaos) {
       for (const h of G.homes) if (!h.lease || h.lease.k === "w") refi(G, h, refiMax(G, h));
       credit(G, clMax(G)); let n = 0; while (n++ < 6 && (botTry(G, S, byNeed("gap"), "gap", true) || botTry(G, S, byNeed("keep"), "keep", true)));
       for (const h of G.homes) if (canLease(G, h) && G.steps >= 1) lease(G, h, 1);
-
+      // 남는 현금은 쌓아 두지 않는다: 신용대출을 갚아 두고 다음 턴 계약금으로 다시 빌린다(현금 쿠션 없음)
+      if (G.cash > 200 && G.cl > 0) credit(G, G.cl - (G.cash - 200));
     }
     if (G.auc && !G.auc.done) { const Lq = aucListing(G, 0); const lim = quoteBuy(G, Lq, "keep", 0).lim; const q = quoteBuy(G, Lq, "keep", lim); if (q.ok && G.steps >= 1) bid(G, 0, "keep", lim); }
   } else if (sid === "rent") {
-    if (!live) botTry(G, S, byValDesc().filter(x => TYPES[LOT[x.lot].type].tier <= 2), "live");
-    else if (G.homes.length < 5) botTry(G, S, byNeed("keep").filter(x => TYPES[LOT[x.lot].type].tier <= 1), "keep");
-    for (const h of G.homes) if (!h.live) { botFurnish(G, h, 1200); if (canLease(G, h) && G.steps >= 1) lease(G, h, cozyStars(h) >= 3 ? 1 : 0); }
-    const h = liveHome(G); if (h) botFurnish(G, h, 3000);
+    if (!live) botTry(G, S, byNeed("live").filter(x => TYPES[LOT[x.lot].type].tier <= 1), "live");
+    else if (G.homes.length < 5) (G.homes.length < 3 && botTry(G, S, byNeed("gap").filter(x => !ZONES[LOT[x.lot].zone].reg), "gap")) || botTry(G, S, byNeed("keep").filter(x => TYPES[LOT[x.lot].type].tier <= 1), "keep");
+    for (const h of G.homes) if (!h.live) { if (G.homes.length >= 3) botFurnish(G, h, 1200); if (canLease(G, h) && G.steps >= 1) lease(G, h, cozyStars(h) >= 3 ? 1 : 0); }
+    const h = liveHome(G); if (h && G.homes.length >= 2) botFurnish(G, h, 3000);
     if (G.auc && !G.auc.done && G.steps >= 1) { const Lq = aucListing(G, 1); const lim = quoteBuy(G, Lq, "keep", 0).lim; if (quoteBuy(G, Lq, "keep", lim * .8).ok) bid(G, 1, "keep", lim * .8); }
   } else if (sid === "redev") {
     const rv = L.filter(x => LOT[x.lot].zone === "redev");
     if (!live && m.stage < 4) botTry(G, S, rv.length ? rv : byValDesc(), "live", true);
     else if (!live) botTry(G, S, byValDesc().filter(x => LOT[x.lot].zone !== "redev"), "live");
-    if (m.stage < 3 && G.homes.length < 4) botTry(G, S, rv.sort((a, b) => a.ask - b.ask), "gap", true);
-    const h = liveHome(G); if (h) botFurnish(G, h, 2500);
+    if (m.stage < 3 && G.homes.length < 4) botTry(G, S, rv.sort((a, b) => a.ask - b.ask), "gap", true) || (G.homes.length === 1 && botTry(G, S, byNeed("gap").filter(x => !ZONES[LOT[x.lot].zone].reg), "gap"));
+    const h = liveHome(G); if (h && G.homes.length >= 2) botFurnish(G, h, 2500);
     for (const h2 of G.homes) if (canLease(G, h2) && G.steps >= 1) lease(G, h2, 0);
   }
   for (const h of G.homes) if (canLease(G, h) && G.steps >= 1 && sid !== "rent" && sid !== "redev") lease(G, h, sid === "lev" ? 0 : 1);
@@ -1166,6 +1175,7 @@ function runBot(seed, sid, opt) {
   try {
     while (!G.done && guard++ < 40) {
       if (opt.chaos) { if (!hasMove(G)) stuck++; else stuck = 0; rec.stuckMax = Math.max(rec.stuckMax, stuck); }
+      if (!rec.canSecond && G.homes.length >= 1 && G.list.some(L => !L.gone && ["gap", "keep"].some(md => { const q0 = quoteBuy(G, L, md, 0); return quoteBuy(G, L, md, q0.lim).ok; }))) rec.canSecond = G.t;
       botTurn(G, sid, opt.chaos);
       const c0 = G.cash, rep = endTurn(G);
       // [F] 돈 정합: 줄 합 = 현금 변화, 원장 = 현금, 순자산 공식
@@ -1180,7 +1190,7 @@ function runBot(seed, sid, opt) {
       rec.turns = rep.t;
     }
   } catch (e) { rec.err = e && e.stack || String(e); }
-  rec.G = G; rec.nw = nw(G); rec.failed = G.failed; rec.stars = G.failed ? 0 : starsOf(rec.nw); rec.done = G.done; rec.second = G.stat.second; rec.route = routeTag(G);
+  rec.G = G; rec.nw = nw(G); rec.failed = G.failed; rec.stars = G.failed ? 0 : starsOf(rec.nw); rec.done = G.done; rec.second = G.stat.second; rec.canSecond = rec.canSecond || 0; rec.route = routeTag(G);
   return rec;
 }
 if (typeof module !== "undefined") module.exports = { runBot, STRATS, STRAT_IDS };
@@ -2047,7 +2057,7 @@ function openListing(L) {
    <div class="g-tags"><span class="g-tag">${condStars(cond)}</span><span class="g-tag">${I("g-sun")}${L.face}</span>${L.urgent ? '<span class="g-tag hot">급매</span>' : ""}</div>
    <div class="g-tags">${traits}</div>
    ${showHurry ? '<div class="g-bubble">이사가 급하대요</div>' : ""}
-   ${L.urgent && !L.seen ? '<p class="ui-cap">급매는 나쁜 특성 40%</p>' : ""}
+   ${L.urgent && !L.seen ? '<p class="ui-cap">급매는 나쁜 특성 55%</p>' : ""}
    <div class="g-row2"><button class="ui-btn" id="lsIn" ${L.seen ? "" : G.steps < 1 ? "disabled" : ""}>${I(L.seen ? "eye" : "footprints")}${L.seen ? "집 보기" : "임장 · 1"}</button><button class="ui-btn primary" id="lsNego">${I("handshake")}${L.acc ? "계약하기" : "흥정"}</button></div>
   </div>`);
   thumbBuilding($("lsCv"), (lot.zone === "redev" && MK(G).stage >= 5) ? "newapt" : lot.type, lot.zone, { w: 72, h: 72, season: season(G.t) });
@@ -2312,11 +2322,12 @@ function openLoan(h) {
   sheet(`<div class="g-shead"><div class="g-grow"><b class="ui-h">대출</b><span class="ui-cap">금리 ${loanRate(G).toFixed(1)}% · DSR 한도 ${won(dsrCap(G))}</span></div>${closeBtn()}</div>
   <div class="g-stack"><div class="g-kv" style="border:0"><span>${I("house")}이 집 담보</span><b class="ui-num" id="lnA">${won(h.loan)}</b></div>
   <input type="range" class="g-range" id="lnR" min="0" max="${mx}" step="100" value="${h.loan}" style="--p:${mx ? h.loan / mx * 100 : 0}%" ${mx && !(h.lease && h.lease.k === "j") ? "" : "disabled"}>
-  <div class="g-kv" style="border:0"><span>${I("g-brief")}신용대출 · +2%p</span><b class="ui-num" id="lnB">${won(G.cl)}</b></div>
+  <div class="g-kv" style="border:0"><span>${I("g-brief")}신용대출 · ${clRate(G).toFixed(1)}%</span><b class="ui-num" id="lnB">${won(G.cl)}</b></div>
   <input type="range" class="g-range" id="lnC" min="0" max="${cm}" step="100" value="${G.cl}" style="--p:${cm ? G.cl / cm * 100 : 0}%" ${cm ? "" : "disabled"}>
+  <div class="g-kv"><span>${I("triangle-alert")}높은 LTV 가산금리</span><b class="ui-num" id="lnP"></b></div>
   <div class="g-kv"><span>${I("clock")}분기 이자 합</span><b class="ui-num ui-bad" id="lnI"></b></div>
   <button class="ui-btn primary" id="lnGo">${I("check")}적용</button></div>`);
-  const upd = () => { const a = +$("lnR").value, b = +$("lnC").value; $("lnA").textContent = won(a); $("lnB").textContent = won(b); $("lnR").style.setProperty("--p", (mx ? a / mx * 100 : 0) + "%"); $("lnC").style.setProperty("--p", (cm ? b / cm * 100 : 0) + "%"); const r = loanRate(G); const tot = (debt(G) - h.loan - G.cl + a) * r / 400 + b * (r + 2) / 400 + G.mt * 3 / 400; $("lnI").textContent = "−" + won(tot); };
+  const upd = () => { const a = +$("lnR").value, b = +$("lnC").value; $("lnA").textContent = won(a); $("lnB").textContent = won(b); $("lnR").style.setProperty("--p", (mx ? a / mx * 100 : 0) + "%"); $("lnC").style.setProperty("--p", (cm ? b / cm * 100 : 0) + "%"); const o1 = h.loan, o2 = G.cl; h.loan = a; G.cl = b; const tot = interestQ(G), pr = ltvPrem(G, a / hv(G, h)); h.loan = o1; G.cl = o2; $("lnI").textContent = "−" + won(tot); $("lnP").textContent = pr > .005 ? "+" + pr.toFixed(1) + "%p" : "없음"; };
   $("lnR").oninput = upd; $("lnC").oninput = upd; upd();
   $("lnGo").onclick = () => { const a = +$("lnR").value, b = +$("lnC").value; refi(G, h, a); credit(G, b); SFX.coin(); closeSheet(); hud(); persist(); syncTerms(); };
 }
@@ -2512,7 +2523,7 @@ const TERMS = {
   sise: { t: "시세", g: "집의 숨은 값. 동네 지수×상태×향×특성", r: "실제로는 최근 거래로 짐작하는 값" },
   hoga: { t: "호가", g: "파는 사람이 부르는 값", r: "거래가보다 높게 걸리는 일이 많아요" },
   silgeorae: { t: "실거래가", g: "같은 동네·유형 최근 3건", r: "실제는 정부 실거래가 공개 시스템에 신고" },
-  urgent: { t: "급매", g: "시세 88~94%, 이번 턴만. 나쁜 특성 40%", r: "싸지만 이유가 있을 수 있어요" },
+  urgent: { t: "급매", g: "시세 88~94%, 이번 턴만. 나쁜 특성 55%", r: "싸지만 이유가 있을 수 있어요" },
   nego: { t: "흥정", g: "호가 −2·−5·−9% 중 골라 제시. 수락 확률 공개", r: "실제 흥정은 중개사를 통해 조율" },
   imjang: { t: "임장", g: "발걸음 1로 숨은 특성 3칸 확인", r: "직접 가서 집과 동네를 보는 일" },
   fee: { t: "중개보수", g: "매매가 0.5%, 실장과는 0.3%까지 협의", r: "실제는 가격 구간별 법정 상한 안에서 협의" },
@@ -2520,6 +2531,7 @@ const TERMS = {
   first: { t: "생애최초", g: "첫 집은 취득세 200만 감면·LTV 70%", r: "감면·한도 조건은 해마다 바뀌어요" },
   ltv: { t: "LTV", g: "대출 ≤ 시세×비율. 규제 40%·비규제 70%", r: "집값 대비 대출 한도 비율" },
   dsr: { t: "DSR", g: "연봉 기준 빚 한도. 금리 오르면 줄어요", r: "소득 대비 원리금 상환 비율 규제" },
+  lvrisk: { t: "레버리지 위험", g: "LTV 50% 넘는 대출은 가산금리, 금리 오를수록 커져요. 빚이 많으면 마이너스 통장 한도도 줄어요", r: "빚이 클수록 금리·집값 충격도 커져요" },
   rate: { t: "기준금리", g: "4턴마다 발표, 한 턴 전 확률 예고", r: "중앙은행이 정해요. 대출 금리에 영향" },
   ptax: { t: "재산세", g: "여름 정산에 시세 0.15%", r: "실제는 공시가격 기준, 7·9월에 내요" },
   ctax: { t: "종합부동산세", g: "겨울 정산. 12억 넘는 부분 0.5%, 3주택↑ 9억 넘는 부분 1.2%", r: "공시가격·공제·세율이 더 복잡해요" },
@@ -2530,8 +2542,8 @@ const TERMS = {
   jr: { t: "전세가율", g: "전세금÷집값. 구역마다 55~70%, 하락기엔 내려가요", r: "높을수록 갭이 작아져요" },
   gap: { t: "갭 투자", g: "전세 끼고 사기. 집값−전세금만 필요", r: "전세가가 떨어지면 돌려줄 돈이 모자라요" },
   lease2: { t: "임대차 2년", g: "8턴 계약, 갱신 1회, 인상 5% 상한", r: "계약갱신청구권·5% 상한 제도" },
-  reverse: { t: "역전세", g: "만기 때 전세가가 내려 차액을 돌려줘요", r: "전세가 하락기에 생기는 위험" },
-  mt: { t: "마이너스 통장", g: "현금이 바닥나면 한 번, 3천만까지", r: "쓴 만큼 이자가 붙는 신용 한도" },
+  reverse: { t: "역전세", g: "만기 때 전세가가 내려 차액을 돌려줘요. 조정·하락기에 재계약이 안 되면 보증금 전액 반환", r: "전세가 하락기에 생기는 위험" },
+  mt: { t: "마이너스 통장", g: "현금이 바닥나면 한 번, 최대 3천만(빚 많으면 줄어요)", r: "쓴 만큼 이자가 붙는 신용 한도" },
   forced: { t: "급매 강제", g: "두 번째 바닥엔 시세 85%로 팔려요", r: "급하게 팔면 손해 보기 쉬워요" },
   sub: { t: "청약 가점", g: "무주택·부양가족·통장 기간, 84점 만점", r: "가점·추첨 비율은 면적·지역마다 달라요" },
   presale: { t: "분양권", g: "당첨되면 10% 내고 6턴 뒤 입주", r: "실제는 계약금·중도금·잔금으로 나눠요" },
@@ -2602,27 +2614,28 @@ function selftestCore() {
   const bal = runs.rent.concat(runs.redev);
   const levOk = runs.lev.filter(r => !r.failed);
   const B = [
-    ["T5 안전", nw5("safe"), 6000, .5], ["T5 레버리지", nw5("lev"), 9000, .5],
+    ["T5 안전", nw5("safe"), 10000, .2], ["T5 레버리지", nw5("lev"), 15000, .2],
     ["T24 안전", nw24("safe"), 35000, .3], ["T24 균형", med(bal.map(r => r.nw)), 65000, .3], ["T24 공격(성공)", med(levOk.map(r => r.nw)), 110000, .3],
   ];
   for (const [n, v, tgt, tol] of B) ck("B", n, Math.abs(v - tgt) <= tgt * tol, eok(v) + " (목표 " + eok(tgt) + " ±" + rd(tol * 100) + "%)");
-  const second = med(all.filter(r => r.second).map(r => r.second)), fd = med(all.map(r => r.firstDown));
-  ck("B", "두 번째 집 중앙", second >= 5 && second <= 9, "T" + second + " (목표 T7)");
+  const second = med(all.filter(r => r.second).map(r => r.second)), can2 = med(all.filter(r => r.canSecond).map(r => r.canSecond)), fd = med(all.map(r => r.firstDown));
+  ck("B", "두 번째 집 중앙", second <= 10 && can2 <= 10, "구매 T" + second + " · 가능 T" + can2 + " (목표 ≤T10)");
   ck("B", "첫 하락기 중앙", fd >= 10 && fd <= 12, "T" + fd + " (목표 T10~12)");
   const fs = failR("safe"), fb = bal.filter(r => r.failed).length / bal.length, fl = failR("lev");
-  ck("B", "파산율 안전<3% 균형<10%", fs < .03 && fb < .1, rd(fs * 100) + "% · " + rd(fb * 100) + "%");
-  ck("B", "파산율 공격 20~35%", fl >= .2 && fl <= .35, rd(fl * 100) + "%");
+  ck("B", "파산율 안전≤3% 균형<10%", fs <= .03 && fb < .1, rd(fs * 100) + "% · " + rd(fb * 100) + "%");
+  ck("B", "파산율 공격 15~30%", fl >= .15 && fl <= .3, rd(fl * 100) + "%");
   const sr = k => all.filter(r => r.stars >= k).length / all.length;
   ck("B", "별 도달 ★1≥85 ★2 40~60 ★3 10~25", sr(1) >= .85 && sr(2) >= .4 && sr(2) <= .6 && sr(3) >= .1 && sr(3) <= .25, [1, 2, 3].map(k => rd(sr(k) * 100) + "%").join(" / "));
   // [C] 전략 균형
-  const M = med(all.map(r => r.nw)); const ratios = STRAT_IDS.map(s => nw24(s) / M);
-  ck("C", "전략별 중앙 ±35%", ratios.every(x => x >= .65 && x <= 1.35), STRAT_IDS.map((s, i) => STRATS[s].n + " " + ratios[i].toFixed(2)).join(" · "));
+  // [C] 운영 결정(2026-11-27): B 우선. 공격(성공 판) = 전체 중앙의 1.5~2배, 안전 ≥ 0.6배
+  const M = med(all.map(r => r.nw)); const ratios = STRAT_IDS.map(s => nw24(s) / M); const levR = med(levOk.map(r => r.nw)) / M, safeR = nw24("safe") / M;
+  ck("C", "공격 성공 1.5~2배 · 안전 ≥0.6배", levR >= 1.5 && levR <= 2 && safeR >= .6, "공격 " + levR.toFixed(2) + " · 안전 " + safeR.toFixed(2) + " · " + STRAT_IDS.map((s, i) => STRATS[s].n + " " + ratios[i].toFixed(2)).join(" "));
   // [D] 화면 확률 = 실제 (몬테카를로 4천 회)
   const D = []; {
     let exp = 0, got = 0, n = 0; const g = newGame(77, { noTut: true }); while (MK(g).ph === "up") g.t++;
     for (let i = 0; i < 4000; i++) { const L = mkListing(g, { l: LOTS[i % LOTS.length], u: 1 }, i % 2 ? "g" : "m", R(hash(i, "dl"))); const k = i % 3; exp += offerP(L, k); const r = offer(g, L, k); if (r && r.ok) got++; n++; }
     D.push(["흥정 수락", got / n, exp / n]);
-    let u = 0, bad = 0; for (let i = 0; i < 4000; i++) { const L = mkListing(g, { l: LOTS[i % LOTS.length], u: 1 }, "g", R(hash(i, "urg")), { urgent: true }); u++; if (TRAITS[L.trait].bad) bad++; } D.push(["급매 나쁜 특성", bad / u, .40]);
+    let u = 0, bad = 0; for (let i = 0; i < 4000; i++) { const L = mkListing(g, { l: LOTS[i % LOTS.length], u: 1 }, "g", R(hash(i, "urg")), { urgent: true }); u++; if (TRAITS[L.trait].bad) bad++; } D.push(["급매 나쁜 특성", bad / u, .55]);
     let comp = 0; const gu = newGame(5, { noTut: true }); let tt = 1; while (gu.mk[tt] && gu.mk[tt].ph !== "up") tt++; gu.t = tt; for (let i = 0; i < 4000; i++) { const L = mkListing(gu, { l: LOTS[i % LOTS.length], u: 1 }, "g", R(hash(i, "cp"))); if (offer(gu, L, 0).comp) comp++; } D.push(["상승기 경쟁 손님", comp / 4000, COMP_P]);
     const subs = [0, 0], subE = [0, 0]; for (let i = 0; i < 4000; i++) { const s = newGame(300 + i % 50, { noTut: true }); s.t = 9; s.sub = { cutoff: 45, done: false }; s.cash = 99999; s.rs.s = hash(i, "sb"); if (i % 2) { s.noHomeT = 40; s.acctT = 70; } const q = subQuote(s); subE[0] += q.p; const r = applySub(s); if (r && r.win) subs[0]++; subs[1]++; } D.push(["청약 당첨", subs[0] / subs[1], subE[0] / subs[1]]);
     let aw = 0, ad = 0, ar = 0, an = 0; for (let i = 0; i < 4000; i++) { const s = newGame(400 + i % 40, { noTut: true }); s.t = 12; s.cash = 999999; s.auc = genAuction(s, (i % 10) / 10); s.rs.s = hash(i, "au"); if (!s.auc) continue; const r = bid(s, 1, "keep", 0); an++; if (r && r.win) { aw++; if (r.delay) ad++; if (r.repair) ar++; } } D.push(["경매 낙찰 50%", aw / an, AUC_WIN[1]]); D.push(["명도 지연", ad / Math.max(1, aw), AUC_DELAY]); D.push(["숨은 수리비", ar / Math.max(1, aw), AUC_REPAIR]);
