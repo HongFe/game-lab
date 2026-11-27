@@ -1,10 +1,15 @@
-/* NHC game-lab 보상형 광고 모듈 v1 (2026-11-27) — 프로토: 실제 SDK 없이 회색 박스 + 카운트다운 스텁
-   나중에 실제 광고를 붙일 때는 playStub() 자리만 SDK 호출로 바꾼다(보상 판정·한도·쿨다운은 그대로)
+/* NHC game-lab 보상형 광고 모듈 v1.1 (2026-11-27) — 어댑터 방식
+   - 기본 어댑터 "stub": 회색 박스 + 카운트다운(외부 스크립트 없음 — game-lab 오프라인 규칙 그대로). 개발·플레이테스트용
+   - 플랫폼 출시 빌드에서만 그 플랫폼 SDK <script> 1줄과 window.NHC_AD_ADAPTER = "crazygames" | "poki" 를 이 모듈보다 앞에 넣는다
+     (게임 본체 game/index.html 은 바꾸지 않는다. 출시용 사본은 build/<플랫폼>/ 에 따로 만든다)
+   - SDK가 없거나 실패하면 보상 없이 onSkipped({reason:"unavailable"|"error"}) — 게임은 그대로 진행(우아한 실패). 출시 빌드에서 stub으로 몰래 보상하지 않는다
+   - 한도(하루 5회)·쿨다운(60초)·코인 지급은 어댑터와 무관하게 이 모듈이 판정. 완료 여부는 stub은 두 시계, 실제 SDK는 SDK 콜백이 판정
+   - 실제 SDK 함수 이름은 출시 직전에 각 플랫폼 최신 문서로 다시 확인할 것(아래 어댑터는 2026-11 기준 알려진 형태)
 
    쓰는 법 (coin-system.js 가 먼저 있어야 코인이 들어간다):
      RewardedAd.show({ coins: 5, onComplete: function (coins) {}, onSkipped: function (info) {} })
        → 끝까지 보고 '광고 종료'를 누르면 coins 지급 후 onComplete(coins)
-       → 창 전환·ESC·한도 초과·쿨다운 중이면 지급 없이 onSkipped({reason}) — reason: "hidden" | "esc" | "limit" | "cooldown" | "busy"
+       → 창 전환·ESC·한도 초과·쿨다운 중이면 지급 없이 onSkipped({reason}) — reason: "hidden" | "esc" | "limit" | "cooldown" | "busy" | "unavailable" | "error" | "skipped"
      RewardedAd.status() → { left: 오늘 남은 횟수, cooldown: 남은 쿨다운 초, canShow: bool, label: 버튼에 쓸 짧은 글 }
 
    규칙: 하루 5회(자정에 리셋), 직전 광고 완료 후 60초 쿨다운, 기본 15초
@@ -26,7 +31,8 @@
     var o = load(), left = Math.max(0, PER_DAY - o.count);
     var cd = Math.max(0, Math.ceil(COOLDOWN - (Date.now() - (o.last || 0)) / 1000));
     if (o.last > Date.now()) cd = COOLDOWN;   // 시계를 뒤로 돌린 경우
-    return { left: left, cooldown: cd, canShow: left > 0 && cd === 0 && !busy, label: left <= 0 ? "오늘 광고 한도 초과" : cd > 0 ? cd + "초 뒤 다시" : busy ? "광고 중" : "광고 보기" };
+    var av = adapter().a;
+    return { left: left, cooldown: cd, canShow: !!av && left > 0 && cd === 0 && !busy, label: !av ? "광고 준비 안 됨" : left <= 0 ? "오늘 광고 한도 초과" : cd > 0 ? cd + "초 뒤 다시" : busy ? "광고 중" : "광고 보기" };
   }
 
   var CSS = ".gl-ad{position:fixed;inset:0;z-index:2147483000;background:#0b0d12;color:#f2f4f8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;font:400 14px/1.5 -apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;animation:gl-ad-in 200ms cubic-bezier(0,0,.2,1)}" +
@@ -77,9 +83,35 @@
     };
   }
 
+  // ── 어댑터: play(sec, coins, done(ok, reason)) ──
+  var ADAPTERS = {
+    stub: { available: function () { return true; }, play: playStub },
+    crazygames: {   // CrazyGames HTML5 SDK v3 — 출시 빌드에서 SDK 스크립트를 먼저 넣는다
+      available: function () { return !!(window.CrazyGames && window.CrazyGames.SDK && window.CrazyGames.SDK.ad); },
+      play: function (sec, coins, done) {
+        var fin = false, end = function (ok, r) { if (!fin) { fin = true; done(ok, r); } };
+        try { window.CrazyGames.SDK.ad.requestAd("rewarded", { adStarted: function () {}, adFinished: function () { end(true); }, adError: function () { end(false, "error"); } }); }
+        catch (e) { end(false, "error"); }
+      },
+    },
+    poki: {   // Poki SDK — rewardedBreak() 가 Promise<boolean>(끝까지 봤는지)
+      available: function () { return !!(window.PokiSDK && window.PokiSDK.rewardedBreak); },
+      play: function (sec, coins, done) {
+        try { window.PokiSDK.rewardedBreak().then(function (ok) { done(!!ok, ok ? null : "skipped"); }, function () { done(false, "error"); }); }
+        catch (e) { done(false, "error"); }
+      },
+    },
+  };
+  function adapter() {
+    var name = window.NHC_AD_ADAPTER || "stub", a = ADAPTERS[name];
+    return { name: name, a: a && a.available() ? a : null };
+  }
+
   window.RewardedAd = {
     PER_DAY: PER_DAY, COOLDOWN: COOLDOWN, DURATION: DURATION,
     status: status,
+    adapter: function () { var x = adapter(); return x.a ? x.name : "none"; },
+    register: function (name, impl) { ADAPTERS[name] = impl; },   // 새 플랫폼(예: Capacitor AdMob) 붙일 때
     show: function (opt) {
       opt = opt || {};
       var coins = Math.max(0, Math.floor(opt.coins == null ? 5 : opt.coins)), sec = Math.max(1, opt.duration || DURATION);
@@ -88,8 +120,10 @@
       if (busy) return skip("busy");
       if (s.left <= 0) return skip("limit");
       if (s.cooldown > 0) return skip("cooldown");
+      var ad = adapter();
+      if (!ad.a) return skip("unavailable");   // 출시 빌드인데 SDK가 없음 → 보상 없이 게임 계속
       busy = true;
-      playStub(sec, coins, function (ok, reason) {
+      ad.a.play(sec, coins, function (ok, reason) {
         busy = false;
         if (!ok) { skip(reason); return; }
         var o = load(); o.count++; o.last = Date.now(); save(o);
