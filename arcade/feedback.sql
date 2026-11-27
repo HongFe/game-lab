@@ -1,3 +1,4 @@
+-- 다시 실행해도 안전: 표는 if not exists, 정책은 지우고 다시 만든다. 기록(행)은 절대 지우지 않는다 (2026-11-27 사용자 결정: 업데이트해도 기록은 쌓는다)
 -- NHC POCKET 오락실 DB (Supabase Postgres) · 2026-11-26
 -- 사용자(테스터)와 관리자를 나눈다:
 --   테스터(anon 키) : 쓰기만 (피드백·비교 투표·플레이 기록)
@@ -53,8 +54,10 @@ alter table compare_votes enable row level security;
 alter table sessions      enable row level security;
 
 -- 테스터: 쓰기만
+drop policy if exists "tester insert feedback" on feedback;
 create policy "tester insert feedback" on feedback      for insert to anon with check (true);
 create policy "tester insert votes"    on compare_votes for insert to anon with check (true);
+drop policy if exists "tester insert sessions" on sessions;
 create policy "tester insert sessions" on sessions      for insert to anon with check (true);
 -- 관리자: 읽기
 create policy "admin read feedback"    on feedback      for select to authenticated using (true);

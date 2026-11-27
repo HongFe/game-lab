@@ -43,6 +43,7 @@ game-designer (아이디어·점수 → 18점 이상 승격 → brief.md)
 - 관리자 `arcade/admin.html`: 게임별 판정(테스터 5명부터), 테스터 표, 의견 표, 비교 투표, CSV/JSON 내보내기, 카톡으로 받은 피드백 텍스트 붙여넣기
 - 저장: `arcade/config.js` feedback=local(기본: 이 기기 + 텍스트 공유) / supabase(공유 DB). `arcade/feedback.sql` — 테스터는 쓰기만, 읽기는 로그인한 관리자만(RLS)
 - IP·이메일·실명은 받지 않는다
+- **기록은 리셋하지 않고 쌓는다** (2026-11-27 사용자 결정): 게임·오락실을 업데이트해도 sessions·feedback·compare_votes(로컬 `nhcpocket_*`, 공유 DB 둘 다)는 지우거나 키를 바꾸지 않는다. 행마다 `version`이 붙어 있으니 빌드별 비교는 집계에서 나눈다. 표 구조 변경은 열 추가만(drop·truncate 금지)
 - 외부 업로드·계정·결제·새 패키지 설치는 사용자에게 먼저 묻는다
 - Git: `~/Desktop/NHC/shared/git/standard.md`. 사용자가 "커밋해줘"라고 할 때만 커밋
 
