@@ -614,13 +614,18 @@ const scoreOf = d => (d.goal ? 1e9 : 0) + (d.endless ? 5e8 + d.endless * 1e6 : 0
 const better = (a, b) => !b || scoreOf(a) > scoreOf(b);
 function resultLines(id, d) {
   const st = d.stars ? "★".repeat(d.stars) + "☆".repeat(Math.max(0, 3 - d.stars)) : "";
-  const sc = d.score ? `점수 ${Math.round(d.score).toLocaleString()}` : "";
+  const sc = d.score && !["G024", "G025", "G031", "G032"].includes(id) ? `점수 ${Math.round(d.score).toLocaleString()}` : "";
   const L = d.level || 1;
   const main = {
     G001: `레벨 ${L} 탈출`, G002: `웨이브 ${L} 돌파`, G004: `레벨 ${L} 완성`, G006: `${L}번째 가게 입장`, G011: `노선 ${L} 출근`,
     G003: `${L}단계 · 수익률 ${d.ret >= 0 ? "+" : ""}${Math.round(d.ret || 0)}%`,
     G012: d.goal ? `🌆 펜트하우스 도착` : `${L}층까지 갈아탐`,
     G013: d.endless ? `무한 출근 ${d.endless}역` : `${L}역 · ${d.boarded ?? "?"}/${d.total ?? "?"}명 탑승`,
+    G021: `레벨 ${L} 주차 완료`, G022: `레벨 ${L} 기차 출발`,
+    G024: `${L}단계 · ×${Math.round(d.score || 0).toLocaleString()} 매도`,
+    G025: `${L}단계 · 연봉 +${Math.round((d.score || 0) * 10) / 10}%`,
+    G031: `${L}단계 · 승진 ${Math.round(d.score || 0).toLocaleString()}점`,
+    G032: `순자산 ${Math.round(d.score || 0).toLocaleString()}`,
   }[id] || `레벨 ${L} 클리어`;
   const sub = [st, sc, id === "G012" && d.min ? `${d.min}분` : "", id === "G011" && d.combo ? `콤보 ${d.combo}` : ""].filter(Boolean).join(" · ");
   return { main, sub };
