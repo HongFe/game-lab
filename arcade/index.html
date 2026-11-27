@@ -625,7 +625,7 @@ function resultLines(id, d) {
     G024: `${L}단계 · ×${Math.round(d.score || 0).toLocaleString()} 매도`,
     G025: `${L}단계 · 연봉 +${Math.round((d.score || 0) * 10) / 10}%`,
     G031: `${L}단계 · 승진 ${Math.round(d.score || 0).toLocaleString()}점`,
-    G032: `순자산 ${Math.round(d.score || 0).toLocaleString()}`,
+    G032: (d.score || 0) >= 10000 ? `${d.turn ? d.turn + "턴 · " : ""}순자산 ${(d.score / 10000).toFixed(2)}억` : `${d.turn ? d.turn + "턴 · " : ""}순자산 ${Math.round(d.score || 0).toLocaleString()}만`,
   }[id] || `레벨 ${L} 클리어`;
   const sub = [st, sc, id === "G012" && d.min ? `${d.min}분` : "", id === "G011" && d.combo ? `콤보 ${d.combo}` : ""].filter(Boolean).join(" · ");
   return { main, sub };
