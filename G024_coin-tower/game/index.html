@@ -89,6 +89,8 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 .g-txt p{font-size:var(--ui-t2);line-height:1.5;color:var(--ui-muted);margin:0}
 .g-item.no{box-shadow:none;background:transparent;outline:1px dashed var(--ui-line);outline-offset:-1px}
 .g-item.no .ui-em{color:var(--ui-muted)}
+#box .ui-badge{font-size:var(--ui-t2);height:24px}
+#box .ui-level .ui-stars .ui-icon{width:12px;height:12px}
 .g-sec{font-size:var(--ui-t2);font-weight:700;color:var(--ui-muted);margin:var(--ui-s2) 0 0;text-align:left}
 /* 대표 그림: 흔들리는 코인 탑 */
 .g-hero{width:112px;height:112px;border-radius:var(--ui-r3);background:radial-gradient(circle at 50% 30%,#1f2a52,#121731);position:relative;overflow:hidden;box-shadow:var(--ui-shadow1)}
@@ -99,7 +101,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;displa
 @media (prefers-reduced-motion:reduce){.g-hero .t{animation:none}}
 
 /* ── 게임 화면 연출 ── */
-.stamp{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-12deg) scale(2.2);border:5px solid var(--gold);color:var(--gold);font:900 36px var(--ui-font);padding:4px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.3,1.6,.6,1),opacity .2s;white-space:nowrap;z-index:8;background:rgba(11,14,26,.35)}
+.stamp{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) rotate(-12deg) scale(2.2);border:5px solid var(--gold);color:var(--gold);font:700 36px var(--ui-font);padding:4px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:transform .25s cubic-bezier(.3,1.6,.6,1),opacity .2s;white-space:nowrap;z-index:8;background:rgba(11,14,26,.35)}
 .stamp.on{opacity:1;transform:translate(-50%,-50%) rotate(-12deg) scale(1)}
 .stamp.bad{border-color:var(--dn);color:var(--dn)}
 .ui-toast.top{top:max(132px,env(safe-area-inset-top))}
@@ -309,14 +311,15 @@ UI.toast=function(m,ms,pos){var t=document.getElementById('ui-toast');if(!t){t=d
 </div>
 <script>
 // ───────── 핵심 로직 (DOM 없음: 플레이·봇·자체 검사가 같이 쓴다) ─────────
-const BW = 375, W0 = 225, BH = 26, DT = 1 / 120, XMIN = 40, XMAX = 335, VMAX = 320, SPAWN_WAIT = .25, WARN_MIN = 3, SWAY_AMP = 14, SWAY_T = 1.8;
-const STAGES = [ // 🎯·★★·★★★ 배수는 사람 근사 봇 곡선으로 맞춘 값 (brief 표 대비: 자체 검사 [D]·[E] 참고)
-  { n: 1, v: 160, b0: 4, bk: .3, goal: 5, s2: 12, s3: 30, pump: 0, drop: 0, whale: 0, rug: 0, list: 0 },
-  { n: 2, v: 175, b0: 4, bk: .4, goal: 15, s2: 40, s3: 120, pump: [2, 3], drop: 0, whale: 0, rug: 0, list: 0 },
-  { n: 3, v: 190, b0: 5, bk: .4, goal: 40, s2: 90, s3: 200, pump: [2, 2], drop: [2, 3], whale: 0, rug: 0, list: 0 },
-  { n: 4, v: 205, b0: 5, bk: .5, goal: 50, s2: 100, s3: 200, pump: [1, 2], drop: [1, 2], whale: [1, 2], rug: 0, list: 0 },
-  { n: 5, v: 215, b0: 5, bk: .5, goal: 80, s2: 250, s3: 800, pump: [1, 2], drop: [1, 2], whale: [1, 1], rug: [1, 1], list: 0, rugAt: [5, 9], whaleAt: [10, 18] },
-  { n: 6, v: 225, b0: 6, bk: .5, goal: 400, s2: 1000, s3: 3000, pump: [1, 2], drop: [1, 2], whale: [1, 1], rug: [1, 1], list: 1, listAt: [11, 14] },
+const PERF_BASE = .5, BW = 375, W0 = 225, BH = 26, DT = 1 / 120, XMIN = 40, XMAX = 335, VMAX = 320, SPAWN_WAIT = .25, WARN_MIN = 3, SWAY_AMP = 14, SWAY_T = 1.8;
+const STAGES = [ // 🎯·★★·★★★ 배수·흔들림·사건 위치는 '보통 손' 사람 근사 봇 곡선으로 맞춘 값 (자체 검사 [D]·[E]·[F])
+  // 사건 위치(xxAt)는 그 단계 목표 도달 층 근처~뒤: 목표를 넘긴 뒤 '예고 보고 팔까'가 한 번 더 오게
+  { n: 1, v: 160, b0: 4, bk: 0.5, goal: 6, s2: 15, s3: 40, pump: 0, drop: 0, whale: 0, rug: 0, list: 0 },
+  { n: 2, v: 175, b0: 4, bk: 0, goal: 12, s2: 40, s3: 120, pump: [2, 3], drop: 0, whale: [1, 1], whaleV: 20, whaleAt: [9, 14], rug: 0, list: 0 },
+  { n: 3, v: 190, b0: 3, bk: 0.3, goal: 15, s2: 40, s3: 100, pump: [2, 2], drop: [2, 3], whale: [1, 1], whaleV: 20, whaleAt: [10, 16], rug: 0, list: 0 },
+  { n: 4, v: 205, b0: 1, bk: 0.1, goal: 20, s2: 45, s3: 100, pump: [1, 2], drop: [1, 2], whale: [1, 2], whaleAt: [11, 22], rug: 0, list: 0 },
+  { n: 5, v: 215, b0: 1, bk: 0, goal: 25, s2: 50, s3: 100, pump: [1, 2], drop: [1, 2], whale: [1, 1], rug: [1, 1], list: 0, rugAt: [13, 20], whaleAt: [13, 21] },
+  { n: 6, v: 225, b0: 2, bk: 0.1, goal: 50, s2: 150, s3: 500, pump: [1, 2], drop: [1, 2], whale: [1, 1], rug: [1, 1], list: 1, listAt: [13, 21], rugAt: [14, 25], whaleAt: [14, 25] },
 ];
 const ENDLESS = { n: 7, v: 230, b0: 6, bk: .6, goal: 0, s2: 0, s3: 0, endless: true };
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -347,9 +350,13 @@ function makePlan(seed, c, body) {
       else drops[f] = { side: R() < .5 ? -1 : 1, frac: .2 + R() * .15 };
       f += 4 + ri(0, 1); }
   } else {
-    if (c.list) { const f = place("list", ...(c.listAt || [8, 12]), 1, 0); for (let j = 0; j < 3; j++) kinds[f + j] = "list"; for (let j = -1; j <= 3; j++) used.add(f + j); }
-    for (let i = 0; i < cnt(c.rug); i++) place("rug", ...(c.rugAt || [6, 16]), 2, body.rugV);
-    for (let i = 0; i < cnt(c.whale); i++) place("whale", ...(c.whaleAt || [6, 18]), 2, body.whaleV);
+    // 사건 놓는 순서도 시드로 섞는다(먼저 놓인 사건이 자리를 잡아 배치가 한 가지로 굳지 않게)
+    const jobs = [];
+    if (c.list) jobs.push(() => { const f = place("list", ...(c.listAt || [8, 12]), 1, 0); if (f) for (let j = 0; j < 3; j++) kinds[f + j] = "list"; });
+    for (let i = 0; i < cnt(c.rug); i++) jobs.push(() => place("rug", ...(c.rugAt || [6, 16]), 2, body.rugV));
+    for (let i = 0; i < cnt(c.whale); i++) jobs.push(() => place("whale", ...(c.whaleAt || [6, 18]), 2, c.whaleV || body.whaleV)); // 2·3단계는 작은 고래(+20)
+    for (let i = jobs.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [jobs[i], jobs[j]] = [jobs[j], jobs[i]]; }
+    jobs.forEach(f => f());
     const np = cnt(c.pump); for (let i = 0, tries = 0; i < np && tries < 80; tries++) { const f = ri(4, 16); if (kinds[f] !== "coin" || kinds[f - 1] === "pump" || used.has(f)) continue; kinds[f] = "pump"; i++; }
     const nd = cnt(c.drop); for (let i = 0, tries = 0; i < nd && tries < 80; tries++) { const f = ri(4, 18); if (drops[f] || drops[f - 1] || drops[f + 1] || used.has(f) || kinds[f] !== "coin") continue; drops[f] = { side: R() < .5 ? -1 : 1, frac: .2 + R() * .15 }; i++; }
   }
@@ -403,7 +410,7 @@ function place(s, E) {
   s.floors = i; s.tower.push(nb); s.mult *= mul; if (gotDrop) s.gotDrops++;
   let gaza = false;
   if (perfect) { s.streak++; s.perfects++; if (s.streak % 3 === 0) { gaza = true; nb.w = Math.min(W0, nb.w + .1 * W0); } } else s.streak = 0;
-  const add = perfect ? -6 : baseAt(s, i) + 40 * Math.abs(d) / w;
+  const add = perfect ? baseAt(s, i) * PERF_BASE : baseAt(s, i) + 40 * Math.abs(d) / w; // 딱도 기본분의 절반은 더한다(높이 자체가 압박)
   if (m.kind === "lock") s.locked = Math.max(s.locked, .3 * s.mult * 1000);
   if (m.kind === "list") s.listing++;
   s.dropNow = null; s.lastDrop = s.t;
@@ -412,7 +419,7 @@ function place(s, E) {
   if (s.over) return;
   for (const e of evHitting(s, i)) { // 예고된 사건이 친다
     const before = s.S; s.warned = s.warned.filter(x => x !== e);
-    if (e.t === "whale" && s.body.whaleM > 1) { s.mult *= s.body.whaleM; s.eaten++; }
+    if (e.t === "whale" && s.body.whaleM > 1 && !s.c.whaleV) { s.mult *= s.body.whaleM; s.eaten++; }
     s.hitLog.push({ t: e.t, val: e.val, at: s.t, warnAt: e.warnAt, placesBetween: i - e.warn });
     E && E("hit", { e }); bump(s, e.val, e.t, E); e.dS = s.over ? e.val : s.S - before; if (s.over) return;
   }
@@ -469,7 +476,9 @@ function botPlay(seed, n, o, bodyK, hook) {
 const nextRisk = s => s.S + baseAt(s, s.floors + 1) + evNextVal(s);
 function humanPolicy(s) { const c = s.c; if (c.endless) return nextRisk(s) >= 88;
   if (s.mult >= c.s3) return true; if (s.mult >= c.goal) return nextRisk(s) >= 88; return nextRisk(s) >= 95; }
-const HUMAN = { sxBy: [18, 15, 12, 6, 4, 6.5], sig: .025, late: .1, lateMs: .06, comp: .7, react: .35, policy: humanPolicy };
+const HUMAN = { sx: 12, sig: .025, late: .1, lateMs: .06, comp: .7, react: .35, policy: humanPolicy };
+const SKILLED = { sx: 6, sig: .02, late: .1, lateMs: .06, comp: .85, react: .35, policy: humanPolicy }; // 숙련 손 (딱 약 60%)
+const CLUMSY = { sx: 18, sig: .035, late: .1, lateMs: .06, comp: .5, react: .35, policy: humanPolicy }; // 서툰 손
 const PERFECT = { sig: 0, comp: 1, react: .35, policy: s => s.c.endless ? s.floors >= 30 : s.mult >= s.c.s3 };
 
 // ───────── 자체 검사 (로직만: 브라우저·node 공용) ─────────
@@ -546,25 +555,41 @@ function selftestCore(extra) {
   { const thr = perfThr(.2 * W0, VMAX); let okAll = true; for (const n of [...SN, 7]) { const v = Math.min(VMAX, cfgOf(n).v * Math.pow(1.02, 60)); if (perfThr(.2 * W0, v) < v * .015) okAll = false; }
     chk(okAll && thr >= VMAX * .015, `딱 기준 ${thr.toFixed(2)}px ≥ 최고 속도 ${VMAX}px/초 × 15ms = ${(VMAX * .015).toFixed(2)}px`); }
 
+  // 사건 위치: 목표 뒤 고민 · 배치 다양성 · 2·3단계 작은 고래로 존버가 쓰임
+  { const rows = []; let ok = true; for (const n of [2, 3, 4, 5, 6]) { let pre = 0, all = 0; for (let seed = 301; seed <= 340; seed++) { const r = botPlay(seed, n, HUMAN); for (const e of r.s.plan.ev) { if (e.warnAt === undefined) continue; all++; if (r.goalF === null || e.warn < r.goalF) pre++; } } rows.push(`${n}단계 ${pre}/${all}`); if (pre > all * .5) ok = false; }
+    chk(ok, `목표 전에 예고된 사건 비율(보통 손) ≤ 50%: ${rows.join(" · ")}`); }
+  { let ok = true; const rows = []; for (const n of [4, 5, 6]) { const lay = new Map(); for (let seed = 1; seed <= 100; seed++) { const k = makePlan(seed, cfgOf(n), bodyOf(n)).ev.map(e => e.t + e.hit).join(","); lay.set(k, (lay.get(k) || 0) + 1); } const mx = Math.max(...lay.values()); rows.push(`${n}단계 ${lay.size}가지·최다 ${mx}%`); if (mx > 10) ok = false; }
+    chk(ok, `사건 배치 다양성(시드 1~100, 같은 배치 ≤ 10%): ${rows.join(" · ")}`); }
+  { let used = 0, n2 = 0; for (const n of [2, 3]) for (let seed = 301; seed <= 340; seed++) { const r = botPlay(seed, n, { ...HUMAN, policy: null }); if (r.s.jonUsed) used++; n2++; }
+    const small = [2, 3].every(n => makePlan(1, cfgOf(n), bodyOf(n)).ev.some(e => e.t === "whale" && e.val === 20));
+    chk(small && used > 0, `2·3단계 작은 고래(+20) 있음 ${small} · 안 파는 보통 손 ${n2}판 중 존버 발동 ${used}판`); }
+
   // [D] 사람 근사 봇
-  out.push("", "[D] 사람 근사 봇 (탭 σ 25ms + 10%는 +60ms, 흔들림 보정 70%, 반응 0.35초, 자리 눈대중 σ " + HUMAN.sxBy.join("·") + "px) — 매도: ★★★ / 위험(흔들림+다음 기본+예고 사건) ≥ 88 / 미달이면 95까지");
+  out.push("", "[D] 사람 근사 봇 — 보통 손(전 단계 같은 손: 탭 σ 25ms + 10%는 +60ms, 흔들림 보정 70%, 반응 0.35초, 자리 눈대중 σ " + HUMAN.sx + "px) · 매도: ★★★ / 위험(흔들림+다음 기본+예고 사건) ≥ 88 / 미달이면 95까지");
   const E = [];
   for (const n of SN) {
     const c = cfgOf(n); const row = { n, A: null, B: null };
     for (const [a, b, k] of [[301, 340, "A"], [401, 440, "B"]]) { let p = 0, s3 = 0, col = 0; const st = [0, 0, 0, 0], gf = [], secs = [], sellS = [];
       for (let seed = a; seed <= b; seed++) { const r = botPlay(seed, n, HUMAN); if (r.stars) p++; if (r.stars >= 3) s3++; if (r.collapsed) col++; st[r.stars]++; gf.push(r.goalF); secs.push(r.s.t); if (r.sold && r.s.mult >= c.goal) sellS.push(Math.round(r.s.S)); }
       row[k] = { p, s3, col, st, gf: med(gf), sec: med(secs), sellS }; }
+    for (const [k, B] of [["S", SKILLED], ["C", CLUMSY]]) { let p = 0, s3 = 0, pf = 0, fl = 0; for (let seed = 301; seed <= 340; seed++) { const r = botPlay(seed, n, B); if (r.stars) p++; if (r.stars >= 3) s3++; pf += r.s.perfects; fl += r.s.floors + r.s.misses; } row[k] = { p, s3, pf: Math.round(pf / fl * 100) }; }
+    { let pf = 0, fl = 0; for (let seed = 301; seed <= 340; seed++) { const r = botPlay(seed, n, HUMAN); pf += r.s.perfects; fl += r.s.floors + r.s.misses; } row.pf = Math.round(pf / fl * 100); }
     E.push(row);
     const A = row.A, B = row.B, ok = A.p >= 28 && A.s3 >= 6 && A.s3 <= 16 && B.s3 >= 6 && B.s3 <= 16;
     chk(ok, `${n}단계 통과 ${A.p}/40 (${pc(A.p, 40)}) · ★0/1/2/3 ${A.st.join("/")} · ★★★ ${pc(A.s3, 40)} · 새 시드 401~440 ★★★ ${pc(B.s3, 40)} · 붕괴 ${A.col} · 한 판 ${A.sec.toFixed(0)}초 · 목표 넘긴 판 매도 흔들림 ${Math.min(...A.sellS)}~${Math.max(...A.sellS)} — 기준 통과 70%+, ★★★ 15~40%`);
   }
 
+  { const ps = E.map(r => r.A.p); let mono = true; for (let i = 1; i < 6; i++) if (ps[i] > ps[i - 1]) mono = false;
+    chk(mono, `역전 없음(보통 손 통과 수가 단계마다 같거나 줄어듦): ${ps.join(" → ")}/40`);
+    out.push("  손별 곡선 (통과 % / ★★★ % / 딱 비율):");
+    out.push("  단계\t보통 손 12px\t\t숙련 손 6px·σ20ms·보정85%\t서툰 손 18px·σ35ms·보정50%");
+    E.forEach(r => out.push(`  ${r.n}\t${pc(r.A.p, 40)} / ${pc(r.A.s3, 40)} / 딱 ${r.pf}%\t${pc(r.S.p, 40)} / ${pc(r.S.s3, 40)} / 딱 ${r.S.pf}%\t\t${pc(r.C.p, 40)} / ${pc(r.C.s3, 40)} / 딱 ${r.C.pf}%`)); }
   // [E] 곡선
-  out.push("", "[E] 곡선: 목표 도달 층 · 붕괴 층(안 파는 사람 근사 봇) 중앙값이 brief 표 ±2");
-  const GF = [7, 9, 11, 13, 15, 17], CF = [13, 15, 17, 19, 21, 23];
+  out.push("", "[E] 곡선: 목표 도달 층 · 붕괴 층(안 파는 보통 손) 중앙값이 새 곡선 ±2");
+  const GF = [7, 8, 9, 11, 12, 13], CF = [13, 14, 15, 16, 17, 19]; // 2026-11-27 운영 결정(고정 손 재조정) 뒤 곡선. brief 표(7~17층 / 13~23층)는 손이 단계마다 좋아지는 가정이라 교체
   for (const n of SN) { const cf = []; for (let seed = 301; seed <= 340; seed++) cf.push(botPlay(seed, n, { ...HUMAN, policy: null }).s.floors);
     const g = E[n - 1].A.gf, cm = med(cf), c = cfgOf(n);
-    chk(Math.abs(g - GF[n - 1]) <= 2 && Math.abs(cm - CF[n - 1]) <= 2, `${n}단계 목표 ×${c.goal}·★★ ×${c.s2}·★★★ ×${c.s3} · 목표 도달 ${g}층 (표 ${GF[n - 1]}) · 붕괴 ${cm}층 (표 ${CF[n - 1]}) · 속도 ${c.v} · 흔들림 ${c.b0}+${c.bk}×층`); }
+    chk(Math.abs(g - GF[n - 1]) <= 2 && Math.abs(cm - CF[n - 1]) <= 2, `${n}단계 목표 ×${c.goal}·★★ ×${c.s2}·★★★ ×${c.s3} · 목표 도달 ${g}층 (목표 ${GF[n - 1]}) · 붕괴 ${cm}층 (목표 ${CF[n - 1]}) · 속도 ${c.v} · 흔들림 ${c.b0}+${c.bk}×층`); }
   { const best = []; for (let seed = 301; seed <= 320; seed++) { const r = botPlay(seed, 7, HUMAN); best.push(r.sold ? r.s.mult : 0); } out.push(`  무한 장: 사람 근사 봇 시총 배수 중앙 ×${med(best).toFixed(0)} · 최고 ×${Math.max(...best).toFixed(0)}`); }
 
   // [F] 매도 타이밍
@@ -575,6 +600,10 @@ function selftestCore(extra) {
   const bestP = res.reduce((a, b) => b[1] > a[1] ? b : a);
   const bx = Number(bestP[0]);
   chk(bx >= 60 && bx <= 90 && res.find(r => r[0] === "안 팖")[1] < bestP[1] && res.find(r => r[0] === "목표 즉시")[1] < bestP[1], `평균 ★: ${res.map(r => r[0] + " " + r[1].toFixed(2)).join(" · ")} → 최고 X = ${bestP[0]} (기준 60~90, 안 팖·목표 즉시는 최고 아님)`);
+
+  { const resS = pols.map(([k, pol]) => { const st = []; for (const n of SN) for (let seed = 301; seed <= 340; seed++) st.push(botPlay(seed, n, { ...SKILLED, policy: pol }).stars); return [k, avg(st)]; });
+    const bS = resS.slice(0, 6).reduce((a, b) => b[1] > a[1] ? b : a), x40 = resS[0][1], bx2 = Number(bS[0]);
+    chk(bx2 >= 60 && bx2 <= 90 && bS[1] - x40 >= .5 && resS.find(r => r[0] === "안 팖")[1] < bS[1] && resS.find(r => r[0] === "목표 즉시")[1] < bS[1], `숙련 손 평균 ★: ${resS.map(r => r[0] + " " + r[1].toFixed(2)).join(" · ")} → 최고 X = ${bS[0]}, X=40과 차이 ${(bS[1] - x40).toFixed(2)} (기준 60~90, 차이 ≥ 0.5)`); }
 
   // [G] 선택 균형
   out.push("", "[G] 선택 균형");
@@ -647,12 +676,12 @@ const NEWBY = { 2: "pump", 3: "drop", 4: "whale", 5: "rug", 6: "list" };
 const TERMS = {
   sell: { e: "🪙", n: "매도", s: "지금 값 확정", m: "가진 코인을 파는 것", f: "지금 시총을 확정하고 판을 끝낸다" },
   cap: { e: "📈", n: "시가총액", s: "탑의 값", m: "코인 전체의 값", f: "1,000P × 배수. 한 층마다 ×1.2, 딱이면 ×1.5" },
-  perfect: { e: "✨", n: "딱", s: "딱! ×1.5", m: "꼭대기에 정확히 맞춤", f: "폭 그대로, 배수 ×1.5, 흔들림 −6" },
+  perfect: { e: "✨", n: "딱", s: "딱! ×1.5", m: "꼭대기에 정확히 맞춤", f: "폭 그대로, 배수 ×1.5, 흔들림은 기본분의 절반만" },
   gaza: { e: "📢", n: "가즈아", s: "딱 3연속 폭 회복", m: "더 오르길 외치는 말", f: "딱 3연속이면 블록 폭 +10%" },
   miss: { e: "💨", n: "헛매수", s: "흔들 +20", m: "샀는데 아무것도 남지 않음", f: "겹침이 너무 적으면 블록이 떨어져 나간다. 층은 안 늘고 흔들림 +20" },
   pump: { e: "🟩", n: "펌핑", s: "×2 · 흔들 2배", m: "값을 확 끌어올림", f: "초록 캔들 블록: 배수 ×2(딱 ×2.5). 존버러는 흔들림 기본값 2배" },
   drop: { e: "🪂", n: "에어드랍", s: "상자 받으면 ×1.3", m: "공짜로 뿌려 주는 코인", f: "꼭대기 옆 상자. 블록이 상자에 겹치면 배수 ×1.3. 대신 비뚤게 놓아 흔들림 +" },
-  whale: { e: "🐋", n: "고래 매도", s: "2층 뒤 흔들 +35", m: "큰손이 한꺼번에 팔아 값이 흔들림", f: "2층 전 예고 → 옆바람, 흔들림 +35. 큰손 지갑부터는 +10에 저가 매수 ×1.3" },
+  whale: { e: "🐋", n: "고래 매도", s: "2층 뒤 흔들 +35", m: "큰손이 한꺼번에 팔아 값이 흔들림", f: "2층 전 예고 → 옆바람, 흔들림 +35(2·3단계는 작은 고래 +20). 큰손 지갑부터는 +10에 저가 매수 ×1.3" },
   rug: { e: "🧶", n: "러그풀", s: "2층 뒤 흔들 +45", m: "개발자가 돈을 들고 사라짐(깔개 빼기)", f: "2층 전 예고 → 깔개가 당겨져 흔들림 +45. 달나라 주민은 +20" },
   list: { e: "🔔", n: "상장 소식", s: "3층 동안 ×2", m: "큰 거래소에 이름이 올라감", f: "1층 전 예고 → 다음 3블록 폭 +30%, 배수 ×2씩" },
   jon: { e: "💎", n: "존버", s: "사건 한 번 버팀", m: "무슨 일이 있어도 버팀", f: "고래 매도·러그풀로 흔들림 100을 넘을 때 1번 버팀 → 95로 멈춤 (달나라 주민 2번). 쌓다가 넘으면 그냥 무너진다" },
@@ -678,7 +707,7 @@ const I = (n, c) => UI.icon(n, c);
 
 // ───────── 소리 (Web Audio 합성, 첫 터치 뒤) ─────────
 let ac = null, muted = false, noiseBuf = null;
-function audio() { if (muted || auto && !Q.has("sound")) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; } }
+function audio() { if (muted || testing || Q.has("selftest") || auto && !Q.has("sound")) return null; try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume(); return ac; } catch (e) { return null; } }
 function beep(f, d = .06, type = "square", v = .045, w = 0, f2) {
   const a = audio(); if (!a) return; try { const t = a.currentTime + w, o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
@@ -778,7 +807,7 @@ function onEv(kind, a) {
   if (kind === "jon") { if (!live) return; SFX.jon(); hitStop(.12); fx.flash = { t: 0, dur: .4, col: "#8fd3ff" }; const P = w2s(topOf(st).x, hOf(vis.blocks.length - 1)); ring(P.x, P.y, "#8fd3ff", 120); pop("💎 존버 발동", "#8fd3ff", true); meet("jon"); return; }
   if (kind === "hit") {
     const e = a.e; if (!live) return;
-    if (e.t === "whale") { SFX.whale(); fx.wind = 3; fx.shake = 10; pop(st.body.whaleM > 1 ? "🐋 저가 매수 ×1.3" : `🐋 고래 매도 +${e.val}`, st.body.whaleM > 1 ? "#ffd36a" : "#ff8a95", true); }
+    if (e.t === "whale") { SFX.whale(); fx.wind = 3; fx.shake = 10; pop(st.body.whaleM > 1 && !st.c.whaleV ? "🐋 저가 매수 ×1.3" : `🐋 고래 매도 +${e.val}`, st.body.whaleM > 1 && !st.c.whaleV ? "#ffd36a" : "#ff8a95", true); }
     if (e.t === "rug") { SFX.rug(); fx.rugPull = 1; fx.shake = 12; pop(st.body.k >= 6 ? `🧶 둥실 +${e.val}` : `🧶 러그풀 +${e.val}`, "#ff8a95", true); }
     return;
   }
@@ -786,21 +815,23 @@ function onEv(kind, a) {
     const e = a.e; if (!live) return; SFX.warn();
     const msg = e.t === "list" ? "🔔 1층 뒤 상장! 3층 ×2" : e.t === "whale" ? `🐋 2층 뒤 흔들 +${e.val}` : `🧶 2층 뒤 흔들 +${e.val}`;
     if (e.t === "list") SFX.bell();
-    if (!meet(e.t, msg.replace(/^\S+ /, ""))) { hideCard(); UI.toast(msg, 2600, "top"); }
+    if (!meet(e.t, msg.replace(/^\S+ /, ""), 2)) { hideCard(); UI.toast(msg, 2600, "top"); }
     return;
   }
   if (kind === "collapse") { collapse(a.why); return; }
 }
-function meet(k, line) { // 처음 보는 것: 큰 카드 1장 (true 반환). 이미 본 것: false
+function meet(k, line, pri) { // 처음 보는 것: 큰 카드 1장 (true 반환). 이미 본 것: false. 사건 예고 카드(pri 2)가 떠 있으면 다른 NEW 카드는 뒤로 미룬다
   if (runMet.has(k) && dex.has(k)) return false; runMet.add(k);
   if (dex.has(k)) return false;
   dex.add(k); newTerms.push(k); persist();
   if (testing) return true;
-  const T = TERMS[k]; showCard({ e: T.e, n: T.n, s: line || T.s, fresh: true }, 2.2); return true;
+  const T = TERMS[k], c = { e: T.e, n: T.n, s: line || T.s, fresh: true, pri: pri || 1 };
+  if (cardT > 0 && cardPri >= 2 && c.pri < 2) { cardQ.push(c); return true; }
+  showCard(c, pri >= 2 ? 2.8 : 2.2); return true;
 }
-let cardT = 0;
-function showCard(c, sec) { const el = $("card"); el.innerHTML = `<span class="ui-em">${c.e}</span><div><div class="n">${c.n}${c.fresh ? '<span class="ui-badge">NEW</span>' : ""}</div><div class="f">${c.s}</div></div>`; el.classList.add("on"); cardT = sec || 2; const t = $("ui-toast"); if (t) t.classList.remove("on"); }
-function hideCard() { $("card").classList.remove("on"); cardT = 0; }
+let cardT = 0, cardPri = 0, cardQ = [];
+function showCard(c, sec) { cardPri = c.pri || 1; const el = $("card"); el.innerHTML = `<span class="ui-em">${c.e}</span><div><div class="n">${c.n}${c.fresh ? '<span class="ui-badge">NEW</span>' : ""}</div><div class="f">${c.s}</div></div>`; el.classList.add("on"); cardT = sec || 2; const t = $("ui-toast"); if (t) t.classList.remove("on"); }
+function hideCard() { $("card").classList.remove("on"); cardT = 0; cardPri = 0; }
 
 function tickRun() { // 고정 틱 한 번 (사람 탭 · 봇 결정 · 로직)
   let d = tapQ; tapQ = false;
@@ -890,7 +921,7 @@ function stages() {
   const cells = STAGES.map(s => { const open = s.n <= save.cleared + 1, k = save.stars[s.n] || 0;
     return open ? `<button class="ui-level ${s.n === cur ? "cur" : ""}" data-s="${s.n}" aria-label="${s.n}단계, 별 ${k}">${s.n}${UI.stars(k)}</button>`
       : `<button class="ui-level lock" disabled aria-label="${s.n}단계 잠김">${I("lock")}</button>`; }).join("")
-    + (save.cleared >= 6 ? `<button class="ui-level" data-s="7" aria-label="무한 장">∞<span class="ui-cap ui-num">${save.endlessBest ? fmtX(save.endlessBest) : ""}</span></button>` : `<button class="ui-level lock" disabled aria-label="무한 장 잠김">${I("lock")}</button>`);
+    + (save.cleared >= 6 ? `<button class="ui-level" data-s="7" aria-label="무한 장">∞</button>` : `<button class="ui-level lock" disabled aria-label="무한 장 잠김">${I("lock")}</button>`);
   openOv(`<div class="ui-head ui-enter">${iconBtn("back", "chevron-left", "뒤로")}<h2 class="ui-h">단계</h2><span class="ui-chip" aria-label="별">${I("star")}${totalStars()}/18</span></div>
     <div class="ui-levels ui-enter-2">${cells}</div>${save.cleared < 5 ? `<div class="ui-enter-2">${nextHtml(cur + 1)}</div>` : ""}
     <div class="ui-line ui-enter-3">${I("coins")}<span class="ui-grow">가상 지갑</span><b>${fmtP(save.wallet)}</b></div>`);
@@ -904,7 +935,7 @@ function showDex(back) {
   const bodies = BODIES.map((B, i) => i < Math.max(1, save.cleared + 1) ? `<div class="ui-card g-item"><span class="ui-em">${B.e}</span><div class="g-txt"><b>${i + 1} · ${B.n}</b><p>${B.s}</p></div></div>` : `<div class="ui-card g-item no"><span class="ui-em">${I("lock")}</span><div class="g-txt"><p>${i}단계 통과하면 열림</p></div></div>`).join("");
   openOv(`<div class="ui-head ui-enter">${iconBtn("dexBack", "chevron-left", "뒤로")}<h2 class="ui-h">도감</h2><span class="ui-chip" aria-label="모은 용어">${I("book-open")}${TERM_KEYS.filter(k => dex.has(k) || k === "sell" || k === "cap").length}/${TERM_KEYS.length}</span></div>
     <div class="ui-col ui-enter-2" style="gap:var(--ui-s2)"><h3 class="g-sec">용어</h3>${rows}<h3 class="g-sec">몸</h3>${bodies}
-    <p class="ui-cap" style="margin-top:var(--ui-s3);text-align:center">${DISC}<br>용어 뜻은 게임용으로 줄인 설명</p></div>`);
+    <p class="ui-sub" style="margin-top:var(--ui-s3);text-align:center;font-size:var(--ui-t2)">${DISC}<br>용어 뜻은 게임용으로 줄인 설명</p></div>`);
   $("dexBack").onclick = () => back();
 }
 function pauseRun() {
@@ -1005,7 +1036,7 @@ addEventListener("keydown", e => { if (e.code === "Space") { e.preventDefault();
 document.addEventListener("visibilitychange", () => { if (document.hidden && mode === "run" && !auto) pauseRun(); });
 function placeHand(where) {
   const h = $("hand"), gb = $("game").getBoundingClientRect();
-  if (where === "sell") { const r = $("sell").getBoundingClientRect(); h.style.left = (r.left - gb.left + r.width / 2) + "px"; h.style.top = (r.top - gb.top + 18) + "px"; h.classList.add("on"); return; }
+  if (where === "sell") { const r = $("sell").getBoundingClientRect(); h.style.left = (r.left - gb.left + r.width / 2) + "px"; h.style.left = (r.left - gb.left + 30) + "px"; h.style.top = (r.top - gb.top - 50) + "px"; h.classList.add("on"); return; } // 버튼 위쪽 바깥(금액을 가리지 않게)
   h.classList.add("on"); h.dataset.at = "ghost";
 }
 
@@ -1017,13 +1048,13 @@ const blockH = k => k === "pump" ? BH * 1.5 : k === "base" ? 34 : BH;
 function hOf(i) { let h = 0; for (let j = 0; j < i; j++) h += blockH(vis.blocks[j].k); return h; } // i번 블록 바닥 높이
 const skinOf = i => st.c.endless ? (st.plan.skin[i] || 0) : st.c.n - 1;
 function w2s(x, h) { const z = vis.z * K; return { x: VW / 2 + (x - BW / 2) * z, y: baseY - (h - vis.camY) * z, k: z }; }
-function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function rr(x, y, w, h, r) { w = Math.max(0, w); h = Math.max(0, h); r = Math.max(0, Math.min(r, w / 2, h / 2)); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function emoji(e, x, y, size, alpha = 1) { ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = "#fff"; ctx.font = `${size}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(e, x, y); ctx.restore(); }
 function drawBlock(cx, top, w, h, kind, skin, o = {}) { // cx·top = 화면 좌표, w·h = 화면 크기
   const x = cx - w / 2, sq = o.sq || 0, hh = h * (1 - sq * .18), ww = w * (1 + sq * .06), xx = cx - ww / 2, yy = top + (h - hh);
   const C = COINS[skin] || COINS[0];
   let c1 = C.c1, c2 = C.c2;
-  if (kind === "pump") { c1 = "#6ff0a6"; c2 = "#1f9c58"; } else if (kind === "lock") { c1 = "#c9d2e3"; c2 = "#77839a"; } else if (kind === "base") { c1 = "#3a4466"; c2 = "#232a44"; } else if (kind === "list") { c1 = "#fff0b0"; c2 = "#e0a81c"; }
+  if (kind === "pump") { c1 = "#6ff0a6"; c2 = "#1f9c58"; } else if (kind === "lock") { c1 = "#c9d2e3"; c2 = "#77839a"; } else if (kind === "base") { c1 = "#3a4466"; c2 = "#232a44"; } else if (kind === "list") { c1 = "#d9a8ff"; c2 = "#7b3fc4"; }
   ctx.save();
   if (o.alpha !== undefined) ctx.globalAlpha = o.alpha;
   ctx.fillStyle = "rgba(0,0,0,.28)"; rr(xx + 2, yy + 3, ww, hh, 5); ctx.fill();
@@ -1033,8 +1064,8 @@ function drawBlock(cx, top, w, h, kind, skin, o = {}) { // cx·top = 화면 좌�
   if (kind === "pump") { ctx.strokeStyle = "#1f9c58"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx, yy - 7); ctx.lineTo(cx, yy); ctx.moveTo(cx, yy + hh); ctx.lineTo(cx, yy + hh + 4); ctx.stroke();
     if (ww > 26) { ctx.fillStyle = "#0d5a31"; ctx.beginPath(); ctx.moveTo(cx, yy + hh * .25); ctx.lineTo(cx + 8, yy + hh * .68); ctx.lineTo(cx - 8, yy + hh * .68); ctx.closePath(); ctx.fill(); } }
   else if (kind === "lock") { if (ww > 26) { ctx.strokeStyle = "#3c4558"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(cx, yy + hh * .42, 5, Math.PI, 0); ctx.stroke(); ctx.fillStyle = "#3c4558"; rr(cx - 7, yy + hh * .42, 14, 10, 2); ctx.fill(); } }
-  else if (kind !== "base" && ww > 30) { const r = Math.min(hh * .36, 10); ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.beginPath(); ctx.arc(cx, yy + hh / 2, r + 1.5, 0, 7); ctx.fill(); ctx.fillStyle = kind === "list" ? "#7a5600" : C.ink; ctx.font = `700 ${Math.round(r * 1.25)}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(C.ch, cx, yy + hh / 2 + 1); }
-  if (kind === "list") { ctx.strokeStyle = "rgba(255,230,140,.9)"; ctx.lineWidth = 2; rr(xx - 1, yy - 1, ww + 2, hh + 2, 6); ctx.stroke(); }
+  else if (kind !== "base" && ww > 30) { const r = Math.min(hh * .36, 10); ctx.fillStyle = "rgba(255,255,255,.28)"; ctx.beginPath(); ctx.arc(cx, yy + hh / 2, r + 1.5, 0, 7); ctx.fill(); ctx.fillStyle = kind === "list" ? "#2e0f55" : C.ink; ctx.font = `700 ${Math.round(r * 1.25)}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(C.ch, cx, yy + hh / 2 + 1); }
+  if (kind === "list") { ctx.strokeStyle = "rgba(255,214,110,.95)"; ctx.lineWidth = 2; rr(xx - 1, yy - 1, ww + 2, hh + 2, 6); ctx.stroke(); }
   if (o.flash > 0) { ctx.globalAlpha = (o.alpha ?? 1) * o.flash; ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; rr(xx - 2, yy - 2, ww + 4, hh + 4, 6); ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,.35)"; rr(xx, yy, ww, hh, 5); ctx.fill(); }
   ctx.restore();
 }
@@ -1065,9 +1096,9 @@ function drawGauge(T) { // 왼쪽 흔들림 게이지: 빨간 선 100, 다음 �
   if (nb > 0 && mode === "run") { ctx.fillStyle = "rgba(255,255,255,.28)"; const a = yOf(S + nb); ctx.fillRect(x, a, w, yOf(S) - a); }
   ctx.strokeStyle = "#ff3b3b"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x - 4, yOf(100)); ctx.lineTo(x + w + 4, yOf(100)); ctx.stroke();
   // 예고 사건 유령 눈금
-  if (mode === "run") for (const e of st.warned) { if (e.t === "list") continue; const at = S + (e.hit === st.floors + 1 ? nb : 0) + e.val, y = yOf(at), over = at >= 100;
-    ctx.setLineDash([3, 3]); ctx.strokeStyle = over ? "#ff4d5e" : "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 2, y); ctx.lineTo(x + w + 2, y); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = "rgba(10,12,24,.8)"; rr(x + w + 5, y - 11, 56, 22, 6); ctx.fill(); emoji(TERMS[e.t].e, x + w + 15, y + 1, 13); ctx.fillStyle = over ? "#ff8a95" : "#fff"; ctx.font = `700 14px ${FONT}`; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("+" + e.val, x + w + 24, y + 1); }
+  if (mode === "run") for (const e of st.warned) { if (e.t === "list") continue; const at = S + (e.hit === st.floors + 1 ? nb : 0) + e.val, y = yOf(Math.min(at, 100 + 20)), saved = at >= 100 && st.jon > 0, over = at >= 100 && !saved; // 존버가 막아 주면 존버 색 + 💎
+    ctx.setLineDash([3, 3]); ctx.strokeStyle = over ? "#ff4d5e" : saved ? "#8fd3ff" : "#fff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 2, y); ctx.lineTo(x + w + 2, y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(10,12,24,.8)"; rr(x + w + 5, y - 11, saved ? 76 : 56, 22, 6); ctx.fill(); emoji(TERMS[e.t].e, x + w + 15, y + 1, 13); if (saved) emoji("💎", x + w + 66, y + 1, 12); ctx.fillStyle = over ? "#ff8a95" : saved ? "#8fd3ff" : "#fff"; ctx.font = `700 14px ${FONT}`; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("+" + e.val, x + w + 24, y + 1); }
   // 존버 남은 횟수
   for (let i = 0; i < st.body.jon; i++) { const used = i >= st.jon, cx = x + w / 2, cy = y1 + 14 + i * 14; ctx.fillStyle = used ? "rgba(255,255,255,.18)" : "#8fd3ff"; ctx.beginPath(); ctx.moveTo(cx, cy - 5); ctx.lineTo(cx + 5, cy); ctx.lineTo(cx, cy + 5); ctx.lineTo(cx - 5, cy); ctx.closePath(); ctx.fill(); }
   ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.font = `700 14px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(Math.round(S), x + w / 2, y0 - 6);
@@ -1118,7 +1149,7 @@ function draw(dt, T) {
   // 고래 그림자 (예고 → 다가옴)
   const wh = st.warned.find(e => e.t === "whale");
   if (wh && mode === "run") { const left = wh.hit - st.floors, tx = VW - 30 - (2 - left) * 30; vis.whaleX += (tx - vis.whaleX) * Math.min(1, dt * 2); emoji("🐋", vis.whaleX || VW - 20, w2s(0, topH).y + 20, 54, .55 + .2 * Math.sin(T * 4)); }
-  const li = st.warned.find(e => e.t === "list"); if (li && mode === "run") emoji("🔔", VW / 2, w2s(0, topH + 120).y, 34, .7 + .3 * Math.sin(T * 6));
+  const li = st.warned.find(e => e.t === "list"); if (li && mode === "run") emoji("🔔", VW - 44, w2s(0, topH).y - 60, 34, .7 + .3 * Math.sin(T * 6)); // 층 팝업(가운데)과 겹치지 않게 오른쪽
   // 옆바람
   if (fx.wind > 0 && JUICE) { ctx.strokeStyle = "rgba(200,230,255,.35)"; ctx.lineWidth = 2; for (let i = 0; i < 12; i++) { const y = (i * 61 + T * 40) % VH, x = VW - ((T * 700 + i * 137) % (VW + 200)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 60, y); ctx.stroke(); } }
   // 잘린 조각 · 와르르
@@ -1130,7 +1161,7 @@ function draw(dt, T) {
   fx.rings.forEach(r => { const p = r.t / .45; ctx.globalAlpha = Math.max(0, 1 - p); ctx.strokeStyle = r.col; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(r.x, r.y, 8 + r.max * p, 0, 7); ctx.stroke(); }); ctx.globalAlpha = 1;
   fx.parts.forEach(p => { ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.max * 1.5)); ctx.fillStyle = p.col; if (p.coin) { ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r, p.r * .8, 0, 0, 7); ctx.fill(); ctx.fillStyle = "#b87a10"; ctx.fillRect(p.x - 1, p.y - p.r * .5, 2, p.r); } else ctx.fillRect(p.x - p.r / 2, p.y - p.r / 2, p.r, p.r); }); ctx.globalAlpha = 1;
   if (fx.pop) { const p = fx.pop, a = p.t < .1 ? p.t / .1 : Math.max(0, 1 - (p.t - .55) / .35), s = p.t < .12 ? .6 + p.t / .12 * .6 : 1.2 - Math.min(.2, (p.t - .12));
-    const y = w2s(0, topH).y - 92 - p.t * 30; ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.translate(VW / 2, y); ctx.scale(s, s); ctx.font = `800 ${p.big ? 26 : 22}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineWidth = 5; ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.strokeText(p.txt, 0, 0); ctx.fillStyle = p.col; ctx.fillText(p.txt, 0, 0); ctx.restore(); }
+    const y = w2s(0, topH).y - 92 - p.t * 30; ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.translate(VW / 2, y); ctx.scale(s, s); ctx.font = `700 ${p.big ? 26 : 22}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineWidth = 5; ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.strokeText(p.txt, 0, 0); ctx.fillStyle = p.col; ctx.fillText(p.txt, 0, 0); ctx.restore(); }
   if (fx.flash && JUICE) { const a = 1 - fx.flash.t / fx.flash.dur; ctx.globalAlpha = Math.max(0, a * .35); ctx.fillStyle = fx.flash.col; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
 }
 function drawEvolve(dt, T) {
@@ -1152,7 +1183,7 @@ function loop(t) {
     if (st.over === "collapse") vis.capShow = Math.max(0, vis.capShow - Math.max(vis.capShow * dt * 3, 500 * dt)); else vis.capShow = JUICE ? Math.exp(Math.log(vis.capShow) + (Math.log(target) - Math.log(vis.capShow)) * Math.min(1, dt * 7)) : target;
     if (mode === "run" || mode === "sold" || mode === "dying" || mode === "paused") hud();
   }
-  if (cardT > 0) { cardT -= dtReal; if (cardT <= 0) hideCard(); }
+  if (cardT > 0) { cardT -= dtReal; if (cardT <= 0) { hideCard(); if (cardQ.length && mode === "run") showCard(cardQ.shift(), 1.8); } }
   // 손맛 갱신
   fx.parts = fx.parts.filter(p => (p.life -= dt) > 0); fx.parts.forEach(p => { if (p.to && p.life < p.max * .7) { p.x += (p.to.x - p.x) * Math.min(1, dt * 6); p.y += (p.to.y - p.y) * Math.min(1, dt * 6); } else { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.g * dt; p.vx *= .97; p.vy += p.coin ? 300 * dt : 0; } });
   fx.rings = fx.rings.filter(r => (r.t += dt) < .45);
