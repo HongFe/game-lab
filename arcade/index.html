@@ -285,6 +285,7 @@ function renderStage() {
         <button class="pill" data-act="menu">◀ ${isDesk() ? "닫기" : "메뉴"}</button>
         <div class="tt">${esc(sl.g.title)}<small>${esc(sl.g.id)} · ${esc(sl.g.stage)} · 빌드 ${esc(sl.g.version)}</small></div>
         <button class="pill${likes[sl.g.id] ? " on" : ""}" data-act="like">♥</button>
+        <button class="pill" data-act="share" id="sh${i}" title="결과 카드 공유">📤</button>
         <button class="pill pri" data-act="fb">의견</button>
       </div>
       ${two ? `<div class="tabs">${slots.map((x, j) => `<button class="${j === active ? "on" : ""}" data-tab="${j}">${"AB"[j]} · ${esc(x.g.title)}</button>`).join("")}</div>` : ""}
@@ -297,6 +298,7 @@ function renderStage() {
     el.querySelector('[data-act="menu"]').onclick = () => toMenu();
     el.querySelector('[data-act="like"]').onclick = e => toggleLike(i, e);
     el.querySelector('[data-act="fb"]').onclick = () => openFeedback(i);
+    el.querySelector('[data-act="share"]').onclick = () => openShare(i);
     el.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { active = +b.dataset.tab; SND.nav(); renderStage(); });
     el.addEventListener("pointerdown", () => { active = i; slots[i].s.lastInput = Date.now(); }, true);
   });
@@ -338,7 +340,7 @@ addEventListener("message", e => {
   // 플레이 시간은 사람이 움직였다는 신호(input·level·fail)로만 센다. 게임이 저절로 보내는 신호(news 등)는 세지 않는다
   if (["input", "level_start", "level_clear", "fail"].includes(d.ev)) sl.s.lastInput = Date.now();
   sl.s.events++;
-  if (d.ev === "level_clear") sl.s.levels++;
+  if (d.ev === "level_clear") { sl.s.levels++; const dd = d.data || {}; if (better(dd, sl.best)) { sl.best = dd; sl.bestG = sl.g.id; const b = document.getElementById("sh" + slots.indexOf(sl)); if (b) { b.classList.add("on"); setTimeout(() => b.classList.remove("on"), 1600); } if (!sl.shareHint) { sl.shareHint = true; toast("📤 눌러서 결과 자랑하기"); } } }
   if (d.ev === "fail") sl.s.fails++;
   if (d.ev === "level_start") sl.s.starts++;
 });
@@ -350,6 +352,66 @@ setInterval(() => {
 }, 1000);
 function fmt(ms) { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}분 ${String(s % 60).padStart(2, "0")}초`; }
 function tickStats() { slots.forEach((sl, i) => { const el = $("st" + i); if (el) el.innerHTML = `<span>플레이 ${fmt(sl.s.activeMs)}</span><span>클리어 ${sl.s.levels} · 실패 ${sl.s.fails}</span>`; }); }
+
+// ── 결과 카드 공유 (게임이 보낸 level_clear 중 가장 좋은 기록으로 만든다) ──
+const scoreOf = d => (d.goal ? 1e9 : 0) + (d.endless ? 5e8 + d.endless * 1e6 : 0) + (d.level || 0) * 1e6 + (d.stars || 0) * 1e5 + (d.score || 0) + (d.ret || 0);
+const better = (a, b) => !b || scoreOf(a) > scoreOf(b);
+function resultLines(id, d) {
+  const st = d.stars ? "★".repeat(d.stars) + "☆".repeat(Math.max(0, 3 - d.stars)) : "";
+  const sc = d.score ? `점수 ${Math.round(d.score).toLocaleString()}` : "";
+  const L = d.level || 1;
+  const main = {
+    G001: `레벨 ${L} 탈출`, G002: `웨이브 ${L} 돌파`, G004: `레벨 ${L} 완성`, G006: `${L}번째 가게 입장`, G011: `노선 ${L} 출근`,
+    G003: `${L}단계 · 수익률 ${d.ret >= 0 ? "+" : ""}${Math.round(d.ret || 0)}%`,
+    G012: d.goal ? `🌆 펜트하우스 도착` : `${L}층까지 갈아탐`,
+    G013: d.endless ? `무한 출근 ${d.endless}역` : `${L}역 · ${d.boarded ?? "?"}/${d.total ?? "?"}명 탑승`,
+  }[id] || `레벨 ${L} 클리어`;
+  const sub = [st, sc, id === "G012" && d.min ? `${d.min}분` : "", id === "G011" && d.combo ? `콤보 ${d.combo}` : ""].filter(Boolean).join(" · ");
+  return { main, sub };
+}
+function playUrl(id) { return location.origin + location.pathname + "?play=" + encodeURIComponent(id); }
+function drawCard(g, d) {
+  const c = document.createElement("canvas"), W = 720, H = 900; c.width = W; c.height = H; const x = c.getContext("2d");
+  const { main, sub } = resultLines(g.id, d), nick = LS.get("nick", "") || anon;
+  const F = (w, z) => `${w} ${z}px -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif`;
+  x.fillStyle = "#d9d5cb"; x.fillRect(0, 0, W, H);
+  x.fillStyle = "#4a4b63"; rr(x, 40, 40, W - 80, 680, 28); x.fill();
+  x.fillStyle = "#9bbc0f"; rr(x, 76, 76, W - 152, 608, 10); x.fill();
+  x.fillStyle = "#0f380f"; x.textAlign = "center";
+  x.font = F(800, 26); x.fillText("NHC POCKET · 오락실 기록", W / 2, 124);
+  x.fillStyle = "#fff"; x.font = F(400, 120); x.fillText(g.icon || "🎮", W / 2, 290);   // 이모지는 불투명 색으로 (반투명 fillStyle 버그 방지)
+  x.fillStyle = "#0f380f"; x.font = F(900, 52); x.fillText(g.title, W / 2, 380);
+  x.fillRect(130, 412, W - 260, 4);
+  fit(x, main, W / 2, 492, W - 200, 900, 58);
+  x.font = F(800, 34); x.fillText(sub || " ", W / 2, 556);
+  x.font = F(700, 28); x.fillText(nick, W / 2, 640);
+  x.fillStyle = "#3a3a52"; x.font = F(900, 36); x.fillText("너도 해 볼래? ▶", W / 2, 790);
+  x.font = F(600, 22); x.fillText(playUrl(g.id).replace(/^https?:\/\//, ""), W / 2, 836);
+  return c;
+  function rr(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
+  function fit(x, t, cx, y, maxW, w, z) { do { x.font = F(w, z); z -= 2; } while (x.measureText(t).width > maxW && z > 24); x.fillText(t, cx, y); }
+}
+function cardText(g, d) { const { main, sub } = resultLines(g.id, d); return `[NHC POCKET] ${g.icon} ${g.title}\n${main}${sub ? " · " + sub : ""}\n너도 해 볼래? ${playUrl(g.id)}`; }
+function openShare(i) {
+  const sl = slots[i]; if (!sl.best) { toast("한 판 깨면 결과 카드가 생겨요"); return; }
+  const g = sl.g, d = sl.best, c = drawCard(g, d), text = cardText(g, d), url = c.toDataURL("image/png");
+  sheet(`<h3>📤 결과 카드</h3><p class="sub">이번에 플레이한 최고 기록이에요</p>
+    <img src="${url}" alt="결과 카드" style="width:100%;border-radius:14px;display:block">
+    <div class="row">${navigator.share ? '<button class="pri" id="cShare">공유하기</button>' : ""}<button id="cCopy">문구 복사</button></div>
+    <div class="row"><button id="cSave">이미지 저장</button><button id="cDone">닫기</button></div>`);
+  $("cDone").onclick = closeSheet;
+  $("cSave").onclick = () => { const a = document.createElement("a"); a.href = url; a.download = `nhc-pocket-${g.id}.png`; document.body.appendChild(a); a.click(); a.remove(); toast("이미지를 저장했어요"); };
+  $("cCopy").onclick = async () => { try { await navigator.clipboard.writeText(text); toast("복사했어요 — 카톡에 붙여 넣어 주세요"); } catch (e) { toast("복사가 막혔어요 — 이미지 저장을 써 주세요"); } };
+  if ($("cShare")) $("cShare").onclick = () => c.toBlob(async blob => {
+    try {
+      const file = new File([blob], `nhc-pocket-${g.id}.png`, { type: "image/png" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], text });
+      else await navigator.share({ text });
+      SND.like();
+    } catch (e) { /* 사용자가 닫음 */ }
+  }, "image/png");
+  SND.ok();
+}
 
 // ── 피드백 시트 ──
 function sheet(html) { $("sheetCard").innerHTML = html; $("sheet").classList.add("on"); }
