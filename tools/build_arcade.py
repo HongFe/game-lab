@@ -31,6 +31,13 @@ def last_note(folder):
     return s if len(s) <= 40 else s[:39].rstrip(" ,·") + "…"
 
 
+def tracked(f):
+    try:
+        return subprocess.run(["git", "ls-files", "--error-unmatch", str(f)], cwd=ROOT, capture_output=True, timeout=10).returncode == 0
+    except Exception:
+        return True
+
+
 def main():
     d = json.loads((ROOT / "games.json").read_text(encoding="utf-8"))
     rf = ROOT / "arcade" / "ratings.json"
@@ -41,7 +48,7 @@ def main():
             continue
         folder = ROOT / f"{g['id']}_{g['slug']}"
         f = folder / "game" / "index.html"
-        if not f.exists():
+        if not f.exists() or not tracked(f):   # 커밋 안 된 작업 중 파일은 공개 오락실에 넣지 않는다(푸시하면 404)
             continue
         ver = datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
         r = ratings.get(g["id"], {})
