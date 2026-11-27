@@ -118,5 +118,22 @@ window.CATALOG = [
   "rating": null,
   "hot": false,
   "pop": null
+ },
+ {
+  "id": "G022",
+  "title": "기차 칸 줄 세우기",
+  "one_liner": "뒤죽박죽 색깔 기차 칸을 갈림길 레버와 옆 선로로 옮겨, 무지개 순서로 다시 이어 역에 보내라.",
+  "type": "하이 콘셉트",
+  "stage": "프로토",
+  "deadline": "2026-12-04",
+  "created": "2026-11-27",
+  "path": "../G022_train-sort/game/index.html",
+  "color": "#ff8a3d",
+  "icon": "🚂",
+  "version": "2026-11-27 10:56",
+  "note": "기차 칸을 옆 선로로 비켜 가며 순서대로 역에 보내는 아이 순서 계획…",
+  "rating": null,
+  "hot": false,
+  "pop": null
  }
 ];
