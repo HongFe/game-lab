@@ -39,6 +39,11 @@ nav .ib:disabled{opacity:.35}
 @keyframes spin{from{transform:scale(.35) rotate(-90deg)}to{transform:scale(1) rotate(0)}}
 .line{font-size:20px;font-weight:800;margin:4px 0}
 .gain{font-size:17px;font-weight:800;color:#2a9d5c;margin:6px 0 2px;min-height:24px}
+.newcar{height:96px;display:flex;align-items:center;justify-content:center;margin:4px 0}
+.newcar span{font-size:80px;line-height:1;display:inline-block;animation:drop .7s cubic-bezier(.2,1.6,.4,1) .9s both,wig 1.6s ease-in-out 1.7s infinite;filter:drop-shadow(0 5px 3px rgba(0,0,0,.25))}
+@keyframes drop{from{transform:translateY(-20px) scale(.6)}to{transform:none}}
+@keyframes wig{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg) scale(1.06)}75%{transform:rotate(8deg) scale(1.06)}}
+.slot{display:inline-block;width:34px;height:26px;border:3px dashed #8c96a8;border-radius:7px;margin:0 2px}
 .row{display:flex;gap:12px;justify-content:center;margin-top:12px}
 .big{min-width:96px;height:58px;border-radius:18px;border:0;font-size:24px;font-weight:800;box-shadow:var(--sh);background:#fff;color:var(--ink);cursor:pointer;font-family:inherit;padding:0 14px}
 .big.pri{background:#ffcf4a}
@@ -86,11 +91,11 @@ nav .ib:disabled{opacity:.35}
 <script>
 "use strict";
 // ───────────────────────── 레벨 (tools/gen_levels.py 가 만든다. 직접 고치지 않음) ─────────────────────────
-const LEVELS = /*LEVELS_START*/[{"n":1,"train":[0,1,2],"order":[0,1,2],"sidings":0,"cap":0,"opt_moves":3,"target":3,"brief":3},{"n":2,"train":[2,0,1],"order":[0,1,2],"sidings":1,"cap":4,"opt_moves":4,"target":4,"brief":4},{"n":3,"train":[2,1,0],"order":[0,1,2],"sidings":1,"cap":4,"opt_moves":5,"target":5,"brief":5},{"n":4,"train":[3,2,0,1],"order":[0,1,2,3],"sidings":1,"cap":4,"opt_moves":6,"target":6,"brief":6},{"n":5,"train":[3,2,1,0],"order":[0,1,2,3],"sidings":1,"cap":4,"opt_moves":7,"target":7,"brief":7},{"n":6,"train":[1,3,0,2],"order":[0,1,2,3],"sidings":2,"cap":4,"opt_moves":6,"target":6,"brief":6},{"n":7,"train":[1,3,2,0],"order":[0,1,2,3],"sidings":2,"cap":4,"opt_moves":7,"target":7,"brief":7},{"n":8,"train":[2,4,0,3,1],"order":[0,1,2,3,4],"sidings":2,"cap":4,"opt_moves":8,"target":8,"brief":8},{"n":9,"train":[2,4,1,3,0],"order":[0,1,2,3,4],"sidings":2,"cap":4,"opt_moves":9,"target":9,"brief":9},{"n":10,"train":[3,4,1,2,0],"order":[0,1,2,3,4],"sidings":2,"cap":4,"opt_moves":9,"target":9,"brief":10},{"n":11,"train":[1,4,3,0,2],"order":[0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":8,"target":8,"brief":9},{"n":12,"train":[4,1,3,2,0],"order":[0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":9,"target":9,"brief":10},{"n":13,"train":[3,1,4,2,0],"order":[0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":9,"target":9,"brief":11},{"n":14,"train":[4,2,1,3,0,5],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":10,"target":10,"brief":12},{"n":15,"train":[5,2,1,4,0,3],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":10,"target":10,"brief":13},{"n":16,"train":[1,2,4,3,0],"order":[0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":10,"target":10,"brief":11},{"n":17,"train":[1,2,5,4,0,3],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":11,"target":11,"brief":13},{"n":18,"train":[1,4,2,3,0,5],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":12,"target":12,"brief":14},{"n":19,"train":[1,4,2,5,0,3],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":15},{"n":20,"train":[1,3,2,4,0,5],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":16},{"n":21,"train":[1,0,4,2,3,0],"order":[0,0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":12,"target":12,"brief":15},{"n":22,"train":[1,3,2,4,0,2],"order":[0,1,2,2,3,4],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":16},{"n":23,"train":[1,2,4,0,5,3,1],"order":[0,1,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":17},{"n":24,"train":[1,3,2,4,0,3,5],"order":[0,1,2,3,3,4,5],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":18},{"n":25,"train":[2,4,0,3,5,1,4],"order":[0,1,2,3,4,4,5],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":19},{"n":26,"train":[1,4,5,2,0,3,3],"order":[5,3,1,2,0,4,3],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":18},{"n":27,"train":[4,5,3,3,1,0,2],"order":[3,0,4,5,2,3,1],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":19},{"n":28,"train":[2,4,5,0,1,3,1],"order":[1,2,4,5,1,0,3],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":20},{"n":29,"train":[2,0,3,4,1,0,5],"order":[1,2,3,0,0,5,4],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":21},{"n":30,"train":[2,4,1,3,0,5,5],"order":[1,5,2,3,5,4,0],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":22}]/*LEVELS_END*/;
+const LEVELS = /*LEVELS_START*/[{"n":1,"train":[0,1,2],"order":[0,1,2],"sidings":0,"cap":0,"opt_moves":3,"target":3,"brief":3},{"n":2,"train":[2,0,1],"order":[0,1,2],"sidings":1,"cap":4,"opt_moves":4,"target":4,"brief":4},{"n":3,"train":[2,1,0],"order":[0,1,2],"sidings":1,"cap":4,"opt_moves":5,"target":5,"brief":5},{"n":4,"train":[3,2,0,1],"order":[0,1,2,3],"sidings":1,"cap":4,"opt_moves":6,"target":6,"brief":6},{"n":5,"train":[3,2,1,0],"order":[0,1,2,3],"sidings":1,"cap":4,"opt_moves":7,"target":7,"brief":7},{"n":6,"train":[1,3,0,2],"order":[0,1,2,3],"sidings":2,"cap":4,"opt_moves":6,"target":6,"brief":6},{"n":7,"train":[1,3,2,0],"order":[0,1,2,3],"sidings":2,"cap":4,"opt_moves":7,"target":7,"brief":7},{"n":8,"train":[2,4,0,3,1],"order":[0,1,2,3,4],"sidings":2,"cap":4,"opt_moves":8,"target":8,"brief":8},{"n":9,"train":[2,4,1,3,0],"order":[0,1,2,3,4],"sidings":2,"cap":4,"opt_moves":9,"target":9,"brief":9},{"n":10,"train":[3,4,1,2,0],"order":[0,1,2,3,4],"sidings":2,"cap":4,"opt_moves":9,"target":9,"brief":10},{"n":11,"train":[1,4,3,0,2],"order":[0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":8,"target":8,"brief":9},{"n":12,"train":[4,1,3,2,0],"order":[0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":9,"target":9,"brief":10},{"n":13,"train":[3,1,4,2,0],"order":[0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":9,"target":9,"brief":11},{"n":14,"train":[4,2,1,3,0,5],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":10,"target":10,"brief":12},{"n":15,"train":[5,2,1,4,0,3],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":10,"target":10,"brief":13},{"n":16,"train":[2,3,4,0,1],"order":[0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":9,"target":9,"brief":11},{"n":17,"train":[1,2,5,4,0,3],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":11,"target":11,"brief":13},{"n":18,"train":[1,4,2,3,0,5],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":12,"target":12,"brief":14},{"n":19,"train":[1,4,2,5,0,3],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":15},{"n":20,"train":[1,3,2,4,0,5],"order":[0,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":16},{"n":21,"train":[1,0,4,2,3,0],"order":[0,0,1,2,3,4],"sidings":2,"cap":2,"opt_moves":12,"target":12,"brief":15},{"n":22,"train":[1,3,2,4,0,2],"order":[0,1,2,2,3,4],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":16},{"n":23,"train":[1,2,4,0,5,3,1],"order":[0,1,1,2,3,4,5],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":17},{"n":24,"train":[1,3,2,4,0,3,5],"order":[0,1,2,3,3,4,5],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":18},{"n":25,"train":[2,4,0,3,5,1,4],"order":[0,1,2,3,4,4,5],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":19},{"n":26,"train":[1,4,5,2,0,3,3],"order":[5,3,1,2,0,4,3],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":18},{"n":27,"train":[4,5,3,3,1,0,2],"order":[3,0,4,5,2,3,1],"sidings":2,"cap":2,"opt_moves":13,"target":13,"brief":19},{"n":28,"train":[2,4,5,0,1,3,1],"order":[1,2,4,5,1,0,3],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":20},{"n":29,"train":[2,0,3,4,1,0,5],"order":[1,2,3,0,0,5,4],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":21},{"n":30,"train":[2,4,1,3,0,5,5],"order":[1,5,2,3,5,4,0],"sidings":2,"cap":2,"opt_moves":14,"target":14,"brief":22}]/*LEVELS_END*/;
 // 기획 표(brief.md)에서 이 규칙으로 만들 수 없는 값을 고친 곡선 (gen_levels.py CURVE 와 같다)
-const CURVE = [3,4,5,6,7,6,7,8,9,9,8,9,9,10,10,10,11,12,13,13,12,13,13,14,14,13,13,14,14,14];
+const CURVE = [3,4,5,6,7,6,7,8,9,9,8,9,9,10,10,9,11,12,13,13,12,13,13,14,14,13,13,14,14,14];
 const COLORS = ["#ff5a5f","#ff9f1c","#ffd23f","#3ccf6e","#2f9bff","#5b5fe0","#b45cf0"];
-const FRUIT = ["🍎","🍊","🍋","🥦","🐟","🫐","🍇"];
+const FRUIT = ["🍎","🍊","🍋","🥦","🐟","🍆","🍇"];   // 오래된 기기에서도 나오는 그림만
 const CARGO = [null,"🐄","🪵","🧸","🎪","🐧"];       // 5레벨마다 새 화물 칸 (그림만 바뀜)
 const RULE_ICON = {2:"⤵️",6:"✌️",11:"🤏",16:"↔️",21:"👯",26:"🔀"};
 const ST = 9; // 목적지: 역
@@ -167,7 +172,7 @@ function starsFor(moves, opt) { return moves <= opt ? 3 : moves <= opt + Math.ma
 // 한 판 기록: 화면·봇·검사가 이 객체 하나로 움직인다
 class Session {
   constructor(i) { this.i = i; this.lv = LEVELS[i]; this.reset(); }
-  reset() { this.s = startState(this.lv); this.hist = []; this.moves = 0; this.acts = 0; this.hints = 0; this.undos = 0; this.stuck = 0; this.stuckNow = false; this.done = false; this.failed = false; this.t0 = Date.now(); }
+  reset() { this.s = startState(this.lv); this.hist = []; this.moves = 0; this.acts = 0; this.hints = 0; this.autoHints = 0; this.undos = 0; this.stuck = 0; this.stuckNow = false; this.done = false; this.failed = false; this.t0 = Date.now(); }
   tryMove(src, dst) {
     if (this.done) return { ok: false, why: "done" };
     const why = illegal(this.s, this.lv, src, dst);
@@ -206,21 +211,23 @@ const store = {
 };
 let save = BOT ? {} : store.get();
 save.stars = save.stars || {}; save.best = save.best || {}; save.seen = save.seen || {}; save.card = save.card || {};
-save.unlocked = save.unlocked || 1; save.mute = !!save.mute;
+save.cargo = save.cargo || {}; save.unlocked = save.unlocked || 1; save.mute = !!save.mute;
 const totalStars = () => Object.values(save.stars).reduce((a, b) => a + b, 0);
 
 // ───────────────────────── 오락실 신호 (input · level_start · level_clear · fail) ─────────────────────────
 function emit(ev, data = {}) { if (BOT) return; try { if (window.parent !== window) window.parent.postMessage({ type: "nhc-game", game: "G022", ev, data }, "*"); } catch (e) {} }
-let lastInputEmit = 0, pendingStart = false;
-addEventListener("pointerdown", () => {
+let lastInputEmit = 0, pendingStart = false, gestured = false;
+addEventListener("pointerdown", e => {
+  gestured = true;
   const t = Date.now(); if (t - lastInputEmit >= 4000) { lastInputEmit = t; emit("input"); }
-  if (pendingStart) { pendingStart = false; emit("level_start", { level: S.i + 1 }); }
+  // 메뉴·소리 버튼 터치는 '이 판 시작'으로 치지 않는다
+  if (pendingStart && !(e.target.closest && e.target.closest("#menu,#menuBtn,#snd"))) { pendingStart = false; emit("level_start", { level: S.i + 1 }); }
 }, true);
 
 // ───────────────────────── 효과음 (Web Audio 합성, 첫 터치 뒤) ─────────────────────────
 let ac = null, noiseBuf = null;
 function audio() {
-  if (save.mute || BOT && !AUTOPLAY) return null;
+  if (save.mute || !gestured || BOT && !AUTOPLAY) return null;   // 첫 터치 전에는 소리 장치를 만들지 않는다
   try {
     if (!ac) { ac = new (window.AudioContext || window.webkitAudioContext)(); const len = ac.sampleRate * .5; noiseBuf = ac.createBuffer(1, len, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; }
     if (ac.state === "suspended") ac.resume();
@@ -252,6 +259,7 @@ const sfx = {
   star(i) { tone(880 * Math.pow(1.26, i), .18, "sine", .06); tone(1760 * Math.pow(1.26, i), .1, "sine", .02, .03); },
   pick() { tone(660 * pv(), .05, "sine", .03); },
   hmm() { tone(330, .18, "sine", .035, 0, 300); tone(300, .25, "sine", .035, .2, 380); },
+  fanfare() { [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, .22, "triangle", .06, i * .09)); tone(1568, .5, "sine", .04, .5); },
   card() { [523, 659, 784].forEach((f, i) => tone(f, .14, "triangle", .045, i * .07)); }
 };
 
@@ -296,7 +304,7 @@ let parts = [], lever = { a: 0, ta: 0, glow: 0, to: ST }, flashSlot = { q: -1, t
 let phase = "play";           // arrive | play | depart | result
 let phaseT = 0, departDur = 110;
 let guide = null;             // 동시에 하나만: {type:"card"} | {type:"hand",...} | {type:"stuck",n} | {type:"result"}
-let autoGuide = false, bear = { tilt: 0, hop: 0 };
+let autoGuide = false, bear = { tilt: 0, hop: 0 }, cargoPop = { t: 999, big: false }, menuOn = false;
 let bot = null;
 
 function setCarPath(id, to, via = true) {
@@ -327,7 +335,7 @@ function smoke(x, y) { if (!JUICE) return; parts.push({ x, y, vx: 20 + Math.rand
 
 // ───────────────────────── 레벨 열기 ─────────────────────────
 function leaveCurrent(why) {
-  if (S && !S.done && !S.failed && S.acts > 0) { S.failed = true; emit("fail", { level: S.i + 1, why, moves: S.moves, stuck: S.stuck }); }
+  if (S && !S.done && !S.failed && S.moves > 0) { S.failed = true; emit("fail", { level: S.i + 1, why, moves: S.moves, stuck: S.stuck, auto_hints: S.autoHints }); }
 }
 function load(i, byUser = false) {
   S = new Session(i);
@@ -338,7 +346,12 @@ function load(i, byUser = false) {
   const L = i + 1;
   departDur = !JUICE ? 40 : L === 30 ? 230 : 110;
   autoGuide = !BOT && !save.seen[L] && L <= 3;
-  save.seen[L] = 1; store.set(save);
+  save.seen[L] = 1; if (!BOT) save.last = L;
+  // 새 화물 칸이 처음 붙은 판: 기관차 위 화물이 크게 '뿅'
+  const newCargo = L > 1 && (L - 1) % 5 === 0 && !save.cargo[L];
+  if (newCargo && !BOT) save.cargo[L] = 1;
+  cargoPop = { t: 0, big: newCargo };
+  store.set(save);
   hideHand(); $("res").classList.remove("on"); $("card").classList.remove("on");
   lastTouch = tick;
   hud();
@@ -358,8 +371,8 @@ function hud() {
 function setGuide(g) { guide = g; if (!g || g.type !== "hand" && g.type !== "stuck") hideHand(); if (g && g.type === "hand") g.t = 0; if (g && g.type === "stuck") g.t = 0; hud(); }
 function showHint(fromButton) {
   if (phase !== "play" || guide && (guide.type === "card" || guide.type === "result")) return;
-  if (fromButton) S.hints++;
   const h = S.hint();
+  if (fromButton) S.hints++; else if (!BOT && h.kind === "move") S.autoHints++;   // 8초 손짓·첫 방문 손짓은 따로 센다
   if (h.kind === "undo") { enterStuck(); return; }
   if (h.kind !== "move") return;
   const [src, dst] = h.mv, id = topOf(S.s, src);
@@ -368,17 +381,17 @@ function showHint(fromButton) {
 }
 function enterStuck() { setGuide({ type: "stuck", n: S.undoNeed() }); sfx.hmm(); }
 const RULE_SCENE = {
-  2: `<span>🚃</span><span class="sm">⤵️</span><span class="sm">⬜⬜</span><span class="h">👆</span>`,
-  6: `<span class="sm">⤵️</span><span>✌️</span><span class="sm">⤵️</span>`,
+  2: `<span>🚃</span><span class="sm">⤵️</span><span class="slot"></span><span class="slot"></span><span class="h">👆</span>`,
+  6: `<span class="sm">⤵️</span><span>✌️</span><span class="sm">⤵️</span><span class="h">👆</span>`,
   11: `<span class="sm">🛑</span><span>🚃🚃</span><span class="bo">🚃</span>`,
   16: `<span class="sm">⬜</span><span>↔️</span><span class="sm">⬜</span><span class="h">👆</span>`,
   21: `<span>🚃</span><span class="sm">=</span><span>🚃</span>`,
-  26: `<span class="sm">📋</span><span>🍋🍎🥦</span>`
+  26: `<span>📋</span><span class="sm">🔀</span>`
 };
 function showRuleCard(L) {
   const extra = L === 21 ? `<div style="font-size:30px">${FRUIT[S.lv.order.find((c, i, a) => a.indexOf(c) !== i)]}${FRUIT[S.lv.order.find((c, i, a) => a.indexOf(c) !== i)]}</div>` :
     L === 26 ? `<div style="font-size:26px">${S.lv.order.map(c => FRUIT[c]).join("")}</div>` : "";
-  $("cardbox").innerHTML = `<div class="scene">${RULE_SCENE[L]}</div>${extra}<div class="row"><span class="tapme">👆</span></div>`;
+  $("cardbox").innerHTML = `<div class="scene">${RULE_SCENE[L]}</div>${extra}${RULE_SCENE[L].includes('class="h"') ? "" : `<div class="row"><span class="tapme">👆</span></div>`}`;
   $("card").classList.add("on"); setGuide({ type: "card" }); sfx.card();
 }
 $("card").addEventListener("pointerup", () => { $("card").classList.remove("on"); setGuide(null); afterGuideFree(); });
@@ -390,7 +403,7 @@ function hideHand() { handEl.style.display = "none"; }
 function placeHand(px, py, scale = 1, rot = 0) { handEl.style.display = "block"; handEl.style.transform = `translate(${px - 14}px,${py - 4}px) rotate(${rot}rad) scale(${scale})`; }
 function l2p(x, y) { const r = cv.getBoundingClientRect(); return { x: r.left + x * r.width / W, y: r.top + y * r.height / H }; }
 function updateHand() {
-  if (!guide) return;
+  if (!guide || menuOn) { if (menuOn) hideHand(); return; }
   if (guide.type === "hand") {
     const T = 110, t = guide.t % T, rep = Math.floor(guide.t / T);
     if (rep >= guide.reps) { setGuide(null); return; }
@@ -444,29 +457,31 @@ function bounceHome(id, boing) {
 function finishLevel() {
   const L = S.i + 1, opt = S.lv.opt_moves, st = starsFor(S.moves, opt);
   const sec = Math.round((Date.now() - S.t0) / 1000);
-  emit("level_clear", { level: L, moves: S.moves, min: opt, stars: st, hints: S.hints, undos: S.undos, stuck: S.stuck, sec });
+  emit("level_clear", { level: L, moves: S.moves, min: opt, stars: st, hints: S.hints, auto_hints: S.autoHints, undos: S.undos, stuck: S.stuck, sec });
   const before = totalStars(), prevBest = save.best[L], prevStars = save.stars[L] || 0, firstClear = !prevStars;
   save.stars[L] = Math.max(prevStars, st);
   save.best[L] = prevBest ? Math.min(prevBest, S.moves) : S.moves;
   save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length, L + 1));
   store.set(save);
   const after = totalStars();
-  let gain = "";
-  if (prevBest && S.moves < prevBest) gain = `🚃 ${prevBest}수 → ${S.moves}수`;
-  else if (st === 3 && prevStars < 3) gain = `⭐ 별 ${before} → ${after}`;
-  else if (firstClear && L % 5 === 0) gain = L === 30 ? "✨ 별빛 기관차!" : `${CARGO[L / 5]} 새 칸 왔어요!`;
+  // 한 줄만: 새 칸(큰 그림) > 기록 단축 > 별 늘어남
+  let gain = "", big = null;
+  if (firstClear && L % 5 === 0) big = L === 30 ? "✨🚂" : CARGO[L / 5];
+  else if (prevBest && S.moves < prevBest) gain = `🚃 ${prevBest}수 → ${S.moves}수`;
   else if (after > before) gain = `⭐ 별 ${before} → ${after}`;
-  S.result = { st, gain };
+  save.last = Math.min(LEVELS.length, L + 1); store.set(save);
+  S.result = { st, gain, big };
 }
 function showResult() {
-  const L = S.i + 1, { st, gain } = S.result;
+  const L = S.i + 1, { st, gain, big } = S.result;
   const next = L < LEVELS.length ? `▶ ${L + 1}${RULE_ICON[L + 1] ? " " + RULE_ICON[L + 1] : ""}` : "☰";
   $("resbox").innerHTML = `<div class="stars">${[0, 1, 2].map(i => `<span class="${i < st ? "on" : ""}" style="animation-delay:${.15 + i * .22}s">★</span>`).join("")}</div>
-    <div class="line">🚃 ${S.moves}수</div><div class="gain">${gain}</div>
+    <div class="line">🚃 ${S.moves}수</div>${big ? `<div class="newcar"><span>${big}</span></div>` : `<div class="gain">${gain}</div>`}
     <div class="row"><button class="big" id="again" aria-label="다시">🔄</button><button class="big pri" id="next" aria-label="다음">${next}</button></div>`;
   $("res").classList.add("on"); setGuide({ type: "result" });
   if (AUTOPLAY) document.title = `AUTOPLAY CLEAR ${L} ${S.moves}/${S.lv.opt_moves}`;
   for (let i = 0; i < st; i++) setTimeout(() => sfx.star(i), 150 + i * 220);
+  if (big) setTimeout(() => sfx.fanfare(), 150 + st * 220 + 150);
   $("again").onclick = () => load(S.i, true);
   $("next").onclick = () => { if (L < LEVELS.length) load(S.i + 1, true); else openMenu(); };
 }
@@ -490,21 +505,28 @@ function targetAt(y) {
   for (const t of rows) { const d = Math.abs(y - rowY(t)); if (d < bd) { bd = d; best = t; } }
   return best;
 }
+// 고르거나 끌고 있는 칸을 받을 수 있는 줄(탭-탭·끌기 때 밝힌다)
+function canDrop(t) {
+  const src = selected ? selected.src : drag && drag.moved ? drag.src : null;
+  return src !== null && phase === "play" && illegal(S.s, S.lv, src, t) === null;
+}
 function canTouch() { return phase === "play" && !BOT && !(guide && (guide.type === "card" || guide.type === "result")); }
 cv.addEventListener("pointerdown", e => {
   audio(); lastTouch = tick;
   if (!canTouch()) return;
   if (guide && guide.type === "hand") setGuide(null);
   const p = lpos(e), m = movableAt(p);
+  // 칸을 고른 상태: 다른 줄(역·옆 선로)을 누르면, 그 줄에 칸이 있어도 '거기에 놓기'
+  if (selected) {
+    const t = targetAt(p.y);
+    if (t !== null && t !== selected.src) { const sel = selected; selected = null; doMove(sel.src, t); return; }
+    if (!m) { bounceHome(selected.id, false); selected = null; return; }
+  }
   if (m) {
     cv.setPointerCapture(e.pointerId);
     const c = cars[m.id]; c.path = null;
     drag = { ...m, sx: p.x, sy: p.y, ox: c.x - p.x, oy: c.y - p.y, moved: false };
     sfx.pick();
-  } else if (selected) {
-    const t = targetAt(p.y);
-    const sel = selected; selected = null;
-    if (t !== null && t !== sel.src) doMove(sel.src, t); else bounceHome(sel.id, false);
   }
 });
 cv.addEventListener("pointermove", e => {
@@ -549,9 +571,9 @@ function openMenu() {
     b.onclick = () => { closeMenu(); if (i !== S.i || S.done) { leaveCurrent(i < S.i ? "prev" : "quit"); load(i, true); } };
     g.appendChild(b);
   }
-  $("menu").classList.add("on");
+  $("menu").classList.add("on"); menuOn = true; hideHand();
 }
-function closeMenu() { $("menu").classList.remove("on"); }
+function closeMenu() { $("menu").classList.remove("on"); menuOn = false; lastTouch = tick; }
 $("menuBtn").onclick = openMenu; $("menuX").onclick = closeMenu;
 addEventListener("pagehide", () => leaveCurrent("quit"));
 
@@ -566,6 +588,7 @@ function update() {
   if (flashSlot.t > 0) flashSlot.t--; if (sdFlash.t > 0) sdFlash.t--;
   bear.tilt += ((guide && guide.type === "stuck" ? -.35 : 0) - bear.tilt) * .15; if (bear.hop > 0) bear.hop--;
   if (guide && (guide.type === "hand" || guide.type === "stuck")) { guide.t++; }
+  cargoPop.t++; if (cargoPop.big && cargoPop.t === 50) sfx.fanfare();
 
   if (phase === "arrive") {
     const D = JUICE ? 48 : 20, u = Math.min(1, phaseT / D), e = 1 - Math.pow(1 - u, 3);
@@ -578,7 +601,7 @@ function update() {
       else if (autoGuide) showHint(false);
     }
   } else if (phase === "play") {
-    if (!BOT && !guide && !drag && !selected && !S.done && tick - lastTouch > 480) { lastTouch = tick; showHint(false); }
+    if (!BOT && !menuOn && !guide && !drag && !selected && !S.done && tick - lastTouch > 480) { lastTouch = tick; showHint(false); }
   } else if (phase === "depart") {
     if (phaseT === 0) { sfx.whistle(); if (JUICE) bear.hop = 30; }
     if (phaseT > 0) {
@@ -623,7 +646,7 @@ function drawTracks() {
   for (let j = 0; j < n; j++) {
     const x0 = slotPos(j, 0).x - CW / 2 - 10;
     const fl = sdFlash.j === j && sdFlash.t > 0 && Math.floor(sdFlash.t / 6) % 2 === 0;
-    if (hover === j || fl) { ctx.fillStyle = fl ? "rgba(255,120,120,.35)" : "rgba(255,240,150,.55)"; rr(x0 - 4, sdY(j) - 26, SPINE - x0 + 8, 54, 14); ctx.fill(); }
+    if (hover === j || fl || canDrop(j)) { ctx.fillStyle = fl ? "rgba(255,120,120,.35)" : hover === j ? "rgba(255,240,150,.7)" : "rgba(255,240,150,.32)"; rr(x0 - 4, sdY(j) - 26, SPINE - x0 + 8, 54, 14); ctx.fill(); }
     track(x0, SPINE, sdY(j));
     // 막다른 끝(멈춤 막이)
     ctx.fillStyle = "#e04848"; rr(x0 - 6, sdY(j) + 2, 8, 22, 3); ctx.fill(); ctx.fillStyle = "#fff"; ctx.fillRect(x0 - 6, sdY(j) + 9, 8, 4);
@@ -673,7 +696,12 @@ function drawLoco(x, y) {
   ctx.fillStyle = "#ffd23f"; ctx.beginPath(); ctx.arc(x - 21, y + 3, 3.5, 0, 7); ctx.fill();
   if (S.i >= 29 && (save.stars[30] || 0) > 0) { ctx.strokeStyle = "rgba(255,230,120,.9)"; ctx.lineWidth = 2; rr(x - 22, y - 26, 44, 42, 8); ctx.stroke(); }
   for (const wx of [x - 12, x + 8]) { ctx.fillStyle = "#2d3240"; ctx.beginPath(); ctx.arc(wx, y + 15, 6, 0, 7); ctx.fill(); ctx.fillStyle = "#ff595e"; ctx.beginPath(); ctx.arc(wx, y + 15, 2.2, 0, 7); ctx.fill(); }
-  if (cargo) emoji(cargo, x + 9, y - 33, 18);
+  if (cargo) {
+    // 화물: 평소 26px, 새 칸이 처음 온 판은 도착 뒤 크게 '뿅' 했다가 제자리
+    let sc = 1; const t = cargoPop.t - 50;
+    if (cargoPop.big && t > 0 && t < 70) sc = 1 + 1.3 * Math.sin(Math.min(1, t / 70) * Math.PI) * (JUICE ? 1 : .6);
+    emoji(cargo, x + 8, y - 36 - (sc - 1) * 14, 26 * sc);
+  }
 }
 function drawStation() {
   const lv = S.lv, n = lv.train.length, have = S.s.st.length, dx = departX();
@@ -690,13 +718,14 @@ function drawStation() {
     ctx.globalAlpha = 1; emoji(FRUIT[c], 0, -3, 17, Math.min(1, a + .3));
     ctx.restore();
   }
-  if (hover === ST) { ctx.fillStyle = "rgba(255,240,150,.5)"; rr(ST_X0 - 26, Y_ST - 26, W - ST_X0 + 22, 54, 14); ctx.fill(); }
+  if (hover === ST || canDrop(ST)) { ctx.fillStyle = hover === ST ? "rgba(255,240,150,.6)" : "rgba(255,240,150,.3)"; rr(ST_X0 - 26, Y_ST - 26, W - ST_X0 + 22, 54, 14); ctx.fill(); }
   drawLoco(20 + dx, Y_ST);
 }
 function drawBear() {
   const x = 328, y = 28 - (bear.hop > 0 ? Math.abs(Math.sin(bear.hop * .3)) * 8 : 0);
-  ctx.save(); ctx.translate(x, y + 12); ctx.rotate(bear.tilt + (guide && guide.type === "stuck" ? Math.sin(tick * .08) * .06 : 0)); emoji("🐻", 0, -12, 28); ctx.restore();
-  ctx.fillStyle = "#2b59c3"; rr(x - 9, y - 15, 18, 5, 2); ctx.fill();  // 역장 모자
+  ctx.save(); ctx.translate(x, y + 12); ctx.rotate(bear.tilt + (guide && guide.type === "stuck" ? Math.sin(tick * .08) * .06 : 0)); emoji("🐻", 0, -12, 28);
+  ctx.fillStyle = "#2b59c3"; rr(-9, -27, 18, 5, 2); ctx.fill();  // 역장 모자(곰과 같이 기운다)
+  ctx.restore();
   if (guide && guide.type === "stuck") {
     ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.ellipse(x - 40, y - 4, 17, 14, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(x - 22, y + 6, 3, 0, 7); ctx.fill();
     emoji("🤔", x - 40, y - 4, 18);
@@ -863,10 +892,12 @@ function runSelftest() {
 
 // ───────────────────────── 시작 ─────────────────────────
 resize();
-const qLevel = Math.max(1, Math.min(LEVELS.length, parseInt(Q.get("level") || Q.get("autoplay") || "0", 10) || 0));
+// ?level=N·?autoplay=N 이 있을 때만 그 레벨. 없으면 저장된 마지막 판(해금 범위 안)
+const qRaw = parseInt(Q.get("level") || Q.get("autoplay") || "", 10);
+const qLevel = Number.isFinite(qRaw) ? Math.max(1, Math.min(LEVELS.length, qRaw)) : 0;
 if (SELFTEST) { load(0); runSelftest(); }
 else if (AUTOPLAY) startAutoplay((qLevel || 1) - 1);
-else load(qLevel ? qLevel - 1 : Math.min(save.unlocked, LEVELS.length) - 1);
+else load(qLevel ? qLevel - 1 : Math.max(1, Math.min(save.last || save.unlocked, save.unlocked, LEVELS.length)) - 1);
 requestAnimationFrame(frame);
 </script>
 </body>

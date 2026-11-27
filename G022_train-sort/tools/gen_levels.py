@@ -23,9 +23,12 @@ TABLE = [
     (7, 2, 2, 18), (7, 2, 2, 19), (7, 2, 2, 20), (7, 2, 2, 21), (7, 2, 2, 22),
 ]
 ST = 9
+# 고정 배열(QA 1차 고칠 2): 16레벨은 옆→옆이 꼭 필요하면서 막힌 상태가 없는 쉬운 판.
+# 다른 레벨이 바뀌지 않게 난수는 평소대로 쓰고, 고른 결과만 이것으로 바꾼다
+FORCED = {16: [2, 3, 4, 0, 1]}
 # 기획 표 값 중 이 규칙(옆 선로 최대 2개, 16레벨 전에는 옆→옆 없이 최소 해)으로 만들 수 없는 값을 고친 곡선.
 # 5칸·옆→옆 없이 최대 9, 6칸 없이 최대 10, 6칸 옆→옆 허용 최대 13, 7칸(같은 색 포함) 최대 14 (전수 계산)
-CURVE = [3, 4, 5, 6, 7, 6, 7, 8, 9, 9, 8, 9, 9, 10, 10, 10, 11, 12, 13, 13, 12, 13, 13, 14, 14, 13, 13, 14, 14, 14]
+CURVE = [3, 4, 5, 6, 7, 6, 7, 8, 9, 9, 8, 9, 9, 10, 10, 9, 11, 12, 13, 13, 12, 13, 13, 14, 14, 13, 13, 14, 14, 14]
 
 
 def rand_rate(train, order, ns, cap, runs=50, seed=7):
@@ -156,6 +159,9 @@ def main():
         if L >= 8:  # 같은 최소 수면 무작위 봇이 덜 풀리는(헷갈리는) 배치를 고른다
             pick = sorted(pick[:40], key=lambda b: rand_rate(b[1], order, ns, cap))
         score, t, m = pick[0]
+        if L in FORCED:
+            t = tuple(FORCED[L]); m = solve(t, order, ns, cap)
+            assert solve(t, order, ns, cap, allow_ss=False) != m, "16레벨은 옆→옆이 꼭 필요해야 함"
         used.add((t, ns, cap, tuple(order)))
         levels.append({"n": L, "train": list(t), "order": order, "sidings": ns, "cap": cap,
                        "opt_moves": m, "target": target, "brief": brief_target})
