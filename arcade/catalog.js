@@ -113,8 +113,8 @@ window.CATALOG = [
   "path": "../G021_toy-parking/game/index.html",
   "color": "#ffd23f",
   "icon": "🚙",
-  "version": "2026-11-27 11:11",
-  "note": "수정 후 재검수",
+  "version": "2026-11-27 11:15",
+  "note": "새 차 보상 1순위·큰 그림, 13·14레벨 재생성(미소개 규칙 제거)…",
   "rating": null,
   "hot": false,
   "pop": null
