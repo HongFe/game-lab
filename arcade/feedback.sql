@@ -56,10 +56,14 @@ alter table sessions      enable row level security;
 -- 테스터: 쓰기만
 drop policy if exists "tester insert feedback" on feedback;
 create policy "tester insert feedback" on feedback      for insert to anon with check (true);
+drop policy if exists "tester insert votes" on compare_votes;
 create policy "tester insert votes"    on compare_votes for insert to anon with check (true);
 drop policy if exists "tester insert sessions" on sessions;
 create policy "tester insert sessions" on sessions      for insert to anon with check (true);
 -- 관리자: 읽기
+drop policy if exists "admin read feedback" on feedback;
 create policy "admin read feedback"    on feedback      for select to authenticated using (true);
+drop policy if exists "admin read votes" on compare_votes;
 create policy "admin read votes"       on compare_votes for select to authenticated using (true);
+drop policy if exists "admin read sessions" on sessions;
 create policy "admin read sessions"    on sessions      for select to authenticated using (true);
