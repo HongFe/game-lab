@@ -101,5 +101,39 @@ window.CATALOG = [
   "rating": null,
   "hot": false,
   "pop": null
+ },
+ {
+  "id": "G021",
+  "title": "꼬마 주차요원",
+  "one_liner": "장난감 차를 앞뒤로 밀어 길을 열고, 모든 차를 같은 색 주차칸에 넣어라. 적은 수로 넣을수록 별이 많다.",
+  "type": "엄청난 중독성",
+  "stage": "프로토",
+  "deadline": "2026-12-04",
+  "created": "2026-11-27",
+  "path": "../G021_toy-parking/game/index.html",
+  "color": "#ffd23f",
+  "icon": "🚙",
+  "version": "2026-11-27 10:53",
+  "note": "색 차를 같은 색 칸에 정리하는 아이 공간 퍼즐 30레벨, G001 엔…",
+  "rating": null,
+  "hot": false,
+  "pop": null
+ },
+ {
+  "id": "G022",
+  "title": "기차 칸 줄 세우기",
+  "one_liner": "뒤죽박죽 색깔 기차 칸을 갈림길 레버와 옆 선로로 옮겨, 무지개 순서로 다시 이어 역에 보내라.",
+  "type": "하이 콘셉트",
+  "stage": "프로토",
+  "deadline": "2026-12-04",
+  "created": "2026-11-27",
+  "path": "../G022_train-sort/game/index.html",
+  "color": "#ff8a3d",
+  "icon": "🚂",
+  "version": "2026-11-27 10:55",
+  "note": "아이 두뇌 게임, feedback.sql 정책 재실행 안전 마무리",
+  "rating": null,
+  "hot": false,
+  "pop": null
  }
 ];
