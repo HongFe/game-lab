@@ -2,6 +2,7 @@
 """G021 꼬마 주차요원 — 레벨 30개 생성기 (G001 gen_levels.py 틀 재사용).
 
 사용: python3 tools/gen_levels.py [--seed 21]      (레벨 생성 → game/levels.json + index.html 주입)
+      python3 tools/gen_levels.py --only 13,14 --seed 1314   (그 레벨만 다시 뽑기)
       python3 tools/gen_levels.py --inject-only   (levels.json → index.html만)
 표준 라이브러리만.
 
@@ -106,8 +107,9 @@ def dist_to_goal(m, adj, frozen=()):
     return dist
 
 
-def min_from(m, start, frozen=()):
-    """frozen 차는 움직이지 않는 조건에서 최소 수 (없으면 None)."""
+def min_from(m, start, frozen=(), lock_parked=False):
+    """frozen 차는 움직이지 않는 조건에서 최소 수 (없으면 None).
+    lock_parked: 칸에 들어간 색 차는 다시 빼지 않는다(15레벨 전 규칙)."""
     if m.goal(start):
         return 0
     seen = {start}
@@ -116,6 +118,8 @@ def min_from(m, start, frozen=()):
         p, d = q.popleft()
         for i, _, np in m.moves(p):
             if i in frozen or np in seen:
+                continue
+            if lock_parked and m.cars[i][4] == "C" and p[i] == m.cars[i][6]:
                 continue
             if m.goal(np):
                 return d + 1
@@ -204,6 +208,9 @@ def make_level(rng, lvno, tries=4000):
             # 1레벨: 첫 끌기가 어디든 1~2수 안
             if lvno == 1 and any(dist.get(np, 99) > 1 for _, _, np in m.moves(p)):
                 continue
+            # 15레벨('빼고 다시') 소개 전: 칸에 넣은 차를 다시 빼지 않고도 최소 해가 있어야 함
+            if lvno < 15 and min_from(m, p, lock_parked=True) != dd:
+                continue
             if npark:
                 # 칸에 든 차는 모두 한 번은 나와야 풀림
                 if any((min_from(m, p, frozen=(i,)) or 999) <= dd for i in parked):
@@ -242,8 +249,15 @@ def main():
         return
     seed = int(args[args.index("--seed") + 1]) if "--seed" in args else 21
     rng = random.Random(seed)
+    only = None
+    if "--only" in args:   # 일부 레벨만 다시 뽑기 (나머지는 levels.json 그대로)
+        only = {int(x) for x in args[args.index("--only") + 1].split(",")}
+        old = json.loads(out.read_text(encoding="utf-8"))
     levels = []
     for lvno in range(1, 31):
+        if only is not None and lvno not in only:
+            levels.append(old[lvno - 1])
+            continue
         lv = None
         while lv is None:
             lv = make_level(rng, lvno)

@@ -26,8 +26,6 @@ canvas{display:block;touch-action:none;border-radius:18px;box-shadow:0 8px 0 rgb
 #bot{display:flex;gap:12px;margin-top:14px;justify-content:center}
 .big{flex:1;max-width:120px;height:62px;border:0;border-radius:18px;background:#fff;font-size:30px;cursor:pointer;box-shadow:0 4px 0 rgba(35,50,74,.2);padding:0}
 .big:disabled{opacity:.4}
-#hint.glow{animation:glow 1.2s ease-in-out infinite}
-@keyframes glow{50%{background:#fff3c4}}
 .ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;border-radius:18px;background:rgba(20,30,50,.45);z-index:5}
 .ov.on{display:flex}
 .box{background:#fff;border-radius:22px;padding:18px 16px 16px;width:min(300px,88%);text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25);animation:pop .28s cubic-bezier(.2,1.6,.4,1)}
@@ -42,15 +40,16 @@ canvas{display:block;touch-action:none;border-radius:18px;box-shadow:0 8px 0 rgb
 .row{display:flex;gap:10px;margin-top:12px}
 .rb{flex:1;height:60px;border:0;border-radius:16px;font-size:24px;font-weight:900;cursor:pointer;background:#eef3f8;color:var(--ink);box-shadow:0 4px 0 rgba(35,50,74,.18)}
 .rb.pri{background:var(--acc);box-shadow:0 4px 0 #d19a0a}
-.card .ico{font-size:58px;line-height:72px;font-weight:900;white-space:nowrap}
-.card .hand{font-size:40px;height:50px;animation:swipe 1.4s ease-in-out infinite}
-@keyframes swipe{0%{transform:translateX(-40px)}50%{transform:translateX(40px)}100%{transform:translateX(-40px)}}
+.card canvas,#newcar{display:block;margin:0 auto;box-shadow:none;border-radius:14px}
+.card .ico{font-size:30px;line-height:36px;font-weight:900;white-space:nowrap}
+.rb{white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px}
+.badge{display:inline-flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;height:34px;padding:0 5px;font-size:16px;font-weight:900;color:var(--ink)}
+.badge img{height:28px;display:block}
 .sh{display:inline-block;margin:0 2px}
-.cone{display:inline-block;width:.8em;height:.9em;background:linear-gradient(180deg,#ff8a1f 0 38%,#fff 38% 55%,#ff8a1f 55%);clip-path:polygon(50% 0,100% 100%,0 100%);vertical-align:-.05em}
 #sel .box{width:min(340px,94%);padding:12px}
 .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:8px}
 .grid button{height:52px;border:0;border-radius:12px;background:#eef3f8;font-size:18px;font-weight:900;color:var(--ink);cursor:pointer;padding:0;line-height:1.1}
-.grid button small{display:block;font-size:11px;color:#e8a300;letter-spacing:-1px}
+.grid button small{display:block;font-size:13px;color:#e8a300;letter-spacing:-1px}
 .grid button.cur{outline:3px solid var(--acc)}
 .grid button:disabled{opacity:.35}
 #selftest{position:fixed;left:0;top:0;right:0;bottom:0;overflow:auto;margin:0;background:#fff;color:#111;font-size:11px;padding:8px;z-index:9;white-space:pre}
@@ -79,7 +78,7 @@ canvas{display:block;touch-action:none;border-radius:18px;box-shadow:0 8px 0 rgb
 <script>
 "use strict";
 // ── 레벨 데이터: tools/gen_levels.py 가 만든다. cars = [행, 열, 길이, 방향, 종류(C 색 차 / G 회색 차), 색 번호, 칸 위치] ──
-const LEVELS = /*LEVELS_START*/[{"n":4,"cars":[[3,0,2,"H","C",0,1]],"cones":[],"opt_moves":1,"no":1},{"n":4,"cars":[[0,1,2,"H","C",0,2],[0,3,2,"V","G",-1,-1]],"cones":[],"opt_moves":2,"no":2},{"n":4,"cars":[[1,0,2,"H","C",0,2],[0,3,2,"V","G",-1,-1],[1,2,2,"V","G",-1,-1]],"cones":[],"opt_moves":3,"no":3},{"n":4,"cars":[[2,2,2,"H","C",0,1],[3,2,2,"H","C",1,1],[2,1,2,"V","G",-1,-1]],"cones":[],"opt_moves":3,"no":4},{"n":4,"cars":[[0,3,2,"V","C",0,1],[1,2,2,"V","C",1,0],[0,0,2,"V","G",-1,-1],[0,1,2,"H","G",-1,-1]],"cones":[],"opt_moves":4,"no":5},{"n":5,"cars":[[0,4,2,"V","C",0,3],[1,2,2,"H","C",1,0],[3,3,2,"H","G",-1,-1],[2,2,2,"V","G",-1,-1]],"cones":[],"opt_moves":4,"no":6},{"n":5,"cars":[[2,1,2,"V","C",0,3],[0,0,2,"V","C",1,1],[4,0,3,"H","G",-1,-1],[3,3,2,"V","G",-1,-1],[3,4,2,"V","G",-1,-1]],"cones":[],"opt_moves":5,"no":7},{"n":5,"cars":[[2,2,2,"H","C",0,1],[0,0,2,"V","C",1,3],[2,1,2,"V","G",-1,-1],[4,0,2,"H","G",-1,-1],[3,2,2,"V","G",-1,-1]],"cones":[],"opt_moves":6,"no":8},{"n":5,"cars":[[3,3,2,"V","C",0,0],[2,1,2,"V","C",1,1],[2,0,3,"V","G",-1,-1],[0,0,2,"V","G",-1,-1],[2,2,2,"V","G",-1,-1],[2,3,2,"H","G",-1,-1]],"cones":[],"opt_moves":6,"no":9},{"n":5,"cars":[[0,2,2,"H","C",0,3],[0,4,2,"V","C",1,1],[1,1,2,"V","C",2,3],[1,2,2,"V","G",-1,-1],[3,2,2,"V","G",-1,-1],[2,3,2,"H","G",-1,-1]],"cones":[],"opt_moves":7,"no":10},{"n":5,"cars":[[2,0,2,"V","C",0,1],[3,2,2,"H","C",1,1],[1,1,2,"H","C",2,2],[2,2,3,"H","G",-1,-1],[0,3,2,"V","G",-1,-1],[3,4,2,"V","G",-1,-1]],"cones":[[4,0]],"opt_moves":7,"no":11},{"n":5,"cars":[[0,3,2,"H","C",0,0],[2,2,2,"H","C",1,1],[1,3,2,"H","C",2,0],[0,2,2,"V","G",-1,-1],[1,1,2,"V","G",-1,-1],[4,2,3,"H","G",-1,-1],[3,0,2,"H","G",-1,-1]],"cones":[[2,0]],"opt_moves":8,"no":12},{"n":5,"cars":[[3,2,2,"V","C",0,2],[0,0,2,"V","C",1,3],[0,2,2,"H","C",2,3],[4,0,2,"H","G",-1,-1],[2,2,2,"H","G",-1,-1],[1,2,3,"H","G",-1,-1],[2,0,2,"H","G",-1,-1]],"cones":[[1,1]],"opt_moves":9,"no":13},{"n":5,"cars":[[2,3,2,"V","C",0,1],[0,2,2,"V","C",1,2],[3,1,2,"H","C",2,3],[1,3,2,"H","G",-1,-1],[2,4,3,"V","G",-1,-1],[4,0,3,"H","G",-1,-1],[0,3,2,"H","G",-1,-1],[2,0,2,"H","G",-1,-1]],"cones":[[4,3]],"opt_moves":9,"no":14},{"n":5,"cars":[[0,0,2,"H","C",0,3],[1,0,2,"V","C",1,2],[2,2,2,"H","C",2,2],[0,2,2,"V","G",-1,-1],[0,3,2,"V","G",-1,-1],[4,3,2,"H","G",-1,-1],[3,2,2,"H","G",-1,-1]],"cones":[[1,4]],"opt_moves":10,"no":15},{"n":6,"cars":[[1,2,2,"V","C",0,2],[4,2,2,"H","C",1,3],[0,5,2,"V","C",2,2],[2,1,3,"V","G",-1,-1],[2,4,2,"H","G",-1,-1],[4,4,2,"V","G",-1,-1],[5,2,2,"H","G",-1,-1],[4,5,2,"V","G",-1,-1]],"cones":[[0,2]],"opt_moves":9,"no":16},{"n":6,"cars":[[5,1,2,"H","C",0,0],[2,4,2,"H","C",1,0],[3,5,2,"V","C",2,4],[3,2,3,"H","G",-1,-1],[1,0,2,"V","G",-1,-1],[1,3,2,"V","G",-1,-1],[5,3,2,"H","G",-1,-1],[3,1,2,"V","G",-1,-1],[0,3,3,"H","G",-1,-1]],"cones":[[0,0]],"opt_moves":10,"no":17},{"n":6,"cars":[[5,3,2,"H","C",0,1],[0,4,2,"H","C",1,1],[1,0,2,"V","C",2,3],[1,1,2,"H","G",-1,-1],[3,2,2,"V","G",-1,-1],[3,4,2,"H","G",-1,-1],[2,2,2,"H","G",-1,-1],[3,0,2,"H","G",-1,-1],[2,4,2,"H","G",-1,-1]],"cones":[[1,4],[0,0]],"opt_moves":11,"no":18},{"n":6,"cars":[[2,4,2,"V","C",0,3],[1,0,2,"H","C",1,4],[4,0,2,"V","C",2,0],[3,2,2,"H","G",-1,-1],[1,5,3,"V","G",-1,-1],[5,3,2,"H","G",-1,-1],[4,4,2,"H","G",-1,-1],[0,0,2,"H","G",-1,-1],[4,1,2,"V","G",-1,-1],[3,0,2,"H","G",-1,-1]],"cones":[[0,4],[0,5]],"opt_moves":12,"no":19},{"n":6,"cars":[[2,4,2,"H","C",0,3],[1,0,2,"V","C",1,4],[5,0,2,"H","C",2,1],[3,4,2,"V","C",3,0],[2,2,2,"V","G",-1,-1],[0,3,2,"H","G",-1,-1],[5,3,2,"H","G",-1,-1],[0,0,2,"H","G",-1,-1],[4,0,3,"H","G",-1,-1],[3,0,2,"H","G",-1,-1]],"cones":[[1,3]],"opt_moves":12,"no":20},{"n":6,"cars":[[3,1,2,"V","C",0,1],[3,0,2,"V","C",1,1],[4,4,2,"H","C",2,0],[1,4,2,"V","C",3,0],[0,2,2,"V","G",-1,-1],[2,1,2,"H","G",-1,-1],[0,3,2,"V","G",-1,-1],[3,2,2,"V","G",-1,-1],[3,3,2,"V","G",-1,-1],[0,5,3,"V","G",-1,-1]],"cones":[[5,3],[5,5]],"opt_moves":13,"no":21},{"n":6,"cars":[[0,2,2,"H","C",0,1],[1,5,2,"V","C",1,0],[4,0,2,"V","C",2,1],[2,2,2,"V","C",3,1],[4,4,2,"H","G",-1,-1],[4,2,2,"H","G",-1,-1],[2,1,3,"V","G",-1,-1],[3,3,2,"H","G",-1,-1],[5,1,2,"H","G",-1,-1],[1,4,2,"V","G",-1,-1],[1,1,2,"H","G",-1,-1]],"cones":[[0,0],[0,4]],"opt_moves":14,"no":22},{"n":6,"cars":[[0,2,2,"H","C",0,4],[2,1,2,"V","C",1,0],[0,5,2,"V","C",2,3],[5,2,3,"H","C",3,1],[2,0,2,"V","G",-1,-1],[2,4,2,"H","G",-1,-1],[2,3,2,"V","G",-1,-1],[4,2,2,"H","G",-1,-1],[3,4,2,"H","G",-1,-1],[1,0,3,"H","G",-1,-1],[4,0,2,"V","G",-1,-1]],"cones":[[4,1],[5,5]],"opt_moves":14,"no":23},{"n":6,"cars":[[3,3,2,"H","C",0,0],[4,3,2,"V","C",1,0],[4,0,2,"H","C",2,4],[1,0,3,"V","C",3,0],[2,1,2,"V","G",-1,-1],[5,0,3,"H","G",-1,-1],[0,2,2,"V","G",-1,-1],[0,5,2,"V","G",-1,-1],[2,3,2,"H","G",-1,-1],[3,5,2,"V","G",-1,-1],[0,0,2,"H","G",-1,-1],[2,2,2,"V","G",-1,-1]],"cones":[[0,4],[1,1]],"opt_moves":15,"no":24},{"n":6,"cars":[[3,5,2,"V","C",0,3],[4,2,2,"H","C",1,0],[2,3,2,"V","C",2,3],[5,2,3,"H","C",3,2],[1,0,3,"H","G",-1,-1],[3,1,2,"H","G",-1,-1],[1,4,2,"V","G",-1,-1],[0,2,2,"H","G",-1,-1],[3,0,2,"V","G",-1,-1],[4,1,2,"V","G",-1,-1],[0,5,2,"V","G",-1,-1]],"cones":[[2,5],[2,2]],"opt_moves":16,"no":25},{"n":6,"cars":[[3,4,2,"V","C",0,1],[4,1,2,"H","C",1,3],[3,3,2,"V","C",2,1],[2,5,2,"V","C",3,4],[0,2,3,"H","C",4,3],[2,0,2,"V","G",-1,-1],[3,1,2,"H","G",-1,-1],[1,1,2,"V","G",-1,-1],[2,3,2,"H","G",-1,-1],[1,4,2,"H","G",-1,-1],[5,2,2,"H","G",-1,-1]],"cones":[[5,1],[4,0]],"opt_moves":16,"no":26},{"n":6,"cars":[[2,1,2,"V","C",0,4],[3,2,2,"V","C",1,4],[2,5,2,"V","C",2,4],[5,4,2,"H","C",3,3],[1,0,3,"V","C",4,3],[3,3,2,"H","G",-1,-1],[2,3,2,"H","G",-1,-1],[0,4,2,"H","G",-1,-1],[4,0,2,"H","G",-1,-1],[4,3,2,"V","G",-1,-1],[0,2,2,"H","G",-1,-1],[1,4,2,"H","G",-1,-1]],"cones":[[1,1],[0,1]],"opt_moves":17,"no":27},{"n":6,"cars":[[3,3,2,"H","C",0,2],[3,5,2,"V","C",1,2],[1,1,2,"H","C",2,0],[1,4,2,"V","C",3,2],[5,0,3,"H","C",4,1],[3,2,2,"V","G",-1,-1],[2,2,2,"H","G",-1,-1],[4,0,2,"H","G",-1,-1],[0,0,3,"H","G",-1,-1],[0,4,2,"H","G",-1,-1],[1,0,2,"V","G",-1,-1],[1,5,2,"V","G",-1,-1]],"cones":[[3,1],[1,3],[5,4]],"opt_moves":18,"no":28},{"n":6,"cars":[[5,4,2,"H","C",0,3],[5,2,2,"H","C",1,1],[1,2,2,"V","C",2,0],[4,3,2,"H","C",3,4],[3,0,3,"V","C",4,1],[0,0,2,"H","G",-1,-1],[2,3,2,"H","G",-1,-1],[1,0,2,"H","G",-1,-1],[3,3,2,"H","G",-1,-1],[0,4,2,"H","G",-1,-1],[0,3,2,"V","G",-1,-1],[3,2,2,"V","G",-1,-1],[2,5,2,"V","G",-1,-1]],"cones":[[3,1],[2,1],[4,1]],"opt_moves":19,"no":29},{"n":6,"cars":[[2,5,2,"V","C",0,1],[4,1,2,"V","C",1,2],[3,2,2,"V","C",2,2],[4,5,2,"V","C",3,3],[0,0,3,"V","C",4,1],[0,1,2,"H","G",-1,-1],[0,4,2,"V","G",-1,-1],[3,3,2,"V","G",-1,-1],[3,0,2,"H","G",-1,-1],[2,2,2,"H","G",-1,-1],[0,3,2,"V","G",-1,-1],[4,4,2,"V","G",-1,-1],[5,2,2,"H","G",-1,-1]],"cones":[[1,2],[0,5],[4,0]],"opt_moves":20,"no":30}]/*LEVELS_END*/;
+const LEVELS = /*LEVELS_START*/[{"n":4,"cars":[[3,0,2,"H","C",0,1]],"cones":[],"opt_moves":1,"no":1},{"n":4,"cars":[[0,1,2,"H","C",0,2],[0,3,2,"V","G",-1,-1]],"cones":[],"opt_moves":2,"no":2},{"n":4,"cars":[[1,0,2,"H","C",0,2],[0,3,2,"V","G",-1,-1],[1,2,2,"V","G",-1,-1]],"cones":[],"opt_moves":3,"no":3},{"n":4,"cars":[[2,2,2,"H","C",0,1],[3,2,2,"H","C",1,1],[2,1,2,"V","G",-1,-1]],"cones":[],"opt_moves":3,"no":4},{"n":4,"cars":[[0,3,2,"V","C",0,1],[1,2,2,"V","C",1,0],[0,0,2,"V","G",-1,-1],[0,1,2,"H","G",-1,-1]],"cones":[],"opt_moves":4,"no":5},{"n":5,"cars":[[0,4,2,"V","C",0,3],[1,2,2,"H","C",1,0],[3,3,2,"H","G",-1,-1],[2,2,2,"V","G",-1,-1]],"cones":[],"opt_moves":4,"no":6},{"n":5,"cars":[[2,1,2,"V","C",0,3],[0,0,2,"V","C",1,1],[4,0,3,"H","G",-1,-1],[3,3,2,"V","G",-1,-1],[3,4,2,"V","G",-1,-1]],"cones":[],"opt_moves":5,"no":7},{"n":5,"cars":[[2,2,2,"H","C",0,1],[0,0,2,"V","C",1,3],[2,1,2,"V","G",-1,-1],[4,0,2,"H","G",-1,-1],[3,2,2,"V","G",-1,-1]],"cones":[],"opt_moves":6,"no":8},{"n":5,"cars":[[3,3,2,"V","C",0,0],[2,1,2,"V","C",1,1],[2,0,3,"V","G",-1,-1],[0,0,2,"V","G",-1,-1],[2,2,2,"V","G",-1,-1],[2,3,2,"H","G",-1,-1]],"cones":[],"opt_moves":6,"no":9},{"n":5,"cars":[[0,2,2,"H","C",0,3],[0,4,2,"V","C",1,1],[1,1,2,"V","C",2,3],[1,2,2,"V","G",-1,-1],[3,2,2,"V","G",-1,-1],[2,3,2,"H","G",-1,-1]],"cones":[],"opt_moves":7,"no":10},{"n":5,"cars":[[2,0,2,"V","C",0,1],[3,2,2,"H","C",1,1],[1,1,2,"H","C",2,2],[2,2,3,"H","G",-1,-1],[0,3,2,"V","G",-1,-1],[3,4,2,"V","G",-1,-1]],"cones":[[4,0]],"opt_moves":7,"no":11},{"n":5,"cars":[[0,3,2,"H","C",0,0],[2,2,2,"H","C",1,1],[1,3,2,"H","C",2,0],[0,2,2,"V","G",-1,-1],[1,1,2,"V","G",-1,-1],[4,2,3,"H","G",-1,-1],[3,0,2,"H","G",-1,-1]],"cones":[[2,0]],"opt_moves":8,"no":12},{"n":5,"cars":[[2,4,2,"V","C",0,1],[1,0,2,"V","C",1,3],[4,3,2,"H","C",2,2],[3,0,2,"H","G",-1,-1],[3,2,2,"V","G",-1,-1],[0,2,2,"H","G",-1,-1],[2,1,2,"H","G",-1,-1]],"cones":[[4,1]],"opt_moves":9,"no":13},{"n":5,"cars":[[3,4,2,"V","C",0,0],[2,2,2,"V","C",1,1],[0,1,2,"H","C",2,0],[1,1,3,"V","G",-1,-1],[1,2,2,"H","G",-1,-1],[2,3,2,"H","G",-1,-1],[0,3,2,"H","G",-1,-1],[3,3,2,"V","G",-1,-1]],"cones":[[4,0]],"opt_moves":9,"no":14},{"n":5,"cars":[[0,0,2,"H","C",0,3],[1,0,2,"V","C",1,2],[2,2,2,"H","C",2,2],[0,2,2,"V","G",-1,-1],[0,3,2,"V","G",-1,-1],[4,3,2,"H","G",-1,-1],[3,2,2,"H","G",-1,-1]],"cones":[[1,4]],"opt_moves":10,"no":15},{"n":6,"cars":[[1,2,2,"V","C",0,2],[4,2,2,"H","C",1,3],[0,5,2,"V","C",2,2],[2,1,3,"V","G",-1,-1],[2,4,2,"H","G",-1,-1],[4,4,2,"V","G",-1,-1],[5,2,2,"H","G",-1,-1],[4,5,2,"V","G",-1,-1]],"cones":[[0,2]],"opt_moves":9,"no":16},{"n":6,"cars":[[5,1,2,"H","C",0,0],[2,4,2,"H","C",1,0],[3,5,2,"V","C",2,4],[3,2,3,"H","G",-1,-1],[1,0,2,"V","G",-1,-1],[1,3,2,"V","G",-1,-1],[5,3,2,"H","G",-1,-1],[3,1,2,"V","G",-1,-1],[0,3,3,"H","G",-1,-1]],"cones":[[0,0]],"opt_moves":10,"no":17},{"n":6,"cars":[[5,3,2,"H","C",0,1],[0,4,2,"H","C",1,1],[1,0,2,"V","C",2,3],[1,1,2,"H","G",-1,-1],[3,2,2,"V","G",-1,-1],[3,4,2,"H","G",-1,-1],[2,2,2,"H","G",-1,-1],[3,0,2,"H","G",-1,-1],[2,4,2,"H","G",-1,-1]],"cones":[[1,4],[0,0]],"opt_moves":11,"no":18},{"n":6,"cars":[[2,4,2,"V","C",0,3],[1,0,2,"H","C",1,4],[4,0,2,"V","C",2,0],[3,2,2,"H","G",-1,-1],[1,5,3,"V","G",-1,-1],[5,3,2,"H","G",-1,-1],[4,4,2,"H","G",-1,-1],[0,0,2,"H","G",-1,-1],[4,1,2,"V","G",-1,-1],[3,0,2,"H","G",-1,-1]],"cones":[[0,4],[0,5]],"opt_moves":12,"no":19},{"n":6,"cars":[[2,4,2,"H","C",0,3],[1,0,2,"V","C",1,4],[5,0,2,"H","C",2,1],[3,4,2,"V","C",3,0],[2,2,2,"V","G",-1,-1],[0,3,2,"H","G",-1,-1],[5,3,2,"H","G",-1,-1],[0,0,2,"H","G",-1,-1],[4,0,3,"H","G",-1,-1],[3,0,2,"H","G",-1,-1]],"cones":[[1,3]],"opt_moves":12,"no":20},{"n":6,"cars":[[3,1,2,"V","C",0,1],[3,0,2,"V","C",1,1],[4,4,2,"H","C",2,0],[1,4,2,"V","C",3,0],[0,2,2,"V","G",-1,-1],[2,1,2,"H","G",-1,-1],[0,3,2,"V","G",-1,-1],[3,2,2,"V","G",-1,-1],[3,3,2,"V","G",-1,-1],[0,5,3,"V","G",-1,-1]],"cones":[[5,3],[5,5]],"opt_moves":13,"no":21},{"n":6,"cars":[[0,2,2,"H","C",0,1],[1,5,2,"V","C",1,0],[4,0,2,"V","C",2,1],[2,2,2,"V","C",3,1],[4,4,2,"H","G",-1,-1],[4,2,2,"H","G",-1,-1],[2,1,3,"V","G",-1,-1],[3,3,2,"H","G",-1,-1],[5,1,2,"H","G",-1,-1],[1,4,2,"V","G",-1,-1],[1,1,2,"H","G",-1,-1]],"cones":[[0,0],[0,4]],"opt_moves":14,"no":22},{"n":6,"cars":[[0,2,2,"H","C",0,4],[2,1,2,"V","C",1,0],[0,5,2,"V","C",2,3],[5,2,3,"H","C",3,1],[2,0,2,"V","G",-1,-1],[2,4,2,"H","G",-1,-1],[2,3,2,"V","G",-1,-1],[4,2,2,"H","G",-1,-1],[3,4,2,"H","G",-1,-1],[1,0,3,"H","G",-1,-1],[4,0,2,"V","G",-1,-1]],"cones":[[4,1],[5,5]],"opt_moves":14,"no":23},{"n":6,"cars":[[3,3,2,"H","C",0,0],[4,3,2,"V","C",1,0],[4,0,2,"H","C",2,4],[1,0,3,"V","C",3,0],[2,1,2,"V","G",-1,-1],[5,0,3,"H","G",-1,-1],[0,2,2,"V","G",-1,-1],[0,5,2,"V","G",-1,-1],[2,3,2,"H","G",-1,-1],[3,5,2,"V","G",-1,-1],[0,0,2,"H","G",-1,-1],[2,2,2,"V","G",-1,-1]],"cones":[[0,4],[1,1]],"opt_moves":15,"no":24},{"n":6,"cars":[[3,5,2,"V","C",0,3],[4,2,2,"H","C",1,0],[2,3,2,"V","C",2,3],[5,2,3,"H","C",3,2],[1,0,3,"H","G",-1,-1],[3,1,2,"H","G",-1,-1],[1,4,2,"V","G",-1,-1],[0,2,2,"H","G",-1,-1],[3,0,2,"V","G",-1,-1],[4,1,2,"V","G",-1,-1],[0,5,2,"V","G",-1,-1]],"cones":[[2,5],[2,2]],"opt_moves":16,"no":25},{"n":6,"cars":[[3,4,2,"V","C",0,1],[4,1,2,"H","C",1,3],[3,3,2,"V","C",2,1],[2,5,2,"V","C",3,4],[0,2,3,"H","C",4,3],[2,0,2,"V","G",-1,-1],[3,1,2,"H","G",-1,-1],[1,1,2,"V","G",-1,-1],[2,3,2,"H","G",-1,-1],[1,4,2,"H","G",-1,-1],[5,2,2,"H","G",-1,-1]],"cones":[[5,1],[4,0]],"opt_moves":16,"no":26},{"n":6,"cars":[[2,1,2,"V","C",0,4],[3,2,2,"V","C",1,4],[2,5,2,"V","C",2,4],[5,4,2,"H","C",3,3],[1,0,3,"V","C",4,3],[3,3,2,"H","G",-1,-1],[2,3,2,"H","G",-1,-1],[0,4,2,"H","G",-1,-1],[4,0,2,"H","G",-1,-1],[4,3,2,"V","G",-1,-1],[0,2,2,"H","G",-1,-1],[1,4,2,"H","G",-1,-1]],"cones":[[1,1],[0,1]],"opt_moves":17,"no":27},{"n":6,"cars":[[3,3,2,"H","C",0,2],[3,5,2,"V","C",1,2],[1,1,2,"H","C",2,0],[1,4,2,"V","C",3,2],[5,0,3,"H","C",4,1],[3,2,2,"V","G",-1,-1],[2,2,2,"H","G",-1,-1],[4,0,2,"H","G",-1,-1],[0,0,3,"H","G",-1,-1],[0,4,2,"H","G",-1,-1],[1,0,2,"V","G",-1,-1],[1,5,2,"V","G",-1,-1]],"cones":[[3,1],[1,3],[5,4]],"opt_moves":18,"no":28},{"n":6,"cars":[[5,4,2,"H","C",0,3],[5,2,2,"H","C",1,1],[1,2,2,"V","C",2,0],[4,3,2,"H","C",3,4],[3,0,3,"V","C",4,1],[0,0,2,"H","G",-1,-1],[2,3,2,"H","G",-1,-1],[1,0,2,"H","G",-1,-1],[3,3,2,"H","G",-1,-1],[0,4,2,"H","G",-1,-1],[0,3,2,"V","G",-1,-1],[3,2,2,"V","G",-1,-1],[2,5,2,"V","G",-1,-1]],"cones":[[3,1],[2,1],[4,1]],"opt_moves":19,"no":29},{"n":6,"cars":[[2,5,2,"V","C",0,1],[4,1,2,"V","C",1,2],[3,2,2,"V","C",2,2],[4,5,2,"V","C",3,3],[0,0,3,"V","C",4,1],[0,1,2,"H","G",-1,-1],[0,4,2,"V","G",-1,-1],[3,3,2,"V","G",-1,-1],[3,0,2,"H","G",-1,-1],[2,2,2,"H","G",-1,-1],[0,3,2,"V","G",-1,-1],[4,4,2,"V","G",-1,-1],[5,2,2,"H","G",-1,-1]],"cones":[[1,2],[0,5],[4,0]],"opt_moves":20,"no":30}]/*LEVELS_END*/;
 // brief.md 레벨 표: [격자, 색 차, 회색 차, 고깔, 최소 이동]
 const TABLE = [[4,1,0,0,1],[4,1,1,0,2],[4,1,2,0,3],[4,2,1,0,3],[4,2,2,0,4],[5,2,2,0,4],[5,2,3,0,5],[5,2,3,0,6],[5,2,4,0,6],[5,3,3,0,7],
   [5,3,3,1,7],[5,3,4,1,8],[5,3,4,1,9],[5,3,5,1,9],[5,3,4,1,10],[6,3,5,1,9],[6,3,6,1,10],[6,3,6,2,11],[6,3,7,2,12],[6,4,6,1,12],
@@ -91,14 +90,13 @@ const COLS = [
   { c: "#2fc27a", d: "#1a8a52", sh: "star" }, { c: "#b06bff", d: "#7a3dd0", sh: "heart" }];
 const NOTES = [523.25, 659.25, 783.99, 1046.5, 1318.5];       // 도 미 솔 도 미
 const SKINS = [{ at: 5, e: "🚓" }, { at: 10, e: "🚒" }, { at: 15, e: "🚑" }, { at: 20, e: "🚌" }, { at: 25, e: "🚜" }, { at: 30, e: "🏎" }];
-const RULE = { 2: "🚐", 4: "●▲", 6: "5×5", 7: "🚛", 10: "●▲■", 11: "△", 15: "🅿️↔", 16: "6×6", 20: "●▲■★", 23: "🚛■", 26: "●▲■★♥", 30: "🏁" };
-const SHCH = { circle: "●", tri: "▲", square: "■", star: "★", heart: "♥" };
 
 const $ = id => document.getElementById(id);
 const q = new URLSearchParams(location.search);
 const SELFTEST = q.has("selftest"), AUTOPLAY = q.has("autoplay"), JUICE = !q.has("nojuice");
 const QUIET = SELFTEST || AUTOPLAY;       // 자동 실행 중엔 오락실 신호를 보내지 않는다
-const cv = $("cv"), ctx = cv.getContext("2d");
+const cv = $("cv");
+let ctx = cv.getContext("2d");
 
 // ── 저장 (막혀도 게임은 돈다) ──
 const store = {
@@ -136,7 +134,8 @@ const sfx = {
   honk(p = 1, when = 0) { beep(415 * p, .14, "square", .028, when); beep(523 * p, .14, "square", .022, when); },
   star(k) { beep(660 + k * 220, .18, "sine", .07, 0, 1.5); },
   whoosh() { beep(700, .14, "sine", .03, 0, .45); },
-  tap() { beep(880, .05, "sine", .03); }
+  tap() { beep(880, .05, "sine", .03); },
+  fanfare() { [523, 659, 784, 1046].forEach((f, k) => beep(f, .22, "triangle", .06, k * .1)); beep(1568, .4, "sine", .04, .42); }
 };
 
 // ── 오락실(NHC POCKET) 신호: input / level_start / level_clear / fail 만 ──
@@ -175,9 +174,10 @@ function rangeOf(m, pos, i) {   // 차 i가 갈 수 있는 [가장 앞, 가장 �
   while (hi + m.len[i] < n && at(hi + m.len[i]) === -1) hi++;
   return [lo, hi];
 }
-function movesOf(m, pos) {      // 가능한 끌기 전부 (한 번 끌기 = 이동 1, 몇 칸이든)
+function movesOf(m, pos, lockParked = false) {      // 가능한 끌기 전부 (한 번 끌기 = 이동 1, 몇 칸이든)
   const g = gridOf(m, pos), n = m.n, out = [];
   for (let i = 0; i < pos.length; i++) {
+    if (lockParked && m.kind[i] === "C" && pos[i] === m.tgt[i]) continue;   // 칸에 넣은 차는 다시 빼지 않기
     const f = m.fix[i], ln = m.len[i], h = m.h[i];
     for (const st of [-1, 1]) for (let v = pos[i] + st; ; v += st) {
       const head = st < 0 ? v : v + ln - 1; if (head < 0 || head >= n) break;
@@ -190,14 +190,14 @@ function movesOf(m, pos) {      // 가능한 끌기 전부 (한 번 끌기 = 이
 const isGoal = (m, pos) => m.colorIdx.every(i => pos[i] === m.tgt[i]);
 const keyOf = (m, pos) => { let k = 0; for (let i = 0; i < pos.length; i++) k = k * m.n + pos[i]; return k; };
 // 풀이 봇: 지금 배치에서 최소 이동 풀이 (BFS)
-function solveFrom(m, start) {
+function solveFrom(m, start, lockParked = false) {
   if (isGoal(m, start)) return [];
   const k0 = keyOf(m, start), prev = new Map([[k0, null]]); let qa = [start];
   while (qa.length) {
     const nq = [];
     for (const p of qa) {
       const kp = keyOf(m, p);
-      for (const a of movesOf(m, p)) {
+      for (const a of movesOf(m, p, lockParked)) {
         const np = p.slice(); np[a.i] = a.to; const k = keyOf(m, np);
         if (prev.has(k)) continue;
         prev.set(k, [kp, a, p]);
@@ -213,55 +213,88 @@ function solveFrom(m, start) {
   }
   return null;
 }
-// 도달 가능한 상태 전부 → 목표까지 거리 (막힘 검사용)
-function analyze(m) {
+// 도달 가능한 상태 전부 → 목표까지 거리표. 막힘 검사와 💡 캐시가 같이 쓴다.
+// 느린 폰에서 멈추지 않게 조금씩(yield) 계산한다
+function* analyzeGen(m) {
   const idx = new Map(), states = [], adj = [];
-  const add = p => { const k = keyOf(m, p); if (!idx.has(k)) { idx.set(k, states.length); states.push(p); } return idx.get(k); };
+  const add = p => { const k = keyOf(m, p); let s = idx.get(k); if (s === undefined) { s = states.length; idx.set(k, s); states.push(p); } return s; };
   add(m.start);
   for (let s = 0; s < states.length; s++) {
     const p = states[s], nb = [];
     for (const a of movesOf(m, p)) { const np = p.slice(); np[a.i] = a.to; nb.push(add(np)); }
     adj.push(nb);
+    if (s % 300 === 299) yield;
   }
-  const dist = new Int32Array(states.length).fill(-1); let qa = [];
+  const dist = new Int32Array(states.length).fill(-1), qa = [];
   states.forEach((p, s) => { if (isGoal(m, p)) { dist[s] = 0; qa.push(s); } });
-  for (let h = 0; h < qa.length; h++) for (const t of adj[qa[h]]) if (dist[t] < 0) { dist[t] = dist[qa[h]] + 1; qa.push(t); }
+  for (let h = 0; h < qa.length; h++) { for (const t of adj[qa[h]]) if (dist[t] < 0) { dist[t] = dist[qa[h]] + 1; qa.push(t); } if (h % 3000 === 2999) yield; }
   let unreached = 0; for (let s = 0; s < states.length; s++) if (dist[s] < 0) unreached++;
-  return { size: states.length, unreached, startDist: dist[0] };
+  return { idx, dist, size: states.length, unreached, startDist: dist[0] };
 }
+function runAll(gen) { let r; do r = gen.next(); while (!r.done); return r.value; }
+function analyze(m) { return runAll(analyzeGen(m)); }
+function distOf(tab, m, p) { const s = tab.idx.get(keyOf(m, p)); return s === undefined ? -1 : tab.dist[s]; }
 
 // ═════════ 게임 상태 ═════════
-let L = 0, M = null, pos = [], hist = [], moves = 0, hints = 0, cleared = false, failSent = false, pendingStart = false, t0play = 0;
+let L = 0, M = null, pos = [], hist = [], moves = 0, hints = 0, cleared = false, failSent = false, pendingStart = false, startSent = false, t0play = 0;
+let distTab = null, loadId = 0, tapSel = null, spot = null, skinOverride = null, demo = null, newcar = null;
 let inSlot = [], drag = null, guide = null, lastTouch = performance.now(), introT0 = 0, slotFlashT0 = -1e9, busy = false;
-const anim = {};          // 차별 미끄러짐 애니메이션 {from,to,t0,dur}
-const fx = { parts: [], shake: 0, car: {} };
+let anim = {};            // 차별 미끄러짐 애니메이션 {from,to,t0,dur}
+let fx = { parts: [], shake: 0, car: {} };
 
 function apply(a) {        // 한 수 두기 (플레이·봇·재생 공통)
   hist.push({ i: a.i, from: pos[a.i] });
   pos[a.i] = a.to; moves++;
 }
 function load(n, byUser = false) {
-  L = Math.max(0, Math.min(LEVELS.length - 1, n));
+  n = Math.max(0, Math.min(LEVELS.length - 1, n));
+  const quietRestart = !!M && n === L && moves === 0 && !cleared && startSent;   // 0수에서 🔄 연타: 같은 판으로 본다
+  L = n; loadId++; distTab = null; tapSel = null; spot = null;
   M = mkModel(LEVELS[L]); pos = M.start.slice();
   hist = []; moves = 0; hints = 0; cleared = false; failSent = false; drag = null; guide = null; busy = false;
   inSlot = pos.map((p, i) => M.kind[i] === "C" && p === M.tgt[i]);
   for (const k in anim) delete anim[k];
   fx.parts = []; fx.car = {}; fx.shake = 0;
-  ["res", "sel", "card"].forEach(id => $(id).classList.remove("on"));
+  ["res", "sel", "card"].forEach(id => $(id).classList.remove("on")); demo = null; newcar = null;
   t0play = performance.now(); lastTouch = t0play;
   if (!SELFTEST) {
     introT0 = performance.now();
     M.len.forEach((ln, i) => { anim[i] = { from: i % 2 ? M.n + .5 : -ln - .5, to: pos[i], t0: introT0 + i * 35, dur: 600 }; });
     slotFlashT0 = introT0 + 600;
-    if (byUser || pendingStart === "now") { emit("level_start", { level: L + 1 }); pendingStart = false; } else pendingStart = true;
+    if (quietRestart) pendingStart = false;
+    else { startSent = false; if (byUser) { pendingStart = false; startSent = true; emit("level_start", { level: L + 1 }); } else pendingStart = true; }
     setTimeout(() => sfx.brrm(), 0);
     resize(); hud();
+    buildDistTab();
     const lv = L + 1;
-    if (RULE[lv] && !save.seen[lv] && !AUTOPLAY) showCard(lv);
-    else if (lv <= 3 && !save.stars[L] && !AUTOPLAY) setTimeout(() => { if (!guide && !hist.length && L === lv - 1) showHint(false); }, 700);
+    if (DEMO[lv] && !save.seen[lv] && !AUTOPLAY) showCard(lv);
+    else afterIntro(700);
   }
 }
-function flushStart() { if (pendingStart === true) { pendingStart = false; emit("level_start", { level: L + 1 }); } }
+function afterIntro(delay) {   // 카드가 없거나 닫힌 뒤: 새 차 스포트라이트 → 첫 방문 손짓 (동시에 하나씩)
+  const lv = L + 1, id = loadId, newSkin = SKINS.find(s => s.at === lv - 1);
+  setTimeout(() => {
+    if (id !== loadId || AUTOPLAY) return;
+    if (newSkin && !save.stars[L] && M.colorIdx.length) startSpot();
+    else if (lv <= 3 && !save.stars[L] && !guide && !hist.length) showHint(false);
+  }, delay);
+}
+function startSpot() {         // 새로 받은 차가 '짠' 하고 반짝 (스티커 크게)
+  const i = M.colorIdx[0]; spot = { i, t0: performance.now(), dur: 2600 };
+  const r = carRect(i, pos[i]);
+  sfx.fanfare();
+  puff(r.x + r.w / 2, r.y + r.h / 2, 22, { speed: 120, life: .8, r: 3, cols: ["#fff", "#ffc533", COLS[M.col[i]].c], square: true, drag: .9 });
+}
+function buildDistTab() {      // 💡 캐시: 거리표를 프레임마다 8ms씩 나눠 만든다
+  const id = loadId, gen = analyzeGen(M);
+  (function step() {
+    if (id !== loadId) return;
+    const t = performance.now();
+    while (performance.now() - t < 8) { const r = gen.next(); if (r.done) { distTab = r.value; return; } }
+    setTimeout(step, 0);
+  })();
+}
+function flushStart() { if (pendingStart === true) { pendingStart = false; startSent = true; emit("level_start", { level: L + 1 }); } }
 function leave(why) {      // 판을 끝내지 않고 떠날 때 한 번만
   if (!cleared && !failSent && moves > 0) { failSent = true; emit("fail", { level: L + 1, why, moves }); }
 }
@@ -277,26 +310,124 @@ function hud() {
   $("snd").textContent = save.mute ? "🔇" : "🔊";
 }
 
-// ── 레벨 시작 카드: 새 규칙 = 아이콘 + 손짓 (글 없음). 탭하면 닫힘 ──
-function iconHTML(lv) {
-  const s = RULE[lv];
-  return [...s].map(ch => { if (ch === "△") return '<span class="cone"></span>'; const k = Object.keys(SHCH).find(x => SHCH[x] === ch); return k ? `<span class="sh" style="color:${COLS[Object.keys(SHCH).indexOf(k)].c}">${ch}</span>` : ch; }).join("");
+// ── 레벨 시작 카드: 새 규칙을 게임 속 차 그림으로 '보여 준다'(미니 시연 + 손짓, 글 없음). 탭하면 닫힘 ──
+// cars = 레벨과 같은 형식, steps = 손가락이 끄는 수({bump}: 막혀서 '통' 튕김)
+const DEMO = {
+  2: { cols: 4, rows: 3, cars: [[0, 0, 2, "H", "C", 0, 2], [0, 2, 2, "V", "G", -1, -1]], steps: [{ i: 1, to: 1 }, { i: 0, to: 2 }] },
+  4: { cols: 4, rows: 3, cars: [[0, 0, 2, "H", "C", 0, 2], [0, 3, 2, "V", "C", 1, 1]], steps: [{ i: 1, to: 1 }, { i: 0, to: 2 }] },
+  6: { cols: 5, rows: 5, cars: [[2, 0, 2, "H", "C", 0, 3]], steps: [{ i: 0, to: 3 }] },
+  7: { cols: 5, rows: 4, cars: [[0, 0, 2, "H", "C", 0, 3], [0, 3, 3, "V", "G", -1, -1]], steps: [{ i: 1, to: 1 }, { i: 0, to: 3 }] },
+  10: { cols: 4, rows: 3, cars: [[0, 0, 2, "H", "C", 0, 2], [0, 3, 2, "V", "C", 1, 1], [2, 2, 2, "H", "C", 2, 0]], steps: [{ i: 2, to: 0 }, { i: 1, to: 1 }, { i: 0, to: 2 }] },
+  11: { cols: 4, rows: 2, cars: [[0, 1, 2, "H", "C", 0, 0]], cones: [[0, 3]], steps: [{ i: 0, to: 2, bump: true }, { i: 0, to: 0 }] },
+  15: { cols: 4, rows: 4, cars: [[1, 1, 2, "H", "C", 0, 1], [0, 2, 2, "V", "C", 1, 2]], steps: [{ i: 0, to: 0 }, { i: 1, to: 2 }, { i: 0, to: 1 }] },
+  16: { cols: 6, rows: 6, cars: [[3, 0, 2, "H", "C", 0, 4]], steps: [{ i: 0, to: 4 }] },
+  20: { cols: 4, rows: 4, cars: [[0, 0, 2, "H", "C", 0, 2], [1, 2, 2, "H", "C", 1, 0], [2, 0, 2, "H", "C", 2, 2], [3, 2, 2, "H", "C", 3, 0]], steps: [{ i: 0, to: 2 }, { i: 1, to: 0 }, { i: 2, to: 2 }, { i: 3, to: 0 }] },
+  23: { cols: 5, rows: 4, cars: [[1, 0, 3, "H", "C", 3, 2], [0, 3, 2, "V", "G", -1, -1]], steps: [{ i: 0, to: 2, bump: true }, { i: 1, to: 2 }, { i: 0, to: 2 }] },
+  26: { cols: 4, rows: 5, cars: [[0, 0, 2, "H", "C", 0, 2], [1, 2, 2, "H", "C", 1, 0], [2, 0, 2, "H", "C", 2, 2], [3, 2, 2, "H", "C", 3, 0], [4, 0, 2, "H", "C", 4, 2]], steps: [{ i: 0, to: 2 }, { i: 1, to: 0 }, { i: 2, to: 2 }, { i: 3, to: 0 }, { i: 4, to: 2 }] },
+};
+DEMO[30] = { ...DEMO[26], top: "🏁" };
+// 다음 판 미리보기 그림 (결과 카드 ▶ 버튼, 흰 바탕 위)
+const BADGE = {
+  2: { cols: 2, rows: 1, cars: [[0, 0, 2, "H", "G", -1, -1]] }, 4: { cols: 2, rows: 1, cars: [[0, 0, 2, "H", "C", 1, -1]] },
+  7: { cols: 3, rows: 1, cars: [[0, 0, 3, "H", "G", -1, -1]] }, 10: { cols: 2, rows: 1, cars: [[0, 0, 2, "H", "C", 2, -1]] },
+  11: { cols: 1, rows: 1, cars: [], cones: [[0, 0]] }, 15: { cols: 2, rows: 1, cars: [[0, 0, 2, "H", "C", 0, 0]] },
+  20: { cols: 2, rows: 1, cars: [[0, 0, 2, "H", "C", 3, -1]] }, 23: { cols: 3, rows: 1, cars: [[0, 0, 3, "H", "C", 3, -1]] },
+  26: { cols: 2, rows: 1, cars: [[0, 0, 2, "H", "C", 4, -1]] }, 6: "5×5", 16: "6×6", 30: "🏁"
+};
+function mkScene(d, maxW, maxH, padK = .25) {
+  const n = Math.max(d.cols, d.rows), walls = [];
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (r >= d.rows || c >= d.cols) walls.push([r, c]);   // 판 밖은 막힘
+  const M2 = mkModel({ n, cars: d.cars, cones: (d.cones || []).concat(walls) });
+  const S2 = Math.min(maxW / (d.cols + padK * 2), maxH / (d.rows + padK * 2), 64), P2 = S2 * padK;
+  return { ...d, cones: d.cones || [], M: M2, S: S2, PAD: P2, W: d.cols * S2 + P2 * 2, H: d.rows * S2 + P2 * 2 };
+}
+function sceneCanvas(sc) {
+  const c = document.createElement("canvas"), dpr = Math.max(2, window.devicePixelRatio || 1);
+  c.width = Math.round(sc.W * dpr); c.height = Math.round(sc.H * dpr); c.style.width = sc.W + "px"; c.style.height = sc.H + "px";
+  const c2 = c.getContext("2d"); c2.setTransform(dpr, 0, 0, dpr, 0, 0); return [c, c2];
+}
+function renderScene(c2, sc, p, extra, skin = null) {   // 게임과 같은 그리기 함수를 작은 그림판에 쓴다
+  const keep = { ctx, S, PAD, M, pos, L, drag, guide, anim, fx, cleared, spot, skinOverride };
+  ctx = c2; S = sc.S; PAD = sc.PAD; M = sc.M; pos = p; L = 0; drag = null; guide = null; anim = {}; fx = { parts: [], shake: 0, car: {} }; cleared = false; spot = null; skinOverride = skin;
+  try {
+    const t = performance.now();
+    ctx.clearRect(0, 0, sc.W, sc.H);
+    if (!sc.noBg) {
+      ctx.fillStyle = "#535b6b"; rr(0, 0, sc.W, sc.H, 12); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 1.5;
+      for (let k = 1; k < sc.cols; k++) { ctx.beginPath(); ctx.moveTo(PAD + k * S, PAD + 4); ctx.lineTo(PAD + k * S, PAD + sc.rows * S - 4); ctx.stroke(); }
+      for (let k = 1; k < sc.rows; k++) { ctx.beginPath(); ctx.moveTo(PAD + 4, PAD + k * S); ctx.lineTo(PAD + sc.cols * S - 4, PAD + k * S); ctx.stroke(); }
+      M.colorIdx.forEach(i => { if (M.tgt[i] >= 0) drawSlot(i, -1e9); });
+    }
+    sc.cones.forEach(([r, c]) => drawCone(r, c));
+    pos.forEach((_, i) => drawCar(i, t));
+    if (extra) extra(t);
+  } finally { ({ ctx, S, PAD, M, pos, L, drag, guide, anim, fx, cleared, spot, skinOverride } = keep); }
+}
+const DSTEP = 1500;
+function drawDemo(t) {
+  if (!demo) return;
+  const sc = demo.sc, steps = sc.steps;
+  let e = Math.max(0, t - demo.t0);
+  if (e >= steps.length * DSTEP + 1300) { demo.t0 = t; demo.loop++; demo.done = -1; e = 0; }
+  const p = sc.M.start.slice(), k = Math.floor(e / DSTEP), u = (e % DSTEP) / DSTEP;
+  for (let j = 0; j < Math.min(k, steps.length); j++) if (!steps[j].bump) p[steps[j].i] = steps[j].to;
+  let fin = null;
+  if (k < steps.length) {
+    const st = steps[k], from = p[st.i], dir = Math.sign(st.to - from);
+    let v, fv;
+    if (st.bump) {   // 막힌 쪽으로 끌면 조금 가다 '통' 튕겨 돌아온다
+      const q = u < .2 ? 0 : u < .42 ? (u - .2) / .22 : u < .62 ? 1 - (u - .42) / .2 : 0;
+      v = from + dir * .22 * q; fv = from + dir * .45 * Math.min(1, u < .2 ? 0 : (u - .2) / .22);
+      if (demo.done !== k && u > .42) { demo.done = k; if (demo.loop === 0) sfx.bump(); demo.bumpT = t; }
+    } else {
+      const q = u < .2 ? 0 : u > .65 ? 1 : ease((u - .2) / .45);
+      v = from + (st.to - from) * q; fv = v;
+      if (demo.done !== k && u > .65) { demo.done = k; if (demo.loop === 0) { if (sc.M.kind[st.i] === "C" && st.to === sc.M.tgt[st.i]) sfx.ding(sc.M.col[st.i]); else sfx.move(1); } }
+    }
+    p[st.i] = v;
+    fin = { i: st.i, v: fv, a: u < .12 ? u / .12 : u > .8 ? Math.max(0, 1 - (u - .8) / .15) : 1 };
+  }
+  renderScene(demo.c2, sc, p, () => {
+    if (!fin) return;
+    const r = carRect(fin.i, fin.v), b = demo.bumpT && t - demo.bumpT < 250 ? 1 - (t - demo.bumpT) / 250 : 0;
+    if (b) { ctx.save(); ctx.globalAlpha = b; ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(r.x + r.w / 2, r.y + r.h / 2, S * .25 * (2 - b), 0, 7); ctx.fill(); ctx.restore(); }
+    emoji("👆", r.x + r.w / 2 + S * .1, r.y + r.h / 2 + S * .32, S * .62, fin.a);
+  });
 }
 function showCard(lv) {
-  $("cardbox").innerHTML = `<div class="ico">${iconHTML(lv)}</div><div class="hand">👆</div>`;
-  $("card").classList.add("on"); guide = null;
+  const d = DEMO[lv], sc = mkScene(d, 236, 210), [c, c2] = sceneCanvas(sc);
+  $("cardbox").innerHTML = d.top ? `<div class="ico">${d.top}</div>` : "";
+  $("cardbox").appendChild(c);
+  demo = { sc, c2, t0: performance.now() + 250, loop: 0, done: -1 };
+  $("card").classList.add("on"); guide = null; tapSel = null;
 }
 $("card").addEventListener("pointerdown", e => {
-  e.preventDefault(); $("card").classList.remove("on"); save.seen[L + 1] = 1; store.set(save); sfx.tap();
-  if (L + 1 <= 3 && !save.stars[L]) setTimeout(() => showHint(false), 250);
+  e.preventDefault(); $("card").classList.remove("on"); demo = null; save.seen[L + 1] = 1; store.set(save); sfx.tap();
+  afterIntro(250);
 });
+function badgeHTML(lv) {
+  const b = BADGE[lv]; if (!b) return "";
+  if (typeof b === "string") return `<span class="badge">${b}</span>`;
+  const sc = mkScene({ ...b, noBg: true }, 90, 30, .05), [c, c2] = sceneCanvas(sc);
+  renderScene(c2, sc, sc.M.start.slice());
+  return `<span class="badge"><img alt="" src="${c.toDataURL()}"></span>`;
+}
 
 // ── 💡 손짓 힌트: 지금 배치의 최소 풀이 다음 한 수를 손가락이 끌어 보인다 ──
-function nextMove() { const acts = solveFrom(M, pos); return acts && acts.length ? acts[0] : null; }
+function nextMove() {
+  if (distTab) {
+    const d = distOf(distTab, M, pos);
+    if (d > 0) for (const a of movesOf(M, pos)) { const np = pos.slice(); np[a.i] = a.to; if (distOf(distTab, M, np) === d - 1) return a; }
+    if (d >= 0) return null;
+  }
+  const acts = solveFrom(M, pos); return acts && acts.length ? acts[0] : null;
+}
 function showHint(counted) {
   if (cleared || $("card").classList.contains("on") || $("res").classList.contains("on")) return;
   const a = nextMove(); if (!a) return;
   if (counted) hints++;
+  tapSel = null;
   guide = { i: a.i, to: a.to, from: pos[a.i], t0: performance.now() };
 }
 
@@ -334,6 +465,7 @@ function carRect(i, v) {
 }
 function skinFor(i) {      // 5레벨마다 모은 새 차가 다음 레벨부터 색 차로 나온다(모양만)
   if (M.kind[i] !== "C" || M.len[i] !== 2) return null;
+  if (skinOverride) return M.colorIdx.indexOf(i) === 0 ? skinOverride : null;
   const av = SKINS.filter(s => s.at < L + 1), j = M.colorIdx.indexOf(i);
   return av[av.length - 1 - j] ? av[av.length - 1 - j].e : null;
 }
@@ -392,7 +524,13 @@ function drawCar(i, t) {
     ctx.fillStyle = col.c; shapePath(col.sh, mid.x, mid.y, unit * .16); ctx.fill();
     ctx.strokeStyle = col.d; ctx.lineWidth = 1.5; ctx.stroke();
     const sk = skinFor(i);
-    if (sk) emoji(sk, h ? x + unit * .3 : x + w / 2, h ? y + hh / 2 : y + unit * .3, unit * .32);
+    if (sk) {
+      let k = skinOverride ? 1.45 : 1, glow = 0;
+      if (spot && spot.i === i) { const u = (t - spot.t0) / spot.dur; if (u < 1) { k = 1 + .75 * Math.abs(Math.sin(u * Math.PI * 3)) * (1 - u * .5); glow = 1 - u; } else spot = null; }
+      const sx = h ? x + unit * .34 : x + w / 2, sy = h ? y + hh / 2 : y + unit * .34;
+      if (glow) { ctx.save(); ctx.globalAlpha = .7 * glow; ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(sx, sy, unit * .3 * k, 0, 7); ctx.fill(); ctx.restore(); }
+      emoji(sk, sx, sy, unit * .42 * k);
+    }
   }
   if (lifted) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; rr(x, y, w, hh, rad); ctx.stroke(); }
 }
@@ -412,6 +550,18 @@ function drawSlot(i, t) {
   ctx.globalAlpha = 1; ctx.setLineDash([S * .14, S * .1]); ctx.lineWidth = 3; ctx.strokeStyle = col.c; rr(r.x - 2, r.y - 2, r.w + 4, r.h + 4, S * .2); ctx.stroke(); ctx.setLineDash([]);
   ctx.globalAlpha = .75; ctx.fillStyle = "#fff"; shapePath(col.sh, r.x + r.w / 2, r.y + r.h / 2, S * .2); ctx.fill();
   ctx.globalAlpha = 1; ctx.restore();
+}
+function drawNewcar(t) {     // 결과 카드: 새 차가 '부릉' 들어와 반짝
+  if (!newcar) return;
+  const sc = newcar.sc, u = Math.min(1, (t - newcar.t0) / 700), back = 1 + 2.2 * Math.pow(u - 1, 3) + 1.2 * Math.pow(u - 1, 2);
+  renderScene(newcar.c2, sc, [-2.4 + 2.4 * (u < 0 ? 0 : back)], tt => {
+    if (u < 1) return;
+    for (let k = 0; k < 7; k++) {
+      const a = k * 2.4 + 1, rr2 = sc.H * .42 + (k % 3) * 6, x = sc.W / 2 + Math.cos(a) * sc.W * .42, y = sc.H / 2 + Math.sin(a) * rr2, tw = Math.abs(Math.sin(tt / 300 + k));
+      ctx.save(); ctx.globalAlpha = tw; ctx.fillStyle = k % 2 ? "#ffc533" : "#ffffff"; shapePath("star", x, y, 5 + tw * 3); ctx.fill(); ctx.restore();
+    }
+  }, newcar.e);
+  if (u >= 1 && !newcar.rang) { newcar.rang = true; sfx.fanfare(); }
 }
 function drawFinger(t) {
   if (!guide || cleared) return;
@@ -446,6 +596,7 @@ function draw(t) {
   order.forEach(i => drawCar(i, t));
   fx.parts.forEach(p => { if (!p.sq) return; ctx.globalAlpha = Math.max(0, p.life / p.max); ctx.fillStyle = p.col; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.life * 9); ctx.fillRect(-p.r, -p.r * .5, p.r * 2, p.r); ctx.restore(); });
   ctx.globalAlpha = 1;
+  drawArrows(t);
   drawFinger(t);
   ctx.restore();
 }
@@ -472,14 +623,16 @@ function tick() {
   fx.shake *= .85;
   // 8초 동안 손대지 않으면 손짓
   const t = performance.now();
-  if (!guide && !cleared && !busy && !drag && !AUTOPLAY && !anyOverlay() && t - lastTouch > 8000) showHint(false);
+  if (!guide && !tapSel && !cleared && !busy && !drag && !AUTOPLAY && !anyOverlay() && t - lastTouch > 8000) showHint(false);
 }
 function frame() {
+  requestAnimationFrame(frame);     // 그리기에서 오류가 나도 루프는 계속
   const t = performance.now();
   acc += Math.min(200, t - lastT); lastT = t;
   while (acc >= TICK) { tick(); acc -= TICK; }
   draw(t);
-  requestAnimationFrame(frame);
+  if (demo) drawDemo(t);
+  if (newcar) drawNewcar(t);
 }
 const anyOverlay = () => ["res", "sel", "card"].some(id => $(id).classList.contains("on"));
 
@@ -497,9 +650,11 @@ cv.addEventListener("pointerdown", e => {
   lastTouch = performance.now(); guide = null;
   if (cleared || busy || AUTOPLAY || drag) return;
   for (const k in anim) delete anim[k];
-  const p = local(e), i = carNear(p); if (i < 0) return;
+  const p = local(e);
+  if (tapSel) { const sel = tapSel, hit = arrowAt(p); tapSel = null; if (hit) { slideTo(sel.i, hit.to); return; } }
+  const i = carNear(p); if (i < 0) return;
   const [lo, hi] = rangeOf(M, pos, i);
-  drag = { i, start: M.h[i] ? p.x / S : p.y / S, base: pos[i], lo, hi, v: pos[i], bumped: 0, pid: e.pointerId };
+  drag = { i, start: M.h[i] ? p.x / S : p.y / S, base: pos[i], lo, hi, v: pos[i], bumped: 0, pid: e.pointerId, t0: performance.now(), moved: false };
   sfx.grab();
   try { cv.setPointerCapture(e.pointerId); } catch (_) {}
 });
@@ -508,6 +663,7 @@ cv.addEventListener("pointermove", e => {
   lastTouch = performance.now();
   const p = local(e), raw = drag.base + (M.h[drag.i] ? p.x / S : p.y / S) - drag.start;
   drag.v = Math.max(drag.lo, Math.min(drag.hi, raw));
+  if (Math.abs(raw - drag.base) > .15) drag.moved = true;
   const push = raw < drag.lo - .25 ? -1 : raw > drag.hi + .25 ? 1 : 0;
   if (push && drag.bumped !== push) {
     drag.bumped = push;
@@ -522,7 +678,44 @@ function endDrag(e) {
   const d = drag, v = Math.round(d.v); drag = null;
   anim[d.i] = { from: d.v, to: v, t0: performance.now(), dur: 90 };     // 칸 단위로 '착'
   if (v !== d.base) { apply({ i: d.i, to: v }); afterMove(d.i, d.base, v); }
+  else if (!d.moved && performance.now() - d.t0 < 400) tapCar(d.i);
   hud();
+}
+// 톡 치기(4세는 탭을 많이 한다): 차가 들썩 + 갈 수 있는 쪽 화살표. 화살표를 누르면 그쪽 끝까지
+function tapCar(i) {
+  const [lo, hi] = rangeOf(M, pos, i), arrows = [];
+  // 끝까지 가되, 가는 길에 자기 칸이 있으면 칸에서 멈춘다(지나쳐 버리지 않게)
+  const tg = M.kind[i] === "C" ? M.tgt[i] : -1;
+  if (lo < pos[i]) arrows.push({ dir: -1, to: tg >= lo && tg < pos[i] ? tg : lo });
+  if (hi > pos[i]) arrows.push({ dir: 1, to: tg > pos[i] && tg <= hi ? tg : hi });
+  if (!arrows.length) { sfx.nope(); wobble(i); return; }
+  sfx.grab(); bounce(i, arrows[0].dir, .06);
+  tapSel = { i, arrows, t0: performance.now() };
+}
+function arrowPos(i, dir) {
+  const cell = dir > 0 ? pos[i] + M.len[i] : pos[i] - 1;
+  return M.h[i] ? { x: PAD + cell * S + S / 2, y: PAD + M.fix[i] * S + S / 2 } : { x: PAD + M.fix[i] * S + S / 2, y: PAD + cell * S + S / 2 };
+}
+function arrowAt(p) {
+  for (const a of tapSel.arrows) { const c = arrowPos(tapSel.i, a.dir); if (Math.hypot(p.x - c.x, p.y - c.y) < S * .58) return a; }
+  return null;
+}
+function slideTo(i, to) {
+  const from = pos[i];
+  anim[i] = { from, to, t0: performance.now(), dur: 110 + Math.abs(to - from) * 70 };
+  apply({ i, to }); afterMove(i, from, to); hud();
+}
+function drawArrows(t) {
+  if (!tapSel || cleared) return;
+  const i = tapSel.i, u = (t - tapSel.t0) / 1000, h = M.h[i];
+  tapSel.arrows.forEach(a => {
+    const c = arrowPos(i, a.dir), r = S * .34, off = Math.sin(u * 7) * S * .05 * a.dir;
+    const x = c.x + (h ? off : 0), y = c.y + (h ? 0 : off), ang = h ? (a.dir > 0 ? 0 : Math.PI) : (a.dir > 0 ? Math.PI / 2 : -Math.PI / 2);
+    ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.arc(x + 1, y + 3, r, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.fillStyle = M.kind[i] === "C" ? COLS[M.col[i]].d : "#5a6273";
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.beginPath(); ctx.moveTo(r * .55, 0); ctx.lineTo(-r * .32, -r * .5); ctx.lineTo(-r * .32, r * .5); ctx.closePath(); ctx.fill(); ctx.restore();
+  });
 }
 cv.addEventListener("pointerup", endDrag);
 cv.addEventListener("pointercancel", endDrag);
@@ -550,7 +743,7 @@ function slotCheck() {     // 칸에 쏙 → 웃음 + 딩(차마다 다른 음)
 
 // ── 판 끝: 빵빵 합창 → 결과 카드 ──
 function win() {
-  cleared = true; busy = true; guide = null;
+  cleared = true; busy = true; guide = null; tapSel = null;
   const lv = LEVELS[L], st = starsFor(moves, lv.opt_moves), prevStars = save.stars[L] || 0, prevBest = save.best[L], before = totalStars();
   const firstClear = !prevStars;
   save.stars[L] = Math.max(prevStars, st);
@@ -558,10 +751,10 @@ function win() {
   save.unlocked = Math.max(save.unlocked, L + 2);
   store.set(save);
   const after = totalStars(), skin = SKINS.find(s => s.at === L + 1);
-  let gain = "";
-  if (prevBest !== undefined && moves < prevBest) gain = `🚗 ${prevBest}번 → ${moves}번`;
-  else if (st === 3 && prevStars < 3) gain = `⭐ 별 ${before} → ${after}`;
-  else if (firstClear && skin && L + 2 <= LEVELS.length) gain = `${skin.e} 새 차 왔어요!`;
+  // 늘어난 것 한 가지: 새 차(그림) > 기록 단축 > 별
+  let gain = "", newSkin = null;
+  if (firstClear && skin) newSkin = skin.e;
+  else if (prevBest !== undefined && moves < prevBest) gain = `🚗 ${prevBest}번 → ${moves}번`;
   else if (after > before) gain = `⭐ 별 ${before} → ${after}`;
   const sec = Math.round((performance.now() - t0play) / 1000);
   emit("level_clear", { level: L + 1, moves, min: lv.opt_moves, stars: st, hints, sec });
@@ -570,16 +763,24 @@ function win() {
   for (let k = 0; k < rounds; k++) pos.forEach((_, i) => { sfx.honk(1 + (i % 5) * .12, k * .6 + i * .07); setTimeout(() => bounce(i, i % 2 ? 1 : -1, .12), (k * .6 + i * .07) * 1000); });
   shake(3);
   puff(BW / 2, BW * .2, last ? 90 : 50, { angle: -Math.PI / 2, spread: 3, speed: 240, g: 320, life: 1.3, r: 4, cols: CONF, square: true, drag: .96 });
-  setTimeout(() => showResult(st, gain), JUICE ? 650 + (rounds - 1) * 600 : 150);
+  setTimeout(() => showResult(st, gain, newSkin), JUICE ? 650 + (rounds - 1) * 600 : 150);
 }
-function showResult(st, gain) {
+function showResult(st, gain, newSkin) {
   busy = false;
   const nx = L + 2, last = nx > LEVELS.length;
-  const pre = last ? "" : `▶ ${nx}${RULE[nx] ? " " + iconHTML(nx) : ""}`;
+  const pre = last ? "" : `▶ ${nx}${badgeHTML(nx)}`;
   $("resbox").innerHTML = `<div class="stars">${[0, 1, 2].map(k => `<span class="${k < st ? "on" : ""}" style="animation-delay:${.15 + k * .25}s">★</span>`).join("")}</div>
+    <div id="ncwrap"></div>
     <div class="line">🚗 ${moves}</div><div class="gain">${gain}</div>
     <div class="row"><button class="rb" id="again" aria-label="다시">🔄</button>${last ? `<button class="rb pri" id="tomenu" aria-label="레벨">☰</button>` : `<button class="rb pri" id="next" aria-label="다음">${pre}</button>`}</div>`;
   $("res").classList.add("on");
+  newcar = null;
+  if (newSkin) {   // 새 차: 글 대신 큰 그림
+    const sc = mkScene({ cols: 2, rows: 1, cars: [[0, 0, 2, "H", "C", 0, -1]], noBg: true }, 240, 120, .3), [c, c2] = sceneCanvas(sc);
+    c.id = "newcar"; $("ncwrap").appendChild(c);
+    newcar = { sc, c2, e: newSkin, t0: performance.now() + 750 };
+    setTimeout(() => sfx.brrm(), 700);
+  }
   for (let k = 0; k < st; k++) setTimeout(() => sfx.star(k), 150 + k * 250);
   $("again").onclick = () => load(L, true);
   if ($("next")) $("next").onclick = () => load(L + 1, true);
@@ -594,7 +795,7 @@ $("undo").onclick = () => {
   anim[h.i] = { from: cur, to: h.from, t0: performance.now(), dur: 160 };
   sfx.whoosh(); bounce(h.i, Math.sign(h.from - cur), .05);
   M.colorIdx.forEach(i => inSlot[i] = pos[i] === M.tgt[i]);
-  guide = null; lastTouch = performance.now(); hud();
+  guide = null; tapSel = null; lastTouch = performance.now(); hud();
 };
 $("reset").onclick = () => { if (busy) return; leave("reset"); load(L, true); };
 $("hint").onclick = () => { if (busy || cleared) return; lastTouch = performance.now(); sfx.tap(); showHint(true); };
@@ -623,7 +824,7 @@ function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let
 function runSelftest() {
   const rows = []; let pass = 0, total = 0;
   const T = (ok, line) => { total++; if (ok) pass++; rows.push((ok ? "OK   " : "FAIL ") + line); };
-  let solveMs = 0, hintMax = 0;
+  let solveMs = 0, hintMax = 0, bfsMax = 0, tabMax = 0;
   const seenTruck = [], seenCone = [], seenColorTruck = [];
   for (let n = 0; n < LEVELS.length; n++) {
     const lv = LEVELS[n], no = n + 1, tb = TABLE[n], m = mkModel(lv);
@@ -644,12 +845,15 @@ function runSelftest() {
     const parked = m.colorIdx.filter(i => m.start[i] === m.tgt[i]);
     let parkOk = parked.length === (PARKED[no] || 0);
     if (PARKED[no]) parkOk = parkOk && parked.every(i => (acts || []).some(a => a.i === i));
+    // 15레벨 전: 칸에 넣은 차를 다시 빼지 않고도 최소 해 / 15·25: 빼야만 최소 해
+    const nu = solveFrom(m, m.start, true), nuLen = nu ? nu.length : -1;
+    const unparkOk = no < 15 ? nuLen === lv.opt_moves : PARKED[no] ? (nuLen < 0 || nuLen > lv.opt_moves) : true;
     const anyTruck = m.len.some(x => x === 3);
     const truckOk = no < TRUCK_FROM ? !anyTruck : no === TRUCK_FROM ? grayTruck : true;
     const coneOk = no < CONE_FROM ? nCone === 0 : nCone >= 1;
     const ctOk = no < COLOR_TRUCK_FROM ? !colorTruck : no === COLOR_TRUCK_FROM ? colorTruck : true;
-    T(lv.n === tb[0] && nC === tb[1] && nG === tb[2] && nCone === tb[3] && slotOk && parkOk && truckOk && coneOk && ctOk,
-      `L${no} [D] ${lv.n}×${lv.n} 색${nC} 회${nG} 🚧${nCone} 칸줄${slotOk ? "✓" : "✗"} 빼기${parkOk ? "✓" : "✗"}(${parked.length}) 트럭${truckOk ? "✓" : "✗"} 고깔${coneOk ? "✓" : "✗"} 색트럭${ctOk ? "✓" : "✗"}`);
+    T(lv.n === tb[0] && nC === tb[1] && nG === tb[2] && nCone === tb[3] && slotOk && parkOk && truckOk && coneOk && ctOk && unparkOk,
+      `L${no} [D] ${lv.n}×${lv.n} 색${nC} 회${nG} 🚧${nCone} 칸줄${slotOk ? "✓" : "✗"} 빼기${parkOk ? "✓" : "✗"}(${parked.length}) 트럭${truckOk ? "✓" : "✗"} 고깔${coneOk ? "✓" : "✗"} 색트럭${ctOk ? "✓" : "✗"} 안빼고${nuLen < 0 ? "불가" : nuLen}${unparkOk ? "✓" : "✗"}`);
     // [E] 막힘 없음
     const an = analyze(m);
     T(an.unreached === 0 && an.startDist === lv.opt_moves, `L${no} [E] 상태 ${an.size}개 중 못 푸는 상태 ${an.unreached}`);
@@ -657,6 +861,8 @@ function runSelftest() {
     load(n); const R2 = rng(77 + no);
     for (let s = 0; s < 10; s++) { const ms = movesOf(M, pos); apply(ms[Math.floor(R2() * ms.length)]); }
     const need = (solveFrom(M, pos) || []).length; let follow = 0;
+    t1 = performance.now(); nextMove(); bfsMax = Math.max(bfsMax, performance.now() - t1);   // 캐시 없을 때(BFS)
+    t1 = performance.now(); distTab = analyze(M); tabMax = Math.max(tabMax, performance.now() - t1);
     while (!isGoal(M, pos) && follow < 99) { t1 = performance.now(); const a = nextMove(); hintMax = Math.max(hintMax, performance.now() - t1); if (!a) break; apply(a); follow++; }
     T(isGoal(M, pos) && follow === need, `L${no} [F] 힌트 따라 ${follow}수 / 남은 최소 ${need}`);
   }
@@ -666,7 +872,20 @@ function runSelftest() {
   T(g1 && LEVELS[0].opt_moves === 1, `L1 [G] 첫 끌기 1~2수 안에 성공`);
   // [H] 속도
   T(solveMs <= 1000, `[H] 30레벨 풀이 ${solveMs.toFixed(0)}ms (≤1000)`);
-  T(hintMax <= 100, `[H] 💡 계산 최대 ${hintMax.toFixed(1)}ms (≤100)`);
+  T(hintMax <= 100, `[H] 💡 계산 최대 ${hintMax.toFixed(2)}ms (≤100, 거리표 캐시) · 캐시 없을 때 ${bfsMax.toFixed(1)}ms · 거리표 만들기 최대 ${tabMax.toFixed(0)}ms(8ms씩 나눠 계산)`);
+  // [I] 규칙 카드 시연이 실제 규칙대로인가 (끄는 수는 갈 수 있는 수, '통'은 정말 막힌 수, 끝나면 모든 색 차가 칸에)
+  const bad = [];
+  Object.entries(DEMO).forEach(([lv, d]) => {
+    const sc = mkScene(d, 236, 210), m = sc.M, p = m.start.slice();
+    d.steps.forEach((st, j) => {
+      const [lo, hi] = rangeOf(m, p, st.i), can = st.to >= lo && st.to <= hi && st.to !== p[st.i];
+      if (st.bump ? can : !can) bad.push(lv + "#" + (j + 1));
+      if (!st.bump && can) p[st.i] = st.to;
+    });
+    if (!isGoal(m, p)) bad.push(lv + " 끝");
+    if (lv === "15" && !(m.start[0] === m.tgt[0] && d.steps[0].i === 0)) bad.push("15 빼기");
+  });
+  T(!bad.length && Object.keys(DEMO).length === 12, `[I] 규칙 카드 시연 ${Object.keys(DEMO).length}개 규칙대로 ${bad.join(",") || "✓"}`);
   document.body.insertAdjacentHTML("beforeend", `<pre id="selftest">SELFTEST ${pass}/${total}\n${rows.join("\n")}</pre>`);
   document.title = `SELFTEST ${pass}/${total}`;
 }
