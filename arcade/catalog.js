@@ -86,23 +86,6 @@ window.CATALOG = [
   "pop": null
  },
  {
-  "id": "G011",
-  "title": "출근길 피하기",
-  "one_liner": "환승통로에 쏟아지는 백팩·우산·킥보드를 손가락 하나로 피해 9시 전에 사무실 도착.",
-  "type": "엄청난 중독성",
-  "stage": "프로토",
-  "deadline": "2026-12-03",
-  "created": "2026-11-26",
-  "path": "../G011_commute-dodge/game/index.html",
-  "color": "#2fc4c4",
-  "icon": "🚇",
-  "version": "2026-11-26 19:39",
-  "note": "탄 속도 노선 순서대로, 노선 1→2 점프 완화, 체크포인트 별 최대…",
-  "rating": null,
-  "hot": false,
-  "pop": null
- },
- {
   "id": "G012",
   "title": "집 갈아타기",
   "one_liner": "지방 월세에서 한강뷰 펜트하우스까지, 갈림길 지도를 골라 간다. 지방 상급지·수도권·재개발·청약·경매·갭투자 — 금리·대출 규제·폭락기 같은 실제 사건에 막히고 돌아간다.",
@@ -115,23 +98,6 @@ window.CATALOG = [
   "icon": "🏠",
   "version": "2026-11-26 19:43",
   "note": "시간 문구·현금 음수 버그, 실제 총 확률 표시, 청약 쏠림 해소, 알…",
-  "rating": null,
-  "hot": false,
-  "pop": null
- },
- {
-  "id": "G013",
-  "title": "지옥철 밀어넣기",
-  "one_liner": "문 닫히기 3초 전, 승객을 밀어 넣어 한 명이라도 더 태워라. 너무 세게 밀면 반대편 문으로 튀어나간다.",
-  "type": "웃긴 샌드박스",
-  "stage": "프로토",
-  "deadline": "2026-12-03",
-  "created": "2026-11-26",
-  "path": "../G013_subway-push/game/index.html",
-  "color": "#8bc34a",
-  "icon": "🚃",
-  "version": "2026-11-26 21:04",
-  "note": "실수당 최대 2명, 앞사람 바뀌면 힘 초기화, ±12% 힘 오차 곡선…",
   "rating": null,
   "hot": false,
   "pop": null

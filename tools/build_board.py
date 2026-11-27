@@ -7,7 +7,7 @@ board.html은 생성물이다. 내용은 games.json을 고친다. 규칙은 READ
 
 games[]: id(G###), slug, title, one_liner, type, type2?, refs[], why, risk,
          scores{hook,clip,replay,scope,fresh} 1~5, scores_by(claude|user),
-         stage(아이디어|프로토|플레이테스트|유지|폐기), created, updated,
+         stage(아이디어|프로토|플레이테스트|유지|보류|폐기), created, updated,
          started?, deadline?, parent?, extended?, playtests?[{date,testers,again,median_min}],
          decision?{date,result,reason}, lessons?[]
 """
@@ -17,7 +17,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 G = ROOT
 BIZ = "../../agents/business"
 e = lambda s: html.escape(str(s if s is not None else ""), quote=True)
-STAGES = ["아이디어", "프로토", "플레이테스트", "유지", "폐기"]
+STAGES = ["아이디어", "프로토", "플레이테스트", "유지", "보류", "폐기"]   # 보류: 진행 칸·오락실에서 빠지지만 다시 꺼낼 수 있음
 ACTIVE = {"프로토", "플레이테스트"}
 KEYS = ["hook", "clip", "replay", "scope", "fresh"]
 
@@ -53,8 +53,8 @@ def check(d):
             errs.append(f"{gid}: 폴더 없음 {folder(g).name}")
         if g.get("stage") in ACTIVE and not (folder(g) / "brief.md").exists():
             errs.append(f"{gid}: brief.md 없음")
-        if g.get("stage") == "폐기" and not (g.get("decision") or {}).get("reason"):
-            errs.append(f"{gid}: 폐기 이유 없음")
+        if g.get("stage") in ("보류", "폐기") and not (g.get("decision") or {}).get("reason"):
+            errs.append(f"{gid}: {g.get('stage')} 이유 없음")
         if g.get("parent") and g["parent"] not in {x.get("id") for x in d.get("games", [])}:
             errs.append(f"{gid}: parent {g['parent']} 없음")
     act = [g["id"] for g in d.get("games", []) if g.get("stage") in ACTIVE]
@@ -118,7 +118,7 @@ def build():
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     today = datetime.date.today().isoformat()
 
-    flow = " <i>→</i> ".join(f"<span>{s}<b>{len(by[s])}</b></span>" for s in STAGES[:4]) + f" <i>·</i> <span>폐기<b>{len(by['폐기'])}</b></span>"
+    flow = " <i>→</i> ".join(f"<span>{s}<b>{len(by[s])}</b></span>" for s in STAGES[:4]) + f" <i>·</i> <span>보류<b>{len(by['보류'])}</b></span> <i>·</i> <span>폐기<b>{len(by['폐기'])}</b></span>"
 
     def gcard(g):
         f = folder(g)
@@ -167,10 +167,10 @@ def build():
     who = "사용자" if scored_by == {"user"} else "Claude 첫 판단(사용자가 다시 매길 것)"
 
     grave = "".join(
-        f'<div><b>{e(g["id"])} {e(g["title"])}</b><br>{e((g.get("decision") or {}).get("date", ""))} · {e((g.get("decision") or {}).get("reason", ""))}'
-        f'{"<br>레슨: " + e(" / ".join(g.get("lessons", []))) if g.get("lessons") else ""}</div>' for g in by["폐기"])
+        f'<div><b>{"⏸ " if g.get("stage") == "보류" else ""}{e(g["id"])} {e(g["title"])}</b><br>{e((g.get("decision") or {}).get("date", ""))} · {e((g.get("decision") or {}).get("reason", ""))}'
+        f'{"<br>레슨: " + e(" / ".join(g.get("lessons", []))) if g.get("lessons") else ""}</div>' for g in by["보류"] + by["폐기"])
 
-    rules = [("동시 진행 1개", "프로토 + 플레이테스트 합쳐 1개. 하나를 끝내야 다음으로"),
+    rules = [("동시 진행 8개", "프로토 + 플레이테스트 합쳐 8개. 재미없는 건 보류로 내려 자리를 비움"),
              ("7일 기한", "기한을 넘기면 폐기 후보. 연장은 1회 3일"),
              ("심사 18/25", "훅·클립·반복·범위·새로움 각 5점"),
              ("판정", "5명 중 3명이 시키지 않았는데 한 판 더 → 유지. 애매하면 폐기"),
@@ -191,8 +191,8 @@ def build():
 <p class="lead2">점수 순. 초록 점선 위(합 {pass_score}점 이상)만 프로토로 갈 수 있습니다. 점수: {e(who)}. 칸 이름에 마우스를 올리면 질문이 보입니다.</p>
 {itable}</section>
 
-<section><h2>폐기된 게임</h2>
-<p class="lead2">버린 이유와 레슨. 같은 실수를 다시 하지 않기 위한 기록입니다.</p>
+<section><h2>보류·폐기된 게임</h2>
+<p class="lead2">⏸ 보류는 오락실에서 빼 둔 것(다시 꺼낼 수 있음). 폐기는 버린 이유와 레슨. 같은 실수를 다시 하지 않기 위한 기록입니다.</p>
 {f'<div class="grave">{grave}</div>' if grave else '<div class="none">아직 없음</div>'}</section>
 
 <section><h2>규칙</h2>{rules_html}</section>
