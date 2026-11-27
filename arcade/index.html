@@ -212,13 +212,15 @@ const DB = {
 };
 let summary = {};   // game_id → {n, likes, rating, again, ...}
 async function refreshSummary() {
+  if (DB.remote) {   // 공유 DB: 원본은 관리자만 읽을 수 있으니 공개 집계 함수(arcade_stats)로 숫자만 받는다
+    try {
+      const r = await fetch(`${CFG.supabaseUrl}/rest/v1/rpc/arcade_stats`, { method: "POST", headers: DB.headers(), body: "{}" });
+      if (r.ok) { const s = {}; (await r.json()).forEach(x => s[x.game_id] = { n: x.rn, likes: x.likes, rsum: x.rsum, rn: x.rn, pop: x.users ? { users: x.users, back: x.back } : null }); summary = s; if (view === "menu") renderMenu(); }
+    } catch (e) {}
+    return;
+  }
   const fb = await DB.all("feedback"); const s = {};
   fb.forEach(f => { const g = s[f.game_id] || (s[f.game_id] = { n: 0, likes: 0, rsum: 0, rn: 0 }); g.n++; if (f.liked) g.likes++; if (f.rating) { g.rsum += f.rating; g.rn++; } });
-  if (DB.remote) {   // 공유 DB일 때만 모두의 접속 기록으로 인기 계산 (이 기기 기록은 나 한 명뿐이라 쓰지 않는다)
-    const cut = Date.now() - 14 * 864e5, by = {};
-    (await DB.all("sessions")).forEach(x => { if (new Date(x.created_at).getTime() < cut) return; const g = by[x.game_id] || (by[x.game_id] = {}); (g[x.anon_id] || (g[x.anon_id] = new Set())).add(String(x.created_at).slice(0, 10)); });
-    Object.entries(by).forEach(([id, t]) => { const g = s[id] || (s[id] = { n: 0, likes: 0, rsum: 0, rn: 0 }); const d = Object.values(t); g.pop = { users: d.length, back: d.filter(x => x.size >= 2).length }; });
-  }
   summary = s; if (view === "menu") renderMenu();
 }
 

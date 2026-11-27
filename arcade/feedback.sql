@@ -67,3 +67,24 @@ drop policy if exists "admin read votes" on compare_votes;
 create policy "admin read votes"       on compare_votes for select to authenticated using (true);
 drop policy if exists "admin read sessions" on sessions;
 create policy "admin read sessions"    on sessions      for select to authenticated using (true);
+
+-- 모두가 보는 게임별 집계 (2026-11-27): 테스터(anon)는 원본 행을 못 읽고 이 숫자만 받는다. 개인 단위 정보는 나가지 않는다
+--   users = 최근 14일 플레이한 테스터 수, back = 그중 이틀 이상 다시 온 수 → 오락실 BEST 3
+--   likes / rsum·rn = 좋아요 수, 별점 합·개수 → 목록 별점
+create or replace function arcade_stats()
+returns table (game_id text, users int, back int, likes int, rsum int, rn int)
+language sql stable security definer set search_path = public as $$
+  with d as (
+    select game_id, anon_id, count(distinct (created_at at time zone 'Asia/Seoul')::date) as days
+    from sessions where created_at > now() - interval '14 days' group by game_id, anon_id
+  ), p as (
+    select game_id, count(*)::int as users, count(*) filter (where days >= 2)::int as back from d group by game_id
+  ), f as (
+    select game_id, count(*) filter (where liked)::int as likes, coalesce(sum(rating), 0)::int as rsum, count(rating)::int as rn
+    from feedback group by game_id
+  )
+  select coalesce(p.game_id, f.game_id), coalesce(p.users, 0), coalesce(p.back, 0), coalesce(f.likes, 0), coalesce(f.rsum, 0), coalesce(f.rn, 0)
+  from p full join f on p.game_id = f.game_id;
+$$;
+revoke all on function arcade_stats() from public;
+grant execute on function arcade_stats() to anon, authenticated;
