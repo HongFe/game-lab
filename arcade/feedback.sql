@@ -53,6 +53,10 @@ alter table feedback      enable row level security;
 alter table compare_votes enable row level security;
 alter table sessions      enable row level security;
 
+-- 표 권한 (새 Supabase 프로젝트는 anon·authenticated 에 표 권한을 자동으로 주지 않는다. 행 단위 허용은 아래 정책이 정한다)
+grant insert on feedback, compare_votes, sessions to anon;
+grant select on feedback, compare_votes, sessions to authenticated;
+
 -- 테스터: 쓰기만
 drop policy if exists "tester insert feedback" on feedback;
 create policy "tester insert feedback" on feedback      for insert to anon with check (true);
